@@ -424,7 +424,12 @@
                         placeholder="Introduction Text"
                         class="up"
                       />
-                      <textarea class="text" name="" id=""></textarea>
+                      <textarea
+                        class="text-for-upload"
+                        name=""
+                        placeholder="Write You Full Article Here!"
+                        id="the-text-area"
+                      ></textarea>
                       <select name="" id="">
                         <option value="">Web Development</option>
                         <option value="">Social media management</option>
@@ -766,6 +771,125 @@
           </div>
         </div>
       </div>
+      <div class="the-Blog-article-page-holder">
+        <div class="the">
+          <div class="the-plus-button">
+            <div class="plus" onmouseover="dropDown()">+</div>
+          </div>
+          <div class="the-options-part" id="the-options-part">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="lucide lucide-heading-icon lucide-heading"
+              onclick="createHeader()"
+              id="the-header"
+            >
+              <path d="M6 12h12" />
+              <path d="M6 20V4" />
+              <path d="M18 20V4" />
+            </svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="lucide lucide-list-icon lucide-list"
+              onclick="createUnorderedList()"
+              id="the-unlist"
+            >
+              <path d="M3 5h.01" />
+              <path d="M3 12h.01" />
+              <path d="M3 19h.01" />
+              <path d="M8 5h13" />
+              <path d="M8 12h13" />
+              <path d="M8 19h13" />
+            </svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="lucide lucide-list-ordered-icon lucide-list-ordered"
+              onclick="createOrderedList()"
+              id="the-od-list"
+            >
+              <path d="M11 5h10" />
+              <path d="M11 12h10" />
+              <path d="M11 19h10" />
+              <path d="M4 4h1v5" />
+              <path d="M4 9h2" />
+              <path
+                d="M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02"
+              />
+            </svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="lucide lucide-type-icon lucide-type"
+              onclick="createTextTag()"
+              id="txt-tag"
+            >
+              <path d="M12 4v16" />
+              <path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2" />
+              <path d="M9 20h6" />
+            </svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="lucide lucide-italic-icon lucide-italic"
+              onclick="createItalic()"
+              id="italic"
+            >
+              <line x1="19" x2="10" y1="4" y2="4" />
+              <line x1="14" x2="5" y1="20" y2="20" />
+              <line x1="15" x2="9" y1="4" y2="20" />
+            </svg>
+          </div>
+          <div class="the-blog-article" id="the-blog-article">
+            <h1
+              contenteditable="true"
+              data-placeholder="Type your header here!"
+            ></h1>
+            <p
+              contenteditable="true"
+              data-placeholder="Type your content here!"
+            ></p>
+          </div>
+
+          <button class="save">save</button>
+        </div>
+      </div>
     </div>
     <script>
       let button = document.getElementById("menu-btn");
@@ -812,6 +936,201 @@
           imageDisplay.src = URL.createObjectURL(file);
         }
       }
+
+      let textArea = document.getElementById("the-text-area");
+
+      textArea.addEventListener("click", function openText() {
+        const blogger = document.getElementsByClassName(
+          "the-Blog-article-page-holder"
+        )[0];
+
+        // Example: toggle a class
+        blogger.classList.toggle("show");
+      });
+
+      let theOptionsPart = document.getElementById("the-options-part");
+      function dropDown() {
+        theOptionsPart.classList.add("pick");
+      }
+
+      function createHeader() {
+        const header = document.createElement("h2");
+        header.className = "sub-headers";
+        header.setAttribute("contenteditable", "true");
+        header.setAttribute("data-placeholder", "Enter header...");
+
+        const blogArticle = document.getElementById("the-blog-article");
+        blogArticle.appendChild(header);
+        header.focus();
+
+        // 🧠 Delete header on Backspace if empty
+        header.addEventListener("keydown", (e) => {
+          if (e.key === "Backspace" && header.textContent.trim() === "") {
+            e.preventDefault();
+            const prev = header.previousElementSibling;
+            header.remove();
+            if (prev) prev.focus();
+          }
+        });
+
+        the();
+      }
+
+      function createTextTag() {
+        const paragraph = document.createElement("p");
+        paragraph.className = "paragraph-text";
+        paragraph.setAttribute("contenteditable", "true");
+        paragraph.setAttribute("data-placeholder", "Type something...");
+
+        const blogArticle = document.getElementById("the-blog-article");
+        blogArticle.appendChild(paragraph);
+        paragraph.focus();
+
+        // 🧠 Delete paragraph on Backspace if empty
+        paragraph.addEventListener("keydown", (e) => {
+          if (e.key === "Backspace" && paragraph.textContent.trim() === "") {
+            e.preventDefault();
+            const prev = paragraph.previousElementSibling;
+            paragraph.remove();
+            if (prev) prev.focus();
+          }
+        });
+
+        the();
+      }
+
+      function createItalic() {
+        const italicBlock = document.createElement("p");
+        italicBlock.className = "italic-text";
+        italicBlock.setAttribute("contenteditable", "true");
+        italicBlock.setAttribute("data-placeholder", "Type italic text...");
+
+        const blogArticle = document.getElementById("the-blog-article");
+        blogArticle.appendChild(italicBlock);
+        italicBlock.focus();
+
+        // 🧠 Delete italic block on Backspace if empty
+        italicBlock.addEventListener("keydown", (e) => {
+          if (e.key === "Backspace" && italicBlock.textContent.trim() === "") {
+            e.preventDefault();
+            const prev = italicBlock.previousElementSibling;
+            italicBlock.remove();
+            if (prev) prev.focus();
+          }
+        });
+
+        the();
+      }
+
+      function createOrderedList() {
+        const olList = document.createElement("ol");
+        olList.className = "order-list";
+
+        const listItem = document.createElement("li");
+        listItem.className = "order-list-li";
+        listItem.setAttribute("contenteditable", "true");
+        listItem.setAttribute("data-placeholder", "List item...");
+        olList.appendChild(listItem);
+
+        const blogArticle = document.getElementById("the-blog-article");
+        blogArticle.appendChild(olList);
+
+        // Handle Enter and Backspace for any <li> in this <ol>
+        olList.addEventListener("keydown", (e) => {
+          const currentLi = e.target;
+
+          if (currentLi.tagName !== "LI") return;
+
+          // ENTER → create new list item
+          if (e.key === "Enter") {
+            e.preventDefault();
+
+            const newLi = document.createElement("li");
+            newLi.className = "order-list-li";
+            newLi.setAttribute("contenteditable", "true");
+            newLi.setAttribute("data-placeholder", "List item...");
+            olList.insertBefore(newLi, currentLi.nextSibling);
+            newLi.focus();
+          }
+
+          // BACKSPACE → remove empty list item
+          if (e.key === "Backspace" && currentLi.textContent.trim() === "") {
+            e.preventDefault();
+
+            const previous = currentLi.previousElementSibling;
+            currentLi.remove();
+
+            if (previous) previous.focus();
+            else if (olList.children.length === 0) olList.remove();
+          }
+        });
+
+        // Auto-focus on first item
+        listItem.focus();
+
+        // Reinitialize any editor logic
+        the();
+      }
+
+      function createUnorderedList() {
+        const unList = document.createElement("ul");
+        unList.className = "un-order-list";
+
+        const list = document.createElement("li");
+        list.className = "un-order-list-li";
+        list.setAttribute("contenteditable", "true");
+        list.setAttribute("data-placeholder", "List item...");
+        unList.appendChild(list);
+
+        const blogArticle = document.getElementById("the-blog-article");
+        blogArticle.appendChild(unList);
+
+        // Handle Enter and Backspace inside any <li> in this <ul>
+        unList.addEventListener("keydown", (e) => {
+          const currentLi = e.target;
+
+          // Ensure we're typing inside an <li>
+          if (currentLi.tagName !== "LI") return;
+
+          // ENTER → create new list item
+          if (e.key === "Enter") {
+            e.preventDefault();
+
+            const newLi = document.createElement("li");
+            newLi.className = "un-order-list-li";
+            newLi.setAttribute("contenteditable", "true");
+            newLi.setAttribute("data-placeholder", "List item...");
+            unList.insertBefore(newLi, currentLi.nextSibling);
+            newLi.focus();
+          }
+
+          // BACKSPACE → remove empty <li>
+          if (e.key === "Backspace" && currentLi.textContent.trim() === "") {
+            e.preventDefault();
+
+            const previous = currentLi.previousElementSibling;
+            currentLi.remove();
+
+            if (previous) previous.focus();
+            else if (unList.children.length === 0) unList.remove();
+          }
+        });
+
+        list.focus();
+        the();
+      }
+
+      function the() {
+        document.querySelectorAll("[contenteditable]").forEach((el) => {
+          el.addEventListener("input", () => {
+            if (el.innerHTML === "<br>" || el.innerHTML.trim() === "") {
+              el.innerHTML = "";
+            }
+          });
+        });
+      }
+
+      the();
     </script>
   </body>
 </html>

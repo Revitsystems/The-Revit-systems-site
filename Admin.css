@@ -350,14 +350,14 @@
 }
 
 .the-upload .up,
-.text {
+.text-for-upload {
   padding: 5px;
   margin-top: 10px;
   width: 95%;
 }
 
-.text {
-  height: 200px;
+.text-for-upload {
+  height: 100px;
   border-radius: 7px;
   width: 95%;
 }
@@ -493,4 +493,159 @@ select {
 .the-info {
   margin-top: 10px;
   width: 100%;
+}
+
+.the-Blog-article-page-holder {
+  width: 100vw;
+  height: 100vh;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  backdrop-filter: blur(1px);
+  top: 0;
+  background-color: #000000ad;
+}
+
+.the-Blog-article-page-holder.show {
+  display: flex;
+}
+
+.the {
+  padding: 20px;
+  width: 80%;
+  border-radius: 20px;
+  height: 90%;
+  background-color: #ffffff;
+}
+.the-blog-article {
+  position: relative;
+  overflow-y: scroll;
+  height: 80%;
+  background-color: #ffffff1c;
+  width: 100%;
+}
+
+.the-plus-button {
+  width: 95%;
+  display: flex;
+  height: 9%;
+  justify-content: end;
+  align-items: center;
+}
+
+.plus {
+  font-size: 30px;
+  font-weight: 900;
+  background-color: #084c01d6;
+  padding: 2px 13px;
+  display: flex;
+  border-radius: 30px;
+  justify-content: center;
+  cursor: pointer;
+  align-items: center;
+  color: white;
+}
+
+.plus:hover {
+  background-color: #1dab0dd6;
+}
+
+.the-options-part {
+  width: 230px;
+  height: 50px;
+  right: 10%;
+  z-index: 1;
+  border-radius: 10px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.153);
+  position: absolute;
+  justify-content: space-evenly;
+  align-items: center;
+  display: none;
+  background-color: #ffffff;
+}
+
+.sub-headers[contenteditable]:empty:before {
+  content: attr(data-placeholder);
+  color: #888888a0;
+}
+
+.sub-headers {
+  font-size: 1rem;
+  line-height: 1.6;
+  outline: none;
+  padding: 5px;
+  color: #404051;
+}
+
+.pick {
+  display: flex;
+}
+
+.the-options-part svg:hover {
+  color: rgb(121, 197, 51);
+  cursor: pointer;
+}
+
+.the-blog-article h1,
+.the-blog-article p,
+.un-order-list-li,
+.order-list-li,
+.paragraph-text,
+.italic-text {
+  padding: 5px;
+  outline: none;
+}
+.un-order-list {
+  list-style-type: disc; /* ensures bullet points show */
+  margin-left: 1.5rem; /* adds indentation */
+}
+
+.un-order-list-li {
+  list-style-type: disc; /* ensures each li shows a bullet */
+  display: list-item; /* <— VERY important if you used contenteditable */
+  margin-bottom: 0.3rem;
+}
+
+.the-blog-article h1[contenteditable]:empty:before,
+.the-blog-article p[contenteditable]:empty:before,
+.un-order-list-li:empty::before,
+.order-list-li:empty::before,
+.paragraph-text:empty::before,
+.italic-text:empty::before {
+  content: attr(data-placeholder);
+  color: #8888886f;
+}
+
+.order-list {
+  list-style-type: decimal; /* shows numbers (1, 2, 3, ...) */
+  margin-left: 1.5rem;
+  padding-left: 1rem;
+}
+
+.order-list-li {
+  display: list-item;
+  list-style-type: decimal;
+  min-height: 1em;
+}
+
+.paragraph-text {
+  min-height: 1em;
+  margin: 0.5rem 0;
+}
+
+.italic-text {
+  font-style: italic;
+  min-height: 1em;
+  color: #464646d3;
+}
+
+.save {
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.save:hover {
+  background-color: rgba(122, 197, 51, 0.655);
 }
