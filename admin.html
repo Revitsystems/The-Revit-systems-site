@@ -418,11 +418,17 @@
                       />
                     </div>
                     <div class="the-form">
-                      <input type="text" placeholder="Header" class="up" />
+                      <input
+                        type="text"
+                        placeholder="Header"
+                        class="up"
+                        id="blog-header"
+                      />
                       <input
                         type="text"
                         placeholder="Introduction Text"
                         class="up"
+                        id="blog-intro"
                       />
                       <textarea
                         class="text-for-upload"
@@ -431,10 +437,18 @@
                         id="the-text-area"
                       ></textarea>
                       <select name="" id="">
-                        <option value="">Web Development</option>
-                        <option value="">Social media management</option>
-                        <option value="">Digital marketing</option>
-                        <option value="">Business Consulting</option>
+                        <option value="website development">
+                          Web Development
+                        </option>
+                        <option value="social media management">
+                          Social media management
+                        </option>
+                        <option value="digital marketing">
+                          Digital marketing
+                        </option>
+                        <option value="business consulting">
+                          Business Consulting
+                        </option>
                       </select>
                     </div>
                   </div>
@@ -887,10 +901,12 @@
             ></p>
           </div>
 
-          <button class="save">save</button>
+          <button class="save" onclick="movePlace()">save</button>
         </div>
       </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
     <script>
       let button = document.getElementById("menu-btn");
       let side = document.getElementById("side-content");
@@ -948,7 +964,27 @@
         blogger.classList.toggle("show");
       });
 
+      let theHtmlFromTheBlog;
+      function movePlace() {
+        const blogger = document.getElementsByClassName(
+          "the-Blog-article-page-holder"
+        )[0];
+
+        // Example: toggle a class
+        blogger.classList.toggle("show");
+        const theBlogArticle =
+          document.getElementById("the-blog-article").innerHTML;
+        theHtmlFromTheBlog = theBlogArticle;
+        console.log(theBlogArticle);
+        const theBlogArticleText =
+          document.getElementById("the-blog-article").innerText;
+        console.log(theBlogArticleText);
+        const theTextArea = document.getElementById("the-text-area");
+        theTextArea.innerText = theBlogArticleText;
+      }
+
       let theOptionsPart = document.getElementById("the-options-part");
+
       function dropDown() {
         theOptionsPart.classList.add("pick");
       }
@@ -1131,6 +1167,84 @@
       }
 
       the();
+
+      const saveButton = document.querySelector(".bg-green");
+
+      // the cloudinary server upload code
+      const CLOUD_NAME = "dmvltush8";
+      const UPLOAD_PRESET = "revit_unsigned";
+
+      saveButton.addEventListener("click", async () => {
+        const imageFile = document.getElementById("ImgInput").files[0];
+        if (!imageFile) {
+          alert("Please select an image first.");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", imageFile);
+        formData.append("upload_preset", UPLOAD_PRESET);
+
+        try {
+          // Upload to Cloudinary
+          const res = await axios.post(
+            `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+            formData,
+            {
+              headers: { "Content-Type": "multipart/form-data" },
+            }
+          );
+
+          const theImageUrl = res.data.secure_url;
+          console.log("✅ Image uploaded:", theImageUrl);
+
+          // Now save to database
+          await sendToDatabase(theImageUrl);
+        } catch (error) {
+          console.error("❌ Upload failed:", error);
+          alert("Image upload failed");
+        }
+      });
+
+      const sendToDatabase = async (cover_image_url) => {
+        const title = document.getElementById("blog-header").value.trim();
+        const excerpt = document.getElementById("blog-intro").value.trim();
+        const content =
+          typeof theHtmlFromTheBlog !== "undefined" ? theHtmlFromTheBlog : "";
+        const categories = document.querySelector("select").value;
+        const status = "published";
+
+        console.log({
+          title,
+          excerpt,
+          content,
+          categories,
+          cover_image_url,
+        });
+
+        const blogData = {
+          title,
+          excerpt,
+          content,
+          categories,
+          cover_image_url,
+          status,
+        };
+
+        try {
+          const res = await axios.post(
+            "http://localhost:3000/api/posts/upload",
+            blogData,
+            { headers: { "Content-Type": "application/json" } }
+          );
+
+          console.log("✅ Saved successfully:", res.data);
+          alert("Blog uploaded successfully!");
+        } catch (err) {
+          console.error("❌ Upload failed:", err);
+          alert("Failed to upload blog.");
+        }
+      };
     </script>
   </body>
 </html>
