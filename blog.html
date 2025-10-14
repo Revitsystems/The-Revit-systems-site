@@ -158,7 +158,7 @@
             </div>
           </div>
         </div>
-        <div class="blog-grid-container">
+        <div class="blog-grid-container" id="postsContainer">
           <a href="./blog-post.html">
             <div class="blog-blog-card">
               <img
@@ -463,6 +463,7 @@
       </div>
       <!-- End of main container -->
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
       // The categories button on the blog.
       // Select all buttons with the class ".blog-btn"
@@ -480,29 +481,42 @@
       });
 
       const blogGrid = document.querySelector(".blog-grid-container");
-      function renderPosts() {
-        let posts = JSON.parse(localStorage.getItem("posts")) || [];
-        console.log(posts);
-        posts.forEach((post) => {
-          const card = document.createElement("div");
-          card.classList.add("blog-blog-card");
 
-          card.innerHTML = `
-        <img src="${post.imageUrl}" alt="${post.topic}" class="blog-card-image" />
-        <div class="blog-card-content">
-          <h3 class="blog-card-title">${post.topic}</h3>
-          <p class="blog-card-description">${post.content}</p>
-          <div class="blog-author-info">
-            <img src="./Images/default-avatar.png" alt="${post.user}" class="blog-author-avatar" />
-            <span class="blog-author-name">${post.user}</span>
-          </div>
-        </div>
-      `;
-          blogGrid.prepend(card);
-        });
-      }
+      const getPosts = async () => {
+        try {
+          const res = await axios.get("http://localhost:3000/blog");
 
-      document.addEventListener("DOMContentLoaded", renderPosts);
+          console.log("Posts from database:", res.data);
+
+          const postsContainer = document.getElementById("postsContainer");
+          postsContainer.innerHTML = "Loading Data....";
+
+          res.data.forEach((post) => {
+            const card = document.createElement("div");
+            card.classList.add("blog-blog-card");
+
+            card.innerHTML = `
+              <img src="${post.cover_image_url}" alt="${post.title}" class="blog-card-image" />
+              <div class="blog-card-content">
+                <h3 class="blog-card-title">${post.title}</h3>
+                <p class="blog-card-description">${post.excerpt}</p>
+                <div class="blog-author-info">
+                  <img src="./Images/default-avatar.png" alt="${post.user}" class="blog-author-avatar" />
+                  <span class="blog-author-name">${post.user}</span>
+                </div>
+              </div>
+            `;
+            blogGrid.prepend(card);
+          });
+        } catch (err) {
+          console.error("Error fetching posts:", err);
+          document.getElementById("postsContainer").innerHTML =
+            "<p>Failed to load posts.</p>";
+        }
+      };
+
+      // Run when page loads
+      getPosts();
     </script>
   </body>
 </html>

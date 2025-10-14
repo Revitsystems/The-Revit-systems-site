@@ -405,6 +405,16 @@ select {
   background-color: orange;
 }
 
+.bg-green:hover {
+  background-color: rgba(16, 189, 16, 0.869);
+  cursor: pointer;
+}
+
+.bg-orange:hover {
+  background-color: rgb(134, 88, 3);
+  cursor: pointer;
+}
+
 .green {
   color: rgba(8, 137, 8, 0.869);
 }
@@ -648,4 +658,42 @@ select {
 
 .save:hover {
   background-color: rgba(122, 197, 51, 0.655);
+}
+
+/* HTML: <div class="loader"></div> */
+.loader-holder {
+  position: absolute;
+  width: 100%;
+  height: 100vh;
+  background-color: #0000008c;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(1px);
+  display: none;
+}
+.loader {
+  height: 80px;
+  aspect-ratio: 1;
+  padding: 10px;
+  border-radius: 50%;
+  box-sizing: border-box;
+  position: relative;
+  mask: conic-gradient(#000 0 0) content-box exclude, conic-gradient(#000 0 0);
+  filter: blur(12px);
+}
+.loader:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(#0000 25%, #d17609, #0000 65%);
+  animation: l1 1.5s linear infinite;
+}
+@keyframes l1 {
+  to {
+    rotate: 1turn;
+  }
+}
+
+.loader-holder.show-face {
+  display: flex;
 }

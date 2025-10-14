@@ -18,6 +18,9 @@
     <link rel="stylesheet" href="./Admin.css" />
   </head>
   <body>
+    <div class="loader-holder" id="loader">
+      <div class="loader"></div>
+    </div>
     <div class="admin-page-container-holder">
       <div class="admin-page-container">
         <!-- .the-side-bar -->
@@ -406,7 +409,7 @@
                 </div>
                 <div class="the-upload">
                   <div class="the-header-man">Uploads</div>
-                  <div class="load">
+                  <div class="load" id="load">
                     <div class="the-form">
                       <div class="the-preview">
                         <img src="" alt="" id="thePreview" />
@@ -1174,12 +1177,16 @@
       const CLOUD_NAME = "dmvltush8";
       const UPLOAD_PRESET = "revit_unsigned";
 
+      let loader = document.getElementById("loader");
+
       saveButton.addEventListener("click", async () => {
         const imageFile = document.getElementById("ImgInput").files[0];
         if (!imageFile) {
           alert("Please select an image first.");
           return;
         }
+
+        loader.classList.add("show-face");
 
         const formData = new FormData();
         formData.append("file", imageFile);
@@ -1203,6 +1210,7 @@
         } catch (error) {
           console.error("❌ Upload failed:", error);
           alert("Image upload failed");
+          loader.classList.add("show-face");
         }
       });
 
@@ -1240,11 +1248,36 @@
 
           console.log("✅ Saved successfully:", res.data);
           alert("Blog uploaded successfully!");
+          loader.classList.remove("show-face");
+          let load = document.getElementById("load");
+          resetUploadForm();
         } catch (err) {
           console.error("❌ Upload failed:", err);
           alert("Failed to upload blog.");
+          loader.classList.remove("show-face");
         }
       };
+
+      function resetUploadForm() {
+        // Clear text inputs
+        document.getElementById("blog-header").value = "";
+        document.getElementById("blog-intro").value = "";
+        document.getElementById("the-text-area").value = "";
+
+        // Reset select dropdown
+        const select = document.querySelector(".the-form select");
+        if (select) select.selectedIndex = 0;
+
+        // Reset image input & preview
+        const imgInput = document.getElementById("ImgInput");
+        const preview = document.getElementById("thePreview");
+        imgInput.value = "";
+        preview.src = "";
+        preview.alt = "";
+
+        // Optional: if you have preview styling, remove it
+        preview.style.display = "none";
+      }
     </script>
   </body>
 </html>
