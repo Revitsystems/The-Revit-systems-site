@@ -3395,6 +3395,11 @@ hr {
   border-bottom: 1px solid #d17709a3;
 }
 
+.blog-card-contents-detail {
+  display: none;
+  visibility: hidden;
+}
+
 .blog-author-info {
   display: flex;
   align-items: center;

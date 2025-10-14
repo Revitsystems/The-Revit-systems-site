@@ -489,24 +489,34 @@
           console.log("Posts from database:", res.data);
 
           const postsContainer = document.getElementById("postsContainer");
-          postsContainer.innerHTML = "Loading Data....";
+          postsContainer.innerHTML = ""; // clear loading message
 
           res.data.forEach((post) => {
             const card = document.createElement("div");
             card.classList.add("blog-blog-card");
 
             card.innerHTML = `
-              <img src="${post.cover_image_url}" alt="${post.title}" class="blog-card-image" />
-              <div class="blog-card-content">
-                <h3 class="blog-card-title">${post.title}</h3>
-                <p class="blog-card-description">${post.excerpt}</p>
-                <div class="blog-author-info">
-                  <img src="./Images/default-avatar.png" alt="${post.user}" class="blog-author-avatar" />
-                  <span class="blog-author-name">${post.user}</span>
-                </div>
-              </div>
-            `;
-            blogGrid.prepend(card);
+        <img src="${post.cover_image_url}" alt="${post.title}" class="blog-card-image" />
+        <div class="blog-card-content">
+          <h3 class="blog-card-title">${post.title}</h3>
+          <p class="blog-card-description">${post.excerpt}</p>
+          <div class="blog-author-info">
+            <img src="./Images/default-avatar.png" alt="${post.user}" class="blog-author-avatar" />
+            <span class="blog-author-name">${post.user}</span>
+          </div>
+        </div>
+      `;
+
+            // ✅ When user clicks the card
+            card.onclick = () => {
+              // Store the entire post object in localStorage
+              localStorage.setItem("selectedPost", JSON.stringify(post));
+
+              // Redirect to the detailed blog page
+              window.location.href = "blog-post.html";
+            };
+
+            postsContainer.appendChild(card);
           });
         } catch (err) {
           console.error("Error fetching posts:", err);
@@ -515,7 +525,7 @@
         }
       };
 
-      // Run when page loads
+      // Call on page load
       getPosts();
     </script>
   </body>

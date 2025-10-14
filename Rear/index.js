@@ -76,6 +76,7 @@ app.get("/blog", async (req, res) => {
       SELECT 
         title,
         excerpt,
+        content,
         cover_image_url
       FROM posts
     `);
