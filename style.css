@@ -3418,7 +3418,8 @@ hr {
 .blog-author-name {
   font-size: 0.85rem;
   color: #555;
-  font-weight: 500;
+  font-style: italic;
+  font-weight: 700;
 }
 
 /* --- RESPONSIVENESS --- */
@@ -4512,4 +4513,69 @@ hr {
   .remut {
     width: 95%;
   }
+}
+
+/* HTML: <div class="loader"></div> */
+.loader-holder {
+  position: fixed;
+  width: 100%;
+  height: 100vh;
+  background-color: #0000008c;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(1px);
+  display: none;
+  z-index: 4;
+}
+.loader {
+  height: 80px;
+  aspect-ratio: 1;
+  padding: 10px;
+  border-radius: 50%;
+  box-sizing: border-box;
+  position: relative;
+  mask: conic-gradient(#000 0 0) content-box exclude, conic-gradient(#000 0 0);
+  filter: blur(12px);
+}
+.loader:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(#0000 25%, #d17609, #0000 65%);
+  animation: l1 1.5s linear infinite;
+}
+@keyframes l1 {
+  to {
+    rotate: 1turn;
+  }
+}
+
+.loader-holder.show-face {
+  display: flex;
+}
+
+.status-element {
+  width: 240px;
+  position: fixed;
+  top: 20px;
+  right: -100%;
+  z-index: 4;
+  background-color: white;
+  padding: 10px;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.112);
+  border-radius: 10px;
+  display: flex;
+  transition: all ease 0.5s;
+  color: green;
+}
+
+.status-element.status-update {
+  right: 3%;
+  transition: all ease 0.5s;
+}
+
+.fail {
+  color: red;
 }

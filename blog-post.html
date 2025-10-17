@@ -150,6 +150,10 @@
         color: #404051;
         margin-bottom: 10px;
       }
+
+      .sub-b-log-body h2 {
+        font-size: 1.2rem;
+      }
     </style>
   </head>
   <body>
@@ -485,12 +489,13 @@
         document.querySelector(".sub-b-log-body").innerHTML = `
       <p>${post.content}</p>
     `;
-      }); // Select all elements with the 'contendedTable' attribute
-      const elements = document.querySelectorAll("[contendedtable]");
 
-      // Loop through each element and set the attribute to "false"
-      elements.forEach((el) => {
-        el.setAttribute("contendedtable", "false");
+        const elements = document.querySelectorAll("[contenteditable]");
+
+        // Loop through each element and set the attribute to "false"
+        elements.forEach((el) => {
+          el.setAttribute("contenteditable", "false");
+        });
       });
     </script>
   </body>

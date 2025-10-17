@@ -456,58 +456,50 @@
             </div>
           </div>
           <!-- Copyright notice -->
-          <div class="rv-foot-note">
-            © 2025 Revit Systems. All Rights Reserved.
-          </div>
+          <div class="rv-foot-note">© 2025 Revit Systems.</div>
         </footer>
       </div>
       <!-- End of main container -->
     </div>
+    <script src="./config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
-      // The categories button on the blog.
       // Select all buttons with the class ".blog-btn"
       const categoryButtons = document.querySelectorAll(".blog-btn");
 
       categoryButtons.forEach((button) => {
-        console.log("jump");
         button.addEventListener("click", () => {
           // Remove 'blog-active' from all buttons
           categoryButtons.forEach((btn) => btn.classList.remove("blog-active"));
-
           // Add 'blog-active' only to the clicked one
           button.classList.add("blog-active");
         });
       });
 
-      const blogGrid = document.querySelector(".blog-grid-container");
+      const blogGrid = document.querySelector(".blog-grid-container"); // here the element that holds all the blogs was gotten
 
       const getPosts = async () => {
+        // so a particular function is declared here, it is call getPost
+
         try {
-          const res = await axios.get("http://localhost:3000/blog");
-
-          console.log("Posts from database:", res.data);
-
+          //here we get all the post from the backend
+          const res = await axios.get(`${window.baseURL}/blog`);
           const postsContainer = document.getElementById("postsContainer");
-          postsContainer.innerHTML = ""; // clear loading message
+          postsContainer.innerHTML = "";
 
           res.data.forEach((post) => {
             const card = document.createElement("div");
             card.classList.add("blog-blog-card");
-
             card.innerHTML = `
-        <img src="${post.cover_image_url}" alt="${post.title}" class="blog-card-image" />
-        <div class="blog-card-content">
-          <h3 class="blog-card-title">${post.title}</h3>
-          <p class="blog-card-description">${post.excerpt}</p>
-          <div class="blog-author-info">
-            <img src="./Images/default-avatar.png" alt="${post.user}" class="blog-author-avatar" />
-            <span class="blog-author-name">${post.user}</span>
-          </div>
-        </div>
-      `;
+              <img src="${post.cover_image_url}" alt="${post.title}" class="blog-card-image" />
+              <div class="blog-card-content">
+                <h3 class="blog-card-title">${post.title}</h3>
+                <p class="blog-card-description">${post.excerpt}</p>
+                <div class="blog-author-info">
+                  <span class="blog-author-name">Revit Info</span>
+                </div>
+              </div>`;
 
-            // ✅ When user clicks the card
             card.onclick = () => {
               // Store the entire post object in localStorage
               localStorage.setItem("selectedPost", JSON.stringify(post));
@@ -521,7 +513,7 @@
         } catch (err) {
           console.error("Error fetching posts:", err);
           document.getElementById("postsContainer").innerHTML =
-            "<p>Failed to load posts.</p>";
+            "<h2>Failed to load posts...</h2>";
         }
       };
 

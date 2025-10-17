@@ -31,6 +31,10 @@
   </head>
 
   <body>
+    <div class="status-element" id="status-element">Nothing</div>
+    <div class="loader-holder" id="loader">
+      <div class="loader"></div>
+    </div>
     <!-- Main wrapper for the entire page content -->
     <div class="revit-container">
       <!-- Header section containing the navigation bar -->
@@ -166,11 +170,26 @@
           <!-- Right Form -->
           <div class="cont-form">
             <h3>Get in touch</h3>
-            <form>
-              <input type="text" placeholder="Full Name" required />
-              <input type="email" placeholder="Email" required />
-              <textarea placeholder="Message" rows="5" required></textarea>
-              <button type="submit">Send Message</button>
+            <form id="contact-form">
+              <input
+                type="text"
+                placeholder="Full Name"
+                id="nameInput"
+                required
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                id="emailInput"
+                required
+              />
+              <textarea
+                placeholder="Message"
+                rows="5"
+                id="textInput"
+                required
+              ></textarea>
+              <button type="button" onclick="sendEmail()">Send Message</button>
             </form>
           </div>
         </section>
@@ -257,5 +276,58 @@
       <!-- End of main container -->
     </div>
     <!-- End of revit-container -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="./config.js"></script>
+    <script>
+      const loader = document.getElementById("loader");
+      const statusEl = document.getElementById("status-element");
+      const form = document.getElementById("contact-form");
+
+      const sendEmail = async () => {
+        const name = document.getElementById("nameInput").value.trim();
+        const email = document.getElementById("emailInput").value.trim();
+        const message = document.getElementById("textInput").value.trim();
+
+        if (!name || !email || !message) {
+          alert("You have to fill all the fields");
+          return;
+        }
+
+        const payLoad = { name, email, message };
+
+        try {
+          loader.classList.add("show-face");
+
+          const response = await axios.post(
+            `${window.baseURL}/contact`,
+            payLoad,
+            {
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+
+          const data = response.data;
+          statusEl.classList.add("status-update");
+          statusEl.textContent = data.message;
+          form.reset();
+
+          setTimeout(() => {
+            statusEl.classList.remove("status-update");
+          }, 3000);
+        } catch (error) {
+          console.error("Error sending email:", error);
+          statusEl.textContent =
+            error.response?.data?.message || "Network error. Please try again.";
+          statusEl.classList.add("status-update");
+          statusEl.classList.add("fail");
+          setTimeout(() => {
+            statusEl.classList.remove("fail");
+            statusEl.classList.remove("status-update");
+          }, 3000);
+        } finally {
+          loader.classList.remove("show-face");
+        }
+      };
+    </script>
   </body>
 </html>

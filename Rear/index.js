@@ -2,6 +2,7 @@ import express from "express";
 import pkg from "pg";
 import cors from "cors";
 import dotenv from "dotenv";
+import nodemailer from "nodemailer";
 
 dotenv.config(); // ✅ Loads .env variables
 
@@ -19,6 +20,14 @@ const pool = new Pool({
 const app = express();
 const port = process.env.PORT || 3000;
 
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
 // ✅ Middlewares
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
@@ -34,8 +43,6 @@ app.post("/api/posts/upload", async (req, res) => {
   const { title, excerpt, content, cover_image_url, categories, status } =
     req.body;
 
-  console.log("📩 Incoming request body:", req.body);
-
   // Basic validation
   if (!title || !content || !cover_image_url) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -43,8 +50,8 @@ app.post("/api/posts/upload", async (req, res) => {
 
   try {
     const query = `
-      INSERT INTO posts
-      (title, excerpt, content, cover_image_url, categories, status)
+        INSERT INTO posts
+        (title, excerpt, content, cover_image_url, categories, status)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *;
     `;
@@ -59,13 +66,10 @@ app.post("/api/posts/upload", async (req, res) => {
     ];
 
     const result = await pool.query(query, values);
-
-    console.log("✅ New post added:", result.rows[0]);
     res
       .status(201)
       .json({ message: "Post created successfully", post: result.rows[0] });
   } catch (err) {
-    console.error("❌ Database insert failed:", err);
     res.status(500).json({ error: "Failed to create post" });
   }
 });
@@ -80,15 +84,37 @@ app.get("/blog", async (req, res) => {
         cover_image_url
       FROM posts
     `);
-    console.log("Fetched blog posts:", result.rows);
     return res.json(result.rows);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: "Failed to fetch posts" });
   }
 });
 
-// ✅ Start server
+app.post("/contact", async (req, res) => {
+  const { name, email, message } = req.body;
+  const mailOptions = {
+    from: `"${name}, sent a mail from the site" <${process.env.EMAIL_USER}>`,
+    to: "revitsystems@gmail.com", // where you want to receive the messages
+    subject: `New contact form message from ${name}`,
+    text: message,
+    html: `<p><strong>From:</strong> ${name} (${email})</p><p>${message}</p>`,
+  };
+  try {
+    await transporter.sendMail(mailOptions);
+    return res
+      .status(201)
+      .json({ success: true, message: "Email sent successfully" });
+  } catch (error) {
+    console.error("Email send error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Email unsuccessful. Please try again later.",
+    });
+  }
+});
+
+// listing for the emails from the front end
+
 app.listen(port, () => {
   console.log(`🔥 Server running on http://localhost:${port}`);
 });
