@@ -315,10 +315,6 @@
                     <div class="User-name">Bright</div>
                     <label>User Email</label>
                     <div class="User-email">godsbrightc@gmail.com</div>
-                    <label>User Number</label>
-                    <div class="User-textAndNumber">+2349034469446</div>
-                    <label>Last login</label>
-                    <div class="last-login">20th september 2025</div>
                     <label>User Position</label>
                     <div class="position">Software Developer</div>
                   </div>
@@ -330,7 +326,7 @@
             <div class="the-main-mid-page-content">
               <div class="col-1">
                 <div class="the-status-holder">
-                  <div class="the-successfull">
+                  <div class="the-Publishedl">
                     <div class="svg-s-icon the-success-thumbs-up-icon">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -351,7 +347,7 @@
                       </svg>
                     </div>
                     <div class="textAndNumber">
-                      Successful Uploads<span>12</span>
+                      Published Uploads<span id="the-published-number">0</span>
                     </div>
                   </div>
                   <hr />
@@ -378,32 +374,7 @@
                       </svg>
                     </div>
                     <div class="textAndNumber">
-                      Drafted Uploads<span>7</span>
-                    </div>
-                  </div>
-                  <hr />
-                  <div class="the-failed">
-                    <div class="svg-s-icon the-failed-thumbs-down-icon">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.25"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="lucide lucide-thumbs-down-icon lucide-thumbs-down"
-                      >
-                        <path d="M17 14V2" />
-                        <path
-                          d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"
-                        />
-                      </svg>
-                    </div>
-                    <div class="textAndNumber">
-                      Failed Uploads<span>3</span>
+                      Drafted Uploads<span id="the-draft-number">0</span>
                     </div>
                   </div>
                 </div>
@@ -456,17 +427,29 @@
                     </div>
                   </div>
                   <div class="the-btns">
-                    <button class="bg-green">Save</button>
-                    <button class="bg-orange">Drafts</button>
+                    <button
+                      class="bg-green"
+                      id="the-save-btn"
+                      onclick="sendToCloudinary(event)"
+                    >
+                      Save
+                    </button>
+                    <button
+                      class="bg-orange"
+                      id="the-draft-btn"
+                      onclick="sendToCloudinary(event)"
+                    >
+                      Drafts
+                    </button>
                   </div>
                 </div>
               </div>
               <div class="col-2">
-                <ul class="checkList-history">
+                <ul class="checkList-history" id="checkList-history">
                   <li>
                     <div class="the-date-and-status">
                       <span>4th, Sept 2025</span>
-                      <span class="status-for-load">Successful</span>
+                      <span class="status-for-load">Published</span>
                     </div>
                     <div class="the-text-of-the-checkList">
                       From the way things are going now, you would have to
@@ -476,7 +459,7 @@
                   <li>
                     <div class="the-date-and-status">
                       <span>4th, Sept 2025</span>
-                      <span class="status-for-load red">Failed</span>
+                      <span class="status-for-load orange">Drafts</span>
                     </div>
                     <div class="the-text-of-the-checkList">
                       From the way things are going now, you would have to
@@ -486,7 +469,7 @@
                   <li>
                     <div class="the-date-and-status">
                       <span>4th, Sept 2025</span>
-                      <span class="status-for-load">Successful</span>
+                      <span class="status-for-load">Published</span>
                     </div>
                     <div class="the-text-of-the-checkList">
                       From the way things are going now, you would have to
@@ -496,7 +479,7 @@
                   <li>
                     <div class="the-date-and-status">
                       <span>4th, Sept 2025</span>
-                      <span class="status-for-load red">Failed</span>
+                      <span class="status-for-load orange">Drafts</span>
                     </div>
                     <div class="the-text-of-the-checkList">
                       From the way things are going now, you would have to
@@ -506,7 +489,7 @@
                   <li>
                     <div class="the-date-and-status">
                       <span>4th, Sept 2025</span>
-                      <span class="status-for-load">Successful</span>
+                      <span class="status-for-load">Published</span>
                     </div>
                     <div class="the-text-of-the-checkList">
                       From the way things are going now, you would have to
@@ -516,7 +499,7 @@
                   <li>
                     <div class="the-date-and-status">
                       <span>4th, Sept 2025</span>
-                      <span class="status-for-load">Successful</span>
+                      <span class="status-for-load">Published</span>
                     </div>
                     <div class="the-text-of-the-checkList">
                       From the way things are going now, you would have to
@@ -526,7 +509,7 @@
                   <li>
                     <div class="the-date-and-status">
                       <span>4th, Sept 2025</span>
-                      <span class="status-for-load">Successful</span>
+                      <span class="status-for-load">Published</span>
                     </div>
                     <div class="the-text-of-the-checkList">
                       From the way things are going now, you would have to
@@ -536,7 +519,7 @@
                   <li>
                     <div class="the-date-and-status">
                       <span>4th, Sept 2025</span>
-                      <span class="status-for-load">Successful</span>
+                      <span class="status-for-load">Published</span>
                     </div>
                     <div class="the-text-of-the-checkList">
                       From the way things are going now, you would have to
@@ -546,7 +529,7 @@
                   <li>
                     <div class="the-date-and-status">
                       <span>4th, Sept 2025</span>
-                      <span class="status-for-load red">Failed</span>
+                      <span class="status-for-load orange">Drafts</span>
                     </div>
                     <div class="the-text-of-the-checkList">
                       From the way things are going now, you would have to
@@ -556,7 +539,7 @@
                   <li>
                     <div class="the-date-and-status">
                       <span>4th, Sept 2025</span>
-                      <span class="status-for-load">Successful</span>
+                      <span class="status-for-load">Published</span>
                     </div>
                     <div class="the-text-of-the-checkList">
                       From the way things are going now, you would have to
@@ -566,7 +549,7 @@
                   <li>
                     <div class="the-date-and-status">
                       <span>4th, Sept 2025</span>
-                      <span class="status-for-load">Successful</span>
+                      <span class="status-for-load">Published</span>
                     </div>
                     <div class="the-text-of-the-checkList">
                       From the way things are going now, you would have to
@@ -576,7 +559,7 @@
                   <li>
                     <div class="the-date-and-status">
                       <span>4th, Sept 2025</span>
-                      <span class="status-for-load">Successful</span>
+                      <span class="status-for-load">Published</span>
                     </div>
                     <div class="the-text-of-the-checkList">
                       From the way things are going now, you would have to
@@ -586,7 +569,7 @@
                   <li>
                     <div class="the-date-and-status">
                       <span>4th, Sept 2025</span>
-                      <span class="status-for-load red">Failed</span>
+                      <span class="status-for-load orange">Drafts</span>
                     </div>
                     <div class="the-text-of-the-checkList">
                       From the way things are going now, you would have to
@@ -601,13 +584,13 @@
       </div>
       <div class="the-pop-up-of-the-status-pages">
         <div class="the-pop-ups-holder">
-          <div class="the-header">Successful Uploads</div>
+          <div class="the-header">Published Uploads</div>
           <div class="the-list-holder">
             <ul>
               <li>
                 <div class="the-status">
                   <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Successful</div>
+                  <div class="the-status green">Published</div>
                 </div>
                 <div class="the-info">
                   From the way things are going now, you would have to switch to
@@ -617,7 +600,7 @@
               <li>
                 <div class="the-status">
                   <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Successful</div>
+                  <div class="the-status green">Published</div>
                 </div>
                 <div class="the-info">
                   From the way things are going now, you would have to switch to
@@ -627,7 +610,7 @@
               <li>
                 <div class="the-status">
                   <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Successful</div>
+                  <div class="the-status green">Published</div>
                 </div>
                 <div class="the-info">
                   From the way things are going now, you would have to switch to
@@ -637,7 +620,7 @@
               <li>
                 <div class="the-status">
                   <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Successful</div>
+                  <div class="the-status green">Published</div>
                 </div>
                 <div class="the-info">
                   From the way things are going now, you would have to switch to
@@ -647,7 +630,7 @@
               <li>
                 <div class="the-status">
                   <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Successful</div>
+                  <div class="the-status green">Published</div>
                 </div>
                 <div class="the-info">
                   From the way things are going now, you would have to switch to
@@ -657,7 +640,7 @@
               <li>
                 <div class="the-status">
                   <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Successful</div>
+                  <div class="the-status green">Published</div>
                 </div>
                 <div class="the-info">
                   From the way things are going now, you would have to switch to
@@ -667,7 +650,7 @@
               <li>
                 <div class="the-status">
                   <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Successful</div>
+                  <div class="the-status green">Published</div>
                 </div>
                 <div class="the-info">
                   From the way things are going now, you would have to switch to
@@ -677,7 +660,7 @@
               <li>
                 <div class="the-status">
                   <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Successful</div>
+                  <div class="the-status green">Published</div>
                 </div>
                 <div class="the-info">
                   From the way things are going now, you would have to switch to
@@ -687,7 +670,7 @@
               <li>
                 <div class="the-status">
                   <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Successful</div>
+                  <div class="the-status green">Published</div>
                 </div>
                 <div class="the-info">
                   From the way things are going now, you would have to switch to
@@ -697,7 +680,7 @@
               <li>
                 <div class="the-status">
                   <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Successful</div>
+                  <div class="the-status green">Published</div>
                 </div>
                 <div class="the-info">
                   From the way things are going now, you would have to switch to
@@ -707,7 +690,7 @@
               <li>
                 <div class="the-status">
                   <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Successful</div>
+                  <div class="the-status green">Published</div>
                 </div>
                 <div class="the-info">
                   From the way things are going now, you would have to switch to
@@ -717,7 +700,7 @@
               <li>
                 <div class="the-status">
                   <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Successful</div>
+                  <div class="the-status green">Published</div>
                 </div>
                 <div class="the-info">
                   From the way things are going now, you would have to switch to
@@ -727,7 +710,7 @@
               <li>
                 <div class="the-status">
                   <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Successful</div>
+                  <div class="the-status green">Published</div>
                 </div>
                 <div class="the-info">
                   From the way things are going now, you would have to switch to
@@ -737,7 +720,7 @@
               <li>
                 <div class="the-status">
                   <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Successful</div>
+                  <div class="the-status green">Published</div>
                 </div>
                 <div class="the-info">
                   From the way things are going now, you would have to switch to
@@ -747,7 +730,7 @@
               <li>
                 <div class="the-status">
                   <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Successful</div>
+                  <div class="the-status green">Published</div>
                 </div>
                 <div class="the-info">
                   From the way things are going now, you would have to switch to
@@ -757,7 +740,7 @@
               <li>
                 <div class="the-status">
                   <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Successful</div>
+                  <div class="the-status green">Published</div>
                 </div>
                 <div class="the-info">
                   From the way things are going now, you would have to switch to
@@ -767,7 +750,7 @@
               <li>
                 <div class="the-status">
                   <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Successful</div>
+                  <div class="the-status green">Published</div>
                 </div>
                 <div class="the-info">
                   From the way things are going now, you would have to switch to
@@ -777,7 +760,7 @@
               <li>
                 <div class="the-status">
                   <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Successful</div>
+                  <div class="the-status green">Published</div>
                 </div>
                 <div class="the-info">
                   From the way things are going now, you would have to switch to
@@ -823,7 +806,7 @@
               stroke-linecap="round"
               stroke-linejoin="round"
               class="lucide lucide-list-icon lucide-list"
-              onclick="createUnorderedList()"
+              onclick="createUnordeorangeList()"
               id="the-unlist"
             >
               <path d="M3 5h.01" />
@@ -843,8 +826,8 @@
               stroke-width="2"
               stroke-linecap="round"
               stroke-linejoin="round"
-              class="lucide lucide-list-ordered-icon lucide-list-ordered"
-              onclick="createOrderedList()"
+              class="lucide lucide-list-ordeorange-icon lucide-list-ordeorange"
+              onclick="createOrdeorangeList()"
               id="the-od-list"
             >
               <path d="M11 5h10" />
@@ -908,375 +891,9 @@
         </div>
       </div>
     </div>
+    <div class="status-element" id="status-element">Nothing</div>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
-    <script>
-      let button = document.getElementById("menu-btn");
-      let side = document.getElementById("side-content");
-      let main = document.getElementById("main-content");
-      function decreaseSideBar() {
-        side.classList.toggle("decrease");
-        main.classList.toggle("increase");
-      }
-      const months = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sept",
-        "Oct",
-        "Nov",
-        "Dec",
-      ];
-
-      let date = new Date();
-      console.log(new Date());
-      let day = document.getElementById("date");
-      let month = document.getElementById("month");
-      let year = document.getElementById("year");
-      day.innerText = date.getDate() + ",";
-      month.innerText = months[date.getUTCMonth()];
-      year.innerText = date.getFullYear();
-
-      let profileDiv = document.getElementById("profile-div");
-      function profileShow() {
-        profileDiv.classList.toggle("come-out");
-      }
-      let imageInput = document.getElementById("ImgInput");
-      let imageDisplay = document.getElementById("thePreview");
-
-      function imagePreview() {
-        const file = imageInput.files[0];
-        if (file) {
-          imageDisplay.src = URL.createObjectURL(file);
-        }
-      }
-
-      let textArea = document.getElementById("the-text-area");
-
-      textArea.addEventListener("click", function openText() {
-        const blogger = document.getElementsByClassName(
-          "the-Blog-article-page-holder"
-        )[0];
-
-        // Example: toggle a class
-        blogger.classList.toggle("show");
-      });
-
-      let theHtmlFromTheBlog;
-      function movePlace() {
-        const blogger = document.getElementsByClassName(
-          "the-Blog-article-page-holder"
-        )[0];
-
-        // Example: toggle a class
-        blogger.classList.toggle("show");
-        const theBlogArticle =
-          document.getElementById("the-blog-article").innerHTML;
-        theHtmlFromTheBlog = theBlogArticle;
-        console.log(theBlogArticle);
-        const theBlogArticleText =
-          document.getElementById("the-blog-article").innerText;
-        console.log(theBlogArticleText);
-        const theTextArea = document.getElementById("the-text-area");
-        theTextArea.innerText = theBlogArticleText;
-      }
-
-      let theOptionsPart = document.getElementById("the-options-part");
-
-      function dropDown() {
-        theOptionsPart.classList.add("pick");
-      }
-
-      function createHeader() {
-        const header = document.createElement("h2");
-        header.className = "sub-headers";
-        header.classList.add("header");
-        header.setAttribute("contenteditable", "true");
-        header.setAttribute("data-placeholder", "Enter header...");
-
-        const blogArticle = document.getElementById("the-blog-article");
-        blogArticle.appendChild(header);
-        header.focus();
-
-        // 🧠 Delete header on Backspace if empty
-        header.addEventListener("keydown", (e) => {
-          if (e.key === "Backspace" && header.textContent.trim() === "") {
-            e.preventDefault();
-            const prev = header.previousElementSibling;
-            header.remove();
-            if (prev) prev.focus();
-          }
-        });
-
-        the();
-      }
-
-      function createTextTag() {
-        const paragraph = document.createElement("p");
-        paragraph.className = "paragraph-text";
-        paragraph.setAttribute("contenteditable", "true");
-        paragraph.setAttribute("data-placeholder", "Type something...");
-
-        const blogArticle = document.getElementById("the-blog-article");
-        blogArticle.appendChild(paragraph);
-        paragraph.focus();
-
-        // 🧠 Delete paragraph on Backspace if empty
-        paragraph.addEventListener("keydown", (e) => {
-          if (e.key === "Backspace" && paragraph.textContent.trim() === "") {
-            e.preventDefault();
-            const prev = paragraph.previousElementSibling;
-            paragraph.remove();
-            if (prev) prev.focus();
-          }
-        });
-
-        the();
-      }
-
-      function createItalic() {
-        const italicBlock = document.createElement("p");
-        italicBlock.className = "italic-text";
-        italicBlock.setAttribute("contenteditable", "true");
-        italicBlock.setAttribute("data-placeholder", "Type italic text...");
-
-        const blogArticle = document.getElementById("the-blog-article");
-        blogArticle.appendChild(italicBlock);
-        italicBlock.focus();
-
-        // 🧠 Delete italic block on Backspace if empty
-        italicBlock.addEventListener("keydown", (e) => {
-          if (e.key === "Backspace" && italicBlock.textContent.trim() === "") {
-            e.preventDefault();
-            const prev = italicBlock.previousElementSibling;
-            italicBlock.remove();
-            if (prev) prev.focus();
-          }
-        });
-
-        the();
-      }
-
-      function createOrderedList() {
-        const olList = document.createElement("ol");
-        olList.className = "order-list";
-        olList.classList.add("questions");
-        const listItem = document.createElement("li");
-        listItem.className = "order-list-li";
-        listItem.setAttribute("contenteditable", "true");
-        listItem.setAttribute("data-placeholder", "List item...");
-        olList.appendChild(listItem);
-        const blogArticle = document.getElementById("the-blog-article");
-        blogArticle.appendChild(olList);
-
-        // Handle Enter and Backspace for any <li> in this <ol>
-        olList.addEventListener("keydown", (e) => {
-          const currentLi = e.target;
-
-          if (currentLi.tagName !== "LI") return;
-
-          // ENTER → create new list item
-          if (e.key === "Enter") {
-            e.preventDefault();
-
-            const newLi = document.createElement("li");
-            newLi.className = "order-list-li";
-            newLi.setAttribute("contenteditable", "true");
-            newLi.setAttribute("data-placeholder", "List item...");
-            olList.insertBefore(newLi, currentLi.nextSibling);
-            newLi.focus();
-          }
-
-          // BACKSPACE → remove empty list item
-          if (e.key === "Backspace" && currentLi.textContent.trim() === "") {
-            e.preventDefault();
-
-            const previous = currentLi.previousElementSibling;
-            currentLi.remove();
-
-            if (previous) previous.focus();
-            else if (olList.children.length === 0) olList.remove();
-          }
-        });
-        // Auto-focus on first item
-        listItem.focus();
-
-        listItem.classList("questions");
-        // Reinitialize any editor logic
-        the();
-      }
-
-      function createUnorderedList() {
-        const unList = document.createElement("ul");
-        unList.className = "un-order-list";
-        unList.classList.add("questions");
-        const list = document.createElement("li");
-        list.className = "un-order-list-li";
-        list.setAttribute("contenteditable", "true");
-        list.setAttribute("data-placeholder", "List item...");
-        unList.appendChild(list);
-        const blogArticle = document.getElementById("the-blog-article");
-        blogArticle.appendChild(unList);
-
-        // Handle Enter and Backspace inside any <li> in this <ul>
-        unList.addEventListener("keydown", (e) => {
-          const currentLi = e.target;
-
-          // Ensure we're typing inside an <li>
-          if (currentLi.tagName !== "LI") return;
-
-          // ENTER → create new list item
-          if (e.key === "Enter") {
-            e.preventDefault();
-
-            const newLi = document.createElement("li");
-            newLi.className = "un-order-list-li";
-            newLi.setAttribute("contenteditable", "true");
-            newLi.setAttribute("data-placeholder", "List item...");
-            unList.insertBefore(newLi, currentLi.nextSibling);
-            newLi.focus();
-          }
-
-          // BACKSPACE → remove empty <li>
-          if (e.key === "Backspace" && currentLi.textContent.trim() === "") {
-            e.preventDefault();
-
-            const previous = currentLi.previousElementSibling;
-            currentLi.remove();
-
-            if (previous) previous.focus();
-            else if (unList.children.length === 0) unList.remove();
-          }
-        });
-
-        list.focus();
-        the();
-      }
-
-      function the() {
-        document.querySelectorAll("[contenteditable]").forEach((el) => {
-          el.addEventListener("input", () => {
-            if (el.innerHTML === "<br>" || el.innerHTML.trim() === "") {
-              el.innerHTML = "";
-            }
-          });
-        });
-      }
-
-      the();
-
-      const saveButton = document.querySelector(".bg-green");
-
-      // the cloudinary server upload code
-      const CLOUD_NAME = "dmvltush8";
-      const UPLOAD_PRESET = "revit_unsigned";
-
-      let loader = document.getElementById("loader");
-
-      saveButton.addEventListener("click", async () => {
-        const imageFile = document.getElementById("ImgInput").files[0];
-        if (!imageFile) {
-          alert("Please select an image first.");
-          return;
-        }
-
-        loader.classList.add("show-face");
-
-        const formData = new FormData();
-        formData.append("file", imageFile);
-        formData.append("upload_preset", UPLOAD_PRESET);
-
-        try {
-          // Upload to Cloudinary
-          const res = await axios.post(
-            `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-            formData,
-            {
-              headers: { "Content-Type": "multipart/form-data" },
-            }
-          );
-
-          const theImageUrl = res.data.secure_url;
-          console.log("✅ Image uploaded:", theImageUrl);
-
-          // Now save to database
-          await sendToDatabase(theImageUrl);
-        } catch (error) {
-          console.error("❌ Upload failed:", error);
-          alert("Image upload failed");
-          loader.classList.remove("show-face");
-        }
-      });
-
-      const sendToDatabase = async (cover_image_url) => {
-        const title = document.getElementById("blog-header").value.trim();
-        const excerpt = document.getElementById("blog-intro").value.trim();
-        const content =
-          typeof theHtmlFromTheBlog !== "undefined" ? theHtmlFromTheBlog : "";
-        const categories = document.querySelector("select").value;
-        const status = "published";
-
-        console.log({
-          title,
-          excerpt,
-          content,
-          categories,
-          cover_image_url,
-        });
-
-        const blogData = {
-          title,
-          excerpt,
-          content,
-          categories,
-          cover_image_url,
-          status,
-        };
-
-        try {
-          const res = await axios.post(
-            "http://localhost:3000/api/posts/upload",
-            blogData,
-            { headers: { "Content-Type": "application/json" } }
-          );
-
-          console.log("✅ Saved successfully:", res.data);
-          alert("Blog uploaded successfully!");
-          loader.classList.remove("show-face");
-          let load = document.getElementById("load");
-          resetUploadForm();
-        } catch (err) {
-          console.error("❌ Upload failed:", err);
-          alert("Failed to upload blog.");
-          loader.classList.remove("show-face");
-        }
-      };
-
-      function resetUploadForm() {
-        // Clear text inputs
-        document.getElementById("blog-header").value = "";
-        document.getElementById("blog-intro").value = "";
-        document.getElementById("the-text-area").value = "";
-
-        // Reset select dropdown
-        const select = document.querySelector(".the-form select");
-        if (select) select.selectedIndex = 0;
-
-        // Reset image input & preview
-        const imgInput = document.getElementById("ImgInput");
-        const preview = document.getElementById("thePreview");
-        imgInput.value = "";
-        preview.src = "";
-        preview.alt = "";
-
-        // Optional: if you have preview styling, remove it
-        preview.style.display = "none";
-      }
-    </script>
+    <script src="./config.js"></script>
+    <script src="./admin.js"></script>
   </body>
 </html>
