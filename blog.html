@@ -24,7 +24,11 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <link rel="stylesheet" href="./style.css" />
-    <link rel="icon" type="image/png" href="./Images/Logo/favicon.png" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://res.cloudinary.com/dmvltush8/image/upload/v1760973008/favicon_qdd9zl.png"
+    />
     <script defer src="./script.js"></script>
   </head>
 
@@ -39,7 +43,10 @@
             <div class="logo-and-navlinks">
               <div class="logo">
                 <!-- Display the company logo image -->
-                <img src="./Images/Logo/without bg black font.png" alt="" />
+                <img
+                  src="https://res.cloudinary.com/dmvltush8/image/upload/v1760973008/without_bg_black_font_pjd8q9.png"
+                  alt=""
+                />
               </div>
               <!-- Unordered list for navigation menu items -->
               <ul class="nav-links">
@@ -150,43 +157,25 @@
           <div class="blog-category-section">
             <h3>Top Picks</h3>
             <div class="blog-category-buttons">
-              <button class="blog-btn blog-active">All</button>
-              <button class="blog-btn">Website</button>
-              <button class="blog-btn">UIUX</button>
-              <button class="blog-btn">Sales</button>
-              <button class="blog-btn">Marketing</button>
+              <button class="blog-btn blog-active" data-category="All">
+                All
+              </button>
+              <button class="blog-btn" data-category="Software Development">
+                Software Development
+              </button>
+              <button class="blog-btn" data-category="Digital Marketing">
+                Digital Marketing
+              </button>
+              <button class="blog-btn" data-category="Business Education">
+                Business Education
+              </button>
+              <button class="blog-btn" data-category="Branding">
+                Branding
+              </button>
             </div>
           </div>
         </div>
         <div class="blog-grid-container" id="postsContainer">
-          <a href="./blog-post.html">
-            <div class="blog-blog-card">
-              <img
-                src="./Images/Portfolio/43d1c1d9d3462c766ba49bf1db117e41ad4a9239.jpg"
-                alt="Optimizing Workflow Process"
-                class="blog-card-image"
-              />
-              <div class="blog-card-content">
-                <h3 class="blog-card-title">
-                  Your brand is either building trust or eroding it every single
-                  day
-                </h3>
-                <p class="blog-card-description">
-                  In a world where customers are spoilt for choice and attention
-                  spans are shrinking, businesses that fail to evaluate and
-                  evolve risk....
-                </p>
-                <div class="blog-author-info">
-                  <img
-                    src="./Images/Portfolio/844591c28c26c90fe611b787714244f8373a88da.jpg"
-                    alt="Author"
-                    class="blog-author-avatar"
-                  />
-                  <span class="blog-author-name">Jodi Kensley</span>
-                </div>
-              </div>
-            </div></a
-          >
           <div class="blog-blog-card">
             <img
               src="./Images/Portfolio/f36a790085a8a2a3fb386f104d46595149116e8b.jpg"
@@ -387,7 +376,10 @@
             <div class="rv-brand-block">
               <div class="rv-logo">
                 <div class="rv-logo-mark">
-                  <img src="./Images/Logo/without bg white font.png" alt="" />
+                  <img
+                    src="https://res.cloudinary.com/dmvltush8/image/upload/v1760973011/without_bg_white_font_db7hbk.png"
+                    alt=""
+                  />
                 </div>
                 <div class="rv-tagline">
                   Connecting people with impactful opportunities in the Revit
@@ -460,51 +452,74 @@
         </footer>
       </div>
       <!-- End of main container -->
+      <div class="loader-holder" id="loader">
+        <div class="loader"></div>
+      </div>
     </div>
     <script src="./config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
-      // Select all buttons with the class ".blog-btn"
+      const loader = document.getElementById("loader");
       const categoryButtons = document.querySelectorAll(".blog-btn");
+      const postsContainer = document.getElementById("postsContainer");
+      const loadMoreBtn = document.querySelector(".blog-more-btn");
 
-      categoryButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-          // Remove 'blog-active' from all buttons
-          categoryButtons.forEach((btn) => btn.classList.remove("blog-active"));
-          // Add 'blog-active' only to the clicked one
-          button.classList.add("blog-active");
-        });
-      });
+      let currentCategory = "All";
+      let offset = 0;
+      const limit = 10;
+      let allLoaded = false; // Track if there are no more posts
 
-      const blogGrid = document.querySelector(".blog-grid-container"); // here the element that holds all the blogs was gotten
+      // 🔹 Helper: Show/hide loader
+      const showLoader = () => loader.classList.add("show-face");
+      const hideLoader = () => loader.classList.remove("show-face");
 
-      const getPosts = async () => {
-        // so a particular function is declared here, it is call getPost
+      // 🔹 Fetch and render posts
+      const getPosts = async (category = "All", append = false) => {
+        showLoader();
 
         try {
-          //here we get all the post from the backend
-          const res = await axios.get(`${window.baseURL}/blog`);
-          const postsContainer = document.getElementById("postsContainer");
-          postsContainer.innerHTML = "";
+          const res = await axios.get(`${window.baseURL}/blog`, {
+            params: { categories: category, limit, offset },
+          });
 
-          res.data.forEach((post) => {
+          const posts = res.data;
+
+          if (!append) postsContainer.innerHTML = "";
+
+          if (posts.length === 0 && !append) {
+            postsContainer.innerHTML = `<h2>No posts found in this category.</h2>`;
+            loadMoreBtn.style.display = "none";
+            hideLoader();
+            return;
+          }
+
+          // Manage "Load More" visibility
+          if (posts.length < limit) {
+            allLoaded = true;
+            loadMoreBtn.style.display = "none";
+          } else {
+            allLoaded = false;
+            loadMoreBtn.style.display = "block";
+          }
+
+          // Render posts
+          posts.forEach((post) => {
             const card = document.createElement("div");
             card.classList.add("blog-blog-card");
+
             card.innerHTML = `
-              <img src="${post.cover_image_url}" alt="${post.title}" class="blog-card-image" />
-              <div class="blog-card-content">
-                <h3 class="blog-card-title">${post.title}</h3>
-                <p class="blog-card-description">${post.excerpt}</p>
-                <div class="blog-author-info">
-                  <span class="blog-author-name">Revit Info</span>
-                </div>
-              </div>`;
+          <img src="${post.cover_image_url}" alt="${post.title}" class="blog-card-image" />
+          <div class="blog-card-content">
+            <h3 class="blog-card-title">${post.title}</h3>
+            <p class="blog-card-description">${post.excerpt}</p>
+            <div class="blog-author-info">
+              <span class="blog-author-name">Revit Info</span>
+            </div>
+          </div>
+        `;
 
             card.onclick = () => {
-              // Store the entire post object in localStorage
               localStorage.setItem("selectedPost", JSON.stringify(post));
-
-              // Redirect to the detailed blog page
               window.location.href = "blog-post.html";
             };
 
@@ -512,13 +527,36 @@
           });
         } catch (err) {
           console.error("Error fetching posts:", err);
-          document.getElementById("postsContainer").innerHTML =
-            "<h2>Failed to load posts...</h2>";
+          postsContainer.innerHTML = "<h2>Failed to load posts...</h2>";
+        } finally {
+          // ✅ Always hide loader — success or error
+          hideLoader();
         }
       };
 
-      // Call on page load
-      getPosts();
+      // 🔹 Category button handling
+      categoryButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          categoryButtons.forEach((btn) => btn.classList.remove("blog-active"));
+          button.classList.add("blog-active");
+
+          currentCategory = button.dataset.category;
+          offset = 0; // Reset pagination
+          allLoaded = false;
+
+          getPosts(currentCategory);
+        });
+      });
+
+      // 🔹 Load more button
+      loadMoreBtn.addEventListener("click", () => {
+        if (allLoaded) return;
+        offset += limit;
+        getPosts(currentCategory, true); // append = true
+      });
+
+      // 🔹 Initial load
+      getPosts("All");
     </script>
   </body>
 </html>

@@ -176,17 +176,67 @@ app.post("/api/posts/upload", async (req, res) => {
 
 app.get("/blog", async (req, res) => {
   try {
-    const result = await pool.query(`
+    const { categories, limit = 10, offset = 0 } = req.query;
+
+    let query = `
       SELECT 
         title,
         excerpt,
         content,
-        cover_image_url
+        cover_image_url,
+        categories,
+        created_at
       FROM posts
-    `);
+    `;
+
+    const values = [];
+
+    // Apply category filter only if not "All"
+    if (categories && categories !== "All") {
+      query += " WHERE LOWER(categories) = LOWER($1)";
+      values.push(categories);
+    }
+
+    // Dynamically determine parameter positions
+    const limitParam = values.length + 1;
+    const offsetParam = values.length + 2;
+
+    // Order by most recent first
+    query += ` ORDER BY created_at DESC LIMIT $${limitParam} OFFSET $${offsetParam}`;
+    values.push(Number(limit), Number(offset));
+
+    const result = await pool.query(query, values);
     return res.json(result.rows);
   } catch (err) {
+    console.error("Error fetching posts:", err);
     res.status(500).json({ error: "Failed to fetch posts" });
+  }
+});
+
+app.delete("/blog/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Validate id
+    if (!id) {
+      return res.status(400).json({ message: "Post ID is required" });
+    }
+
+    // Check if post exists
+    const checkPost = await pool.query("SELECT * FROM posts WHERE id = $1", [
+      id,
+    ]);
+    if (checkPost.rows.length === 0) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Delete post
+    await pool.query("DELETE FROM posts WHERE id = $1", [id]);
+
+    res.json({ message: "Post deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting post:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
@@ -204,6 +254,8 @@ app.get("/blog/status-counts", async (req, res) => {
       SELECT 
         id,
         title,
+        excerpt,
+        categories,
         status,
         created_at
       FROM posts
@@ -257,6 +309,70 @@ app.post("/contact", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Email unsuccessful. Please try again later.",
+    });
+  }
+});
+
+// ✅ Newsletter signup route
+app.post("/newsletter", async (req, res) => {
+  const { email } = req.body;
+
+  // Basic validation
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res
+      .status(400)
+      .json({
+        success: false,
+        message: "Please provide a valid email address.",
+      });
+  }
+
+  try {
+    // ✅ Save email to DB
+    const result = await pool.query(
+      "INSERT INTO newsletter_subscribers (email) VALUES ($1) ON CONFLICT (email) DO NOTHING RETURNING *",
+      [email.trim()]
+    );
+
+    // If already subscribed
+    if (result.rowCount === 0) {
+      return res
+        .status(200)
+        .json({
+          success: true,
+          message: "You're already subscribed to our newsletter!",
+        });
+    }
+
+    // ✅ Send welcome email
+    const mailOptions = {
+      from: `"Revit Systems" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Welcome to Revit Systems Newsletter 🎉",
+      html: `
+        <h2>Hi there 👋,</h2>
+        <p>Welcome to <strong>Revit Systems</strong> — we’re thrilled to have you join our community!</p>
+        <p>Expect product insights, business growth tips, and behind-the-scenes updates from Africa’s fast-rising tech agency 🚀</p>
+        <br />
+        <p>Stay innovative,<br/>The Revit Systems Team</p>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    return res
+      .status(201)
+      .json({
+        success: true,
+        message:
+          "Subscribed successfully! Check your inbox for a welcome email 🎉",
+      });
+  } catch (error) {
+    console.error("Newsletter error:", error);
+    return res.status(500).json({
+      success: false,
+      message:
+        "Something went wrong while subscribing. Please try again later.",
     });
   }
 });

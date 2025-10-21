@@ -316,6 +316,7 @@
                   required
                 />
                 <button type="submit">Sign me up</button>
+                <p id="newsletterFeedback" class="feedback-msg"></p>
               </form>
             </div>
           </div>
@@ -405,6 +406,8 @@
     <!-- closes .revit-container -->
 
     <!-- ===== SCRIPT ===== -->
+    <script src="config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
       document.querySelectorAll(".faq-question").forEach((button) => {
         button.addEventListener("click", () => {

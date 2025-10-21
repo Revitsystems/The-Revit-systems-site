@@ -230,7 +230,7 @@
             <div class="the-main-content">
               <div class="the-navigation-content">
                 <div class="the-intro-message">
-                  <h3>Welcome, Wendu</h3>
+                  <h3>Welcome, <span id="user-name">Wendu</span></h3>
                   <p>What do we have planned for today</p>
                 </div>
                 <div class="the-date-time">
@@ -326,7 +326,10 @@
             <div class="the-main-mid-page-content">
               <div class="col-1">
                 <div class="the-status-holder">
-                  <div class="the-Publishedl">
+                  <div
+                    class="the-Publishedl"
+                    onclick="gettingStatusBloggerSuccessful()"
+                  >
                     <div class="svg-s-icon the-success-thumbs-up-icon">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -351,7 +354,10 @@
                     </div>
                   </div>
                   <hr />
-                  <div class="the-drafted">
+                  <div
+                    class="the-drafted"
+                    onclick="gettingStatusBloggerDraft()"
+                  >
                     <div class="svg-s-icon the-draft-icon">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -378,6 +384,7 @@
                     </div>
                   </div>
                 </div>
+                <!-- the upload part of the page                 -->
                 <div class="the-upload">
                   <div class="the-header-man">Uploads</div>
                   <div class="load" id="load">
@@ -411,18 +418,16 @@
                         id="the-text-area"
                       ></textarea>
                       <select name="" id="">
-                        <option value="website development">
-                          Web Development
+                        <option value="Software Development">
+                          Software Development
                         </option>
-                        <option value="social media management">
-                          Social media management
+                        <option value="Digital Marketing">
+                          Digital Marketing
                         </option>
-                        <option value="digital marketing">
-                          Digital marketing
+                        <option value="Business Education">
+                          Business Education
                         </option>
-                        <option value="business consulting">
-                          Business Consulting
-                        </option>
+                        <option value="Branding">Branding</option>
                       </select>
                     </div>
                   </div>
@@ -880,14 +885,82 @@
             <h1
               contenteditable="true"
               data-placeholder="Type your header here!"
+              id="text-header"
             ></h1>
             <p
               contenteditable="true"
               data-placeholder="Type your content here!"
+              id="text-paragraph"
             ></p>
           </div>
 
           <button class="save" onclick="movePlace()">save</button>
+          <button class="save" onclick="moveOut()">Quit</button>
+        </div>
+      </div>
+      <div class="the-draft-and-successful-listers" id="get-list">
+        <div class="edit-container">
+          <button class="edit-exit-btn" onclick="exitPreview()">Exit</button>
+          <h1>Posts Management</h1>
+
+          <div class="edit-top-bar">
+            <input type="text" placeholder="Search posts..." />
+          </div>
+
+          <table class="edit-table">
+            <thead class="edit-thead">
+              <tr class="edit-tr">
+                <th class="edit-th">#</th>
+                <th class="edit-th">Title</th>
+                <th class="edit-th">Excerpt</th>
+                <th class="edit-th">Categories</th>
+                <th class="edit-th">Status</th>
+                <th class="edit-th">Action</th>
+              </tr>
+            </thead>
+            <tbody class="edit-tbody">
+              <tr class="edit-tr">
+                <td class="edit-td" data-label="#">1</td>
+                <td class="edit-td" data-label="Title">
+                  Introducing Our New Service
+                </td>
+                <td class="edit-td" data-label="Excerpt">
+                  A quick overview of our latest solution...
+                </td>
+                <td class="edit-td" data-label="Categories">Business, Tech</td>
+                <td class="edit-td" data-label="Status">Published</td>
+                <td class="edit-td edit-actions" data-label="Action">
+                  <button>Delete</button>
+                </td>
+              </tr>
+              <tr class="edit-tr">
+                <td class="edit-td" data-label="#">2</td>
+                <td class="edit-td" data-label="Title">Tech Trends 2025</td>
+                <td class="edit-td" data-label="Excerpt">
+                  Exploring future innovations in AI...
+                </td>
+                <td class="edit-td" data-label="Categories">Technology</td>
+                <td class="edit-td" data-label="Status">Draft</td>
+                <td class="edit-td edit-actions" data-label="Action">
+                  <button>Delete</button>
+                </td>
+              </tr>
+              <tr class="edit-tr">
+                <td class="edit-td" data-label="#">3</td>
+                <td class="edit-td" data-label="Title">
+                  Building Scalable Web Apps
+                </td>
+                <td class="edit-td" data-label="Excerpt">
+                  Best practices for backend developers...
+                </td>
+                <td class="edit-td" data-label="Categories">Development</td>
+                <td class="edit-td" data-label="Status">Published</td>
+                <td class="edit-td edit-actions" data-label="Action">
+                  <button>Delete</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

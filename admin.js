@@ -72,6 +72,15 @@ function movePlace() {
   theTextArea.innerText = theBlogArticleText;
 }
 
+function moveOut() {
+  const blogger = document.getElementsByClassName(
+    "the-Blog-article-page-holder"
+  )[0];
+
+  // Example: toggle a class
+  blogger.classList.toggle("show");
+}
+
 let theOptionsPart = document.getElementById("the-options-part");
 
 function dropDown() {
@@ -364,12 +373,150 @@ const sendToDatabase = async (cover_image_url) => {
   }
 };
 
+const exitPreview = async () => {
+  const list = document.getElementById("get-list");
+  list.classList.remove("display");
+};
+
+const gettingStatusBloggerSuccessful = async () => {
+  console.log("meat");
+  const list = document.getElementById("get-list");
+  list.classList.add("display");
+  try {
+    const { data } = await axios.get(`${window.baseURL}/blog/status-counts`);
+
+    // Extract counts
+    const published =
+      data.counts.find((item) => item.status === "published")?.count || 0;
+    const drafted =
+      data.counts.find((item) => item.status === "drafted")?.count || 0;
+
+    // Display counts
+    draft.innerText = drafted;
+    publish.innerText = published;
+
+    // === Render posts into the table ===
+    const tableBody = document.querySelector(".edit-tbody");
+    if (tableBody && data.posts) {
+      tableBody.innerHTML = data.posts
+        .filter((post) => post.status === "published")
+        .map((post, index) => {
+          return `
+            <tr class="edit-tr">
+              <td class="edit-td" data-label="#">${index + 1}</td>
+              <td class="edit-td" data-label="Title">${post.title}</td> 
+              <td class="edit-td" data-label="Excerpt">${post.excerpt}</td>
+              <td class="edit-td" data-label="Categories">${
+                post.categories
+              }</td>
+                <td class="edit-td" data-label="Status">${
+                  post.status.charAt(0).toUpperCase() + post.status.slice(1)
+                }</td>
+            
+              <td class="edit-td edit-actions" data-label="Action">
+                <button class="edit-delete-btn" data-id="${
+                  post.id
+                }">Delete</button>
+              </td>
+            </tr>
+          `;
+        })
+        .join("");
+    }
+
+    // === Delete button event listeners ===
+    document.querySelectorAll(".edit-delete-btn").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        const postId = e.target.getAttribute("data-id");
+        if (confirm("Are you sure you want to delete this post?")) {
+          try {
+            await axios.delete(`${window.baseURL}/blog/${postId}`);
+            alert("Post deleted successfully!");
+            gettingStatusBlog(); // refresh table
+          } catch (error) {
+            console.error("Error deleting post:", error);
+            alert("Failed to delete post.");
+          }
+        }
+      });
+    });
+  } catch (err) {
+    console.error("Error fetching posts:", err);
+  }
+};
+const gettingStatusBloggerDraft = async () => {
+  const list = document.getElementById("get-list");
+  list.classList.add("display");
+  try {
+    const { data } = await axios.get(`${window.baseURL}/blog/status-counts`);
+
+    // Extract counts
+    const published =
+      data.counts.find((item) => item.status === "published")?.count || 0;
+    const drafted =
+      data.counts.find((item) => item.status === "drafted")?.count || 0;
+
+    // Display counts
+    draft.innerText = drafted;
+    publish.innerText = published;
+
+    // === Render posts into the table ===
+    const tableBody = document.querySelector(".edit-tbody");
+    if (tableBody && data.posts) {
+      tableBody.innerHTML = data.posts
+        .filter((post) => post.status === "drafted")
+        .map((post, index) => {
+          return `
+            <tr class="edit-tr">
+              <td class="edit-td" data-label="#">${index + 1}</td>
+              <td class="edit-td" data-label="Title">${post.title}</td> 
+              <td class="edit-td" data-label="Excerpt">${post.excerpt}</td>
+              <td class="edit-td" data-label="Categories">${
+                post.categories
+              }</td>
+                <td class="edit-td" data-label="Status">${
+                  post.status.charAt(0).toUpperCase() + post.status.slice(1)
+                }</td>
+            
+              <td class="edit-td edit-actions" data-label="Action">
+                <button class="edit-delete-btn" data-id="${
+                  post.id
+                }">Delete</button>
+              </td>
+            </tr>
+          `;
+        })
+        .join("");
+    }
+
+    // === Delete button event listeners ===
+    document.querySelectorAll(".edit-delete-btn").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        const postId = e.target.getAttribute("data-id");
+        if (confirm("Are you sure you want to delete this post?")) {
+          try {
+            await axios.delete(`${window.baseURL}/blog/${postId}`);
+            alert("Post deleted successfully!");
+            gettingStatusBlog(); // refresh table
+          } catch (error) {
+            console.error("Error deleting post:", error);
+            alert("Failed to delete post.");
+          }
+        }
+      });
+    });
+  } catch (err) {
+    console.error("Error fetching posts:", err);
+  }
+};
+
 function resetUploadForm() {
   // Clear text inputs
   document.getElementById("blog-header").value = "";
   document.getElementById("blog-intro").value = "";
   document.getElementById("the-text-area").value = "";
-
+  document.getElementById("text-header").innerText = "";
+  document.getElementById("text-paragraph").innerText = "";
   // Reset select dropdown
   const select = document.querySelector(".the-form select");
   if (select) select.selectedIndex = 0;
@@ -447,6 +594,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Inject user data into HTML
+  document.getElementById("user-name").textContent = user.username || "Unknown";
   document.querySelector(".User-name").textContent = user.username || "Unknown";
   document.querySelector(".User-email").textContent = user.email || "No email";
   document.querySelector(".position").textContent =
