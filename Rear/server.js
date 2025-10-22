@@ -6,6 +6,8 @@ import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 
@@ -20,10 +22,22 @@ const app = express();
 const port = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 
+// Handle ES module path stuff
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+app.use(express.static(path.join(__dirname, "..")));
+
 // ✅ Middlewares
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+app.use(
+  express.static(path.join(__dirname, ".."), {
+    maxAge: "7d", // Cache static files for 7 days
+  })
+);
 
 // ✅ Health check
 app.get("/", (req, res) => {
