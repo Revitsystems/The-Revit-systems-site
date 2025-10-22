@@ -33,6 +33,22 @@ app.get("/", (req, res) => {
   res.send("🚀 Local API working perfectly!");
 });
 
+// ✅ Health check
+app.get("/ping", async (req, res) => {
+  try {
+    // Optionally check DB or cache status
+    const dbStatus = await pool.query("SELECT 1");
+    res.status(200).json({
+      message: "Server is alive",
+      db: dbStatus ? "Connected" : "Down",
+      timestamp: new Date().toISOString(),
+    });
+    console.log("🚀 Local API working perfectly!");
+  } catch (err) {
+    res.status(500).json({ message: "Ping failed", error: err.message });
+  }
+});
+
 // ==========================================
 // 🔐 AUTH ROUTES (SIGNUP + LOGIN)
 // ==========================================
