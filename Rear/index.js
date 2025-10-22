@@ -213,6 +213,33 @@ app.get("/blog", async (req, res) => {
   }
 });
 
+app.put("/blog/publish/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    if (!id) {
+      return res.status(400).json({ message: "Post ID is required" });
+    }
+
+    const checkPost = await pool.query("SELECT * FROM posts WHERE id = $1", [
+      id,
+    ]);
+    if (checkPost.rows.length === 0) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    await pool.query(
+      "UPDATE posts SET status = 'published', updated_at = NOW() WHERE id = $1",
+      [id]
+    );
+
+    res.json({ message: "Post published successfully" });
+  } catch (error) {
+    console.error("Error publishing post:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
 app.delete("/blog/:id", async (req, res) => {
   const { id } = req.params;
 
@@ -319,12 +346,10 @@ app.post("/newsletter", async (req, res) => {
 
   // Basic validation
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return res
-      .status(400)
-      .json({
-        success: false,
-        message: "Please provide a valid email address.",
-      });
+    return res.status(400).json({
+      success: false,
+      message: "Please provide a valid email address.",
+    });
   }
 
   try {
@@ -336,12 +361,10 @@ app.post("/newsletter", async (req, res) => {
 
     // If already subscribed
     if (result.rowCount === 0) {
-      return res
-        .status(200)
-        .json({
-          success: true,
-          message: "You're already subscribed to our newsletter!",
-        });
+      return res.status(200).json({
+        success: true,
+        message: "You're already subscribed to our newsletter!",
+      });
     }
 
     // ✅ Send welcome email
@@ -360,13 +383,11 @@ app.post("/newsletter", async (req, res) => {
 
     await transporter.sendMail(mailOptions);
 
-    return res
-      .status(201)
-      .json({
-        success: true,
-        message:
-          "Subscribed successfully! Check your inbox for a welcome email 🎉",
-      });
+    return res.status(201).json({
+      success: true,
+      message:
+        "Subscribed successfully! Check your inbox for a welcome email 🎉",
+    });
   } catch (error) {
     console.error("Newsletter error:", error);
     return res.status(500).json({

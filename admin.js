@@ -447,6 +447,7 @@ const gettingStatusBloggerSuccessful = async () => {
 const gettingStatusBloggerDraft = async () => {
   const list = document.getElementById("get-list");
   list.classList.add("display");
+
   try {
     const { data } = await axios.get(`${window.baseURL}/blog/status-counts`);
 
@@ -469,16 +470,18 @@ const gettingStatusBloggerDraft = async () => {
           return `
             <tr class="edit-tr">
               <td class="edit-td" data-label="#">${index + 1}</td>
-              <td class="edit-td" data-label="Title">${post.title}</td> 
+              <td class="edit-td" data-label="Title">${post.title}</td>
               <td class="edit-td" data-label="Excerpt">${post.excerpt}</td>
               <td class="edit-td" data-label="Categories">${
                 post.categories
               }</td>
-                <td class="edit-td" data-label="Status">${
-                  post.status.charAt(0).toUpperCase() + post.status.slice(1)
-                }</td>
-            
+              <td class="edit-td" data-label="Status">${
+                post.status.charAt(0).toUpperCase() + post.status.slice(1)
+              }</td>
               <td class="edit-td edit-actions" data-label="Action">
+                <button class="edit-publish-btn" data-id="${
+                  post.id
+                }">Publish</button>
                 <button class="edit-delete-btn" data-id="${
                   post.id
                 }">Delete</button>
@@ -489,7 +492,7 @@ const gettingStatusBloggerDraft = async () => {
         .join("");
     }
 
-    // === Delete button event listeners ===
+    // === DELETE POST EVENT LISTENER ===
     document.querySelectorAll(".edit-delete-btn").forEach((btn) => {
       btn.addEventListener("click", async (e) => {
         const postId = e.target.getAttribute("data-id");
@@ -497,10 +500,32 @@ const gettingStatusBloggerDraft = async () => {
           try {
             await axios.delete(`${window.baseURL}/blog/${postId}`);
             alert("Post deleted successfully!");
-            gettingStatusBlog(); // refresh table
+            gettingStatusBloggerDraft(); // refresh
           } catch (error) {
             console.error("Error deleting post:", error);
             alert("Failed to delete post.");
+          }
+        }
+      });
+    });
+
+    // === PUBLISH POST EVENT LISTENER ===
+    document.querySelectorAll(".edit-publish-btn").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        const postId = e.target.getAttribute("data-id");
+        if (confirm("Do you want to publish this post?")) {
+          try {
+            btn.disabled = true;
+            btn.innerText = "Publishing...";
+            await axios.put(`${window.baseURL}/blog/publish/${postId}`);
+            alert("Post published successfully!");
+            gettingStatusBloggerDraft(); // refresh table
+          } catch (error) {
+            console.error("Error publishing post:", error);
+            alert("Failed to publish post.");
+          } finally {
+            btn.disabled = false;
+            btn.innerText = "Publish";
           }
         }
       });
