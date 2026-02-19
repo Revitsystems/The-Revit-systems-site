@@ -328,7 +328,8 @@
                 <div class="the-status-holder">
                   <div
                     class="the-Publishedl"
-                    onclick="gettingStatusBloggerSuccessful()"
+                    onclick='loadBlogTableByStatus("published")'
+                    ;
                   >
                     <div class="svg-s-icon the-success-thumbs-up-icon">
                       <svg
@@ -356,7 +357,8 @@
                   <hr />
                   <div
                     class="the-drafted"
-                    onclick="gettingStatusBloggerDraft()"
+                    onclick="loadBlogTableByStatus('drafted')"
+                    ;
                   >
                     <div class="svg-s-icon the-draft-icon">
                       <svg
@@ -791,8 +793,10 @@
             ></p>
           </div>
 
-          <button class="save" onclick="movePlace()">save</button>
-          <button class="save" onclick="moveOut()">Quit</button>
+          <button class="save" onclick="cloneTextContentToTextareaTag()">
+            save
+          </button>
+          <button class="save" onclick="closeElement()">Quit</button>
         </div>
       </div>
       <div class="the-draft-and-successful-listers" id="get-list">

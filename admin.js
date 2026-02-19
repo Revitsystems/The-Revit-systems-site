@@ -5,7 +5,11 @@ function decreaseSideBar() {
   side.classList.toggle("decrease");
   main.classList.toggle("increase");
 }
-const months = [
+
+//***** EVERYTHING THAT HAS TO DO WITH THE DATE */
+// List of abbreviated month names.
+// The position in the array corresponds to the month number (0–11).
+const monthNames = [
   "Jan",
   "Feb",
   "Mar",
@@ -20,25 +24,55 @@ const months = [
   "Dec",
 ];
 
-let date = new Date();
-console.log(new Date());
-let day = document.getElementById("date");
-let month = document.getElementById("month");
-let year = document.getElementById("year");
-day.innerText = date.getDate() + ",";
-month.innerText = months[date.getUTCMonth()];
-year.innerText = date.getFullYear();
+// Create an object representing the current date and time
+const currentDate = new Date();
 
+// Select the HTML elements where we want to display the date parts
+const dayElement = document.getElementById("date");
+const monthElement = document.getElementById("month");
+const yearElement = document.getElementById("year");
+
+// Extract individual parts of the current date
+const currentDay = currentDate.getDate(); // 1–31
+const currentMonthIndex = currentDate.getMonth(); // 0–11
+const currentYear = currentDate.getFullYear(); // e.g., 2026
+
+// Convert month number to readable month name
+const currentMonthName = monthNames[currentMonthIndex];
+
+// Insert values into the page
+dayElement.innerText = currentDay + ",";
+monthElement.innerText = currentMonthName;
+yearElement.innerText = currentYear;
+
+//*********** SELECT THE PROFILE CONTAINER ELEMENT FROM THE DOM */
 let profileDiv = document.getElementById("profile-div");
+
 function profileShow() {
+  // Adds the "come-out" class if it's not there
+  // Removes it if it already exists
   profileDiv.classList.toggle("come-out");
 }
+
+//*********** SELECT THE FILE INPUT ELEMENT FROM THE DOM */
 let imageInput = document.getElementById("ImgInput");
+
+// Select the <img> element where the preview will be displayed
 let imageDisplay = document.getElementById("thePreview");
 
+/**
+ * Displays a preview of the selected image file.
+ * This function reads the first selected file
+ * and generates a temporary URL for preview.
+ */
 function imagePreview() {
+  // Get the first selected file from the input
   const file = imageInput.files[0];
+
+  // Check if a file was actually selected
   if (file) {
+    // Create a temporary local URL for the selected file
+    // and assign it to the image source
     imageDisplay.src = URL.createObjectURL(file);
   }
 }
@@ -46,33 +80,30 @@ function imagePreview() {
 let textArea = document.getElementById("the-text-area");
 
 textArea.addEventListener("click", function openText() {
-  const blogger = document.getElementsByClassName(
-    "the-Blog-article-page-holder"
-  )[0];
+  const blogger = document.querySelector(".the-Blog-article-page-holder");
 
   // Example: toggle a class
   blogger.classList.toggle("show");
 });
 
-let theHtmlFromTheBlog;
-function movePlace() {
+function cloneTextContentToTextareaTag() {
   const blogger = document.getElementsByClassName(
     "the-Blog-article-page-holder"
   )[0];
 
   // Example: toggle a class
   blogger.classList.toggle("show");
-  const theBlogArticle = document.getElementById("the-blog-article").innerHTML;
-  theHtmlFromTheBlog = theBlogArticle;
-  console.log(theBlogArticle);
-  const theBlogArticleText =
-    document.getElementById("the-blog-article").innerText;
-  console.log(theBlogArticleText);
-  const theTextArea = document.getElementById("the-text-area");
-  theTextArea.innerText = theBlogArticleText;
+
+  const blogElement = document.getElementById("the-blog-article");
+
+  const blogText = blogElement.innerText;
+  console.log(blogText);
+
+  const textArea = document.getElementById("the-text-area");
+  textArea.value = blogText;
 }
 
-function moveOut() {
+function closeElement() {
   const blogger = document.getElementsByClassName(
     "the-Blog-article-page-holder"
   )[0];
@@ -81,128 +112,218 @@ function moveOut() {
   blogger.classList.toggle("show");
 }
 
-let theOptionsPart = document.getElementById("the-options-part");
+function initializeContentEditableNormalization() {
+  document.querySelectorAll("[contenteditable]").forEach((element) => {
+    element.addEventListener("input", () => {
+      const isEmpty =
+        element.innerHTML === "<br>" || element.innerHTML.trim() === "";
 
-function dropDown() {
-  theOptionsPart.classList.add("pick");
-}
-
-function the() {
-  document.querySelectorAll("[contenteditable]").forEach((el) => {
-    el.addEventListener("input", () => {
-      if (el.innerHTML === "<br>" || el.innerHTML.trim() === "") {
-        el.innerHTML = "";
+      if (isEmpty) {
+        element.innerHTML = "";
       }
     });
   });
 }
 
-the();
+initializeContentEditableNormalization();
 
-// the cloudinary server upload code
+//***************************************** */
+//******* THE CLOUDINARY SERVER UPLOAD CODE */
+//***************************************** */
 const CLOUD_NAME = "dmvltush8";
 const UPLOAD_PRESET = "revit_unsigned";
 
-let loader = document.getElementById("loader");
-let theIdentifier;
-let statusEl = document.getElementById("status-element");
+const loader = document.getElementById("loader");
+const statusEl = document.getElementById("status-element");
+const imgInput = document.getElementById("ImgInput");
 
-sendToCloudinary = async (event) => {
-  console.log(event.target.id);
-  theIdentifier = event.target.id;
-  const imageFile = document.getElementById("ImgInput").files[0];
-  if (!imageFile) {
-    alert("Please select an image first.");
-    return;
+let statusTimer = null;
+
+// --------------------
+// Utility: Clear Timer
+// --------------------
+function clearStatusTimer() {
+  if (statusTimer !== null) {
+    clearTimeout(statusTimer);
+    statusTimer = null;
   }
+}
 
+// --------------------
+// Utility: Show Status
+// --------------------
+function showTemporaryStatus(message, type = "pass", duration = 3000) {
+  clearStatusTimer();
+
+  statusEl.textContent = message;
+  statusEl.classList.add("status-update", type);
+
+  statusTimer = setTimeout(() => {
+    statusEl.classList.remove("status-update", type);
+    clearStatusTimer(); // disallocate
+  }, duration);
+}
+
+// --------------------
+// Main Function
+// --------------------
+const sendToCloudinary = async (event) => {
   loader.classList.add("show-face");
 
-  const formData = new FormData();
-  formData.append("file", imageFile);
-  formData.append("upload_preset", UPLOAD_PRESET);
+  const theButtonClickedIdentifier = event.target.id;
 
   try {
-    // Upload to Cloudinary
+    // =====================
+    // PRE-CONDITIONS
+    // =====================
+
+    const imageFile = imgInput.files?.[0];
+
+    if (!imageFile) {
+      throw new Error("No file selected.");
+    }
+
+    if (!imageFile.type.startsWith("image/")) {
+      throw new Error("Invalid file type. Only images allowed.");
+    }
+
+    // =====================
+    // BUILD REQUEST
+    // =====================
+
+    const formData = new FormData();
+    formData.append("file", imageFile);
+    formData.append("upload_preset", UPLOAD_PRESET);
+
+    // =====================
+    // NETWORK CALL
+    // =====================
+
     const res = await axios.post(
       `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
       formData,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
-      }
+      { headers: { "Content-Type": "multipart/form-data" } }
     );
 
-    const theImageUrl = res.data.secure_url;
-    console.log("✅ Image uploaded:", theImageUrl);
+    // =====================
+    // POST-CONDITIONS
+    // =====================
 
-    // Now save to database
-    await sendToDatabase(theImageUrl);
+    const imageUrl = res?.data?.secure_url;
+
+    if (!imageUrl) {
+      throw new Error("Upload failed: missing secure_url.");
+    }
+
+    if (typeof imageUrl !== "string" || !imageUrl.startsWith("https://")) {
+      throw new Error("Upload failed: invalid URL returned.");
+    }
+
+    // =====================
+    // DATABASE SAVE
+    // =====================
+
+    await sendToDatabase(imageUrl, theButtonClickedIdentifier);
   } catch (error) {
-    console.error("❌ Upload Drafts:", error);
-    statusEl.textContent = `error when sending image ${error}`;
-    statusEl.classList.add("status-update", "fail");
-    setTimeout(() => statusEl.classList.remove("status-update"), 3000);
+    // =====================
+    // EXCEPTION HANDLING
+    // =====================
+
+    console.error("Upload error:", error);
+
+    showTemporaryStatus(
+      error.message || "Image upload failed. Please try again.",
+      "fail"
+    );
+  } finally {
+    // =====================
+    // RESOURCE CLEANUP
+    // =====================
+
     loader.classList.remove("show-face");
   }
 };
 
-const sendToDatabase = async (cover_image_url) => {
-  const title = document.getElementById("blog-header").value.trim();
-  const excerpt = document.getElementById("blog-intro").value.trim();
-  const content =
-    typeof theHtmlFromTheBlog !== "undefined" ? theHtmlFromTheBlog : "";
-  const categories = document.querySelector("select").value;
-  const status = theIdentifier === "the-save-btn" ? "published" : "drafted";
-
-  console.log({
-    title,
-    excerpt,
-    content,
-    categories,
-    cover_image_url,
-  });
-
-  const blogData = {
-    title,
-    excerpt,
-    content,
-    categories,
-    cover_image_url,
-    status,
-  };
-
+// --------------------
+// sendToDatabase Function
+// --------------------
+const sendToDatabase = async (cover_image_url, theIdentifier) => {
+  loader.classList.add("show-face");
+  console.log(theIdentifier);
   try {
+    // --------------------
+    // PRE-CONDITIONS
+    // --------------------
+    const title = document.getElementById("blog-header")?.value.trim();
+    const excerpt = document.getElementById("blog-intro")?.value.trim();
+    const content = document.getElementById("the-text-area").value.trim();
+    const categories = document.querySelector("select")?.value;
+    const status = theIdentifier === "the-save-btn" ? "published" : "drafted";
+
+    console.log(content);
+    if (!title) throw new Error("Blog title cannot be empty.");
+    if (!excerpt) throw new Error("Blog excerpt cannot be empty.");
+    if (!content) throw new Error("Blog content cannot be empty");
+    if (!cover_image_url) throw new Error("Cover image URL is required.");
+    if (!categories) throw new Error("Please select a category.");
+
+    // --------------------
+    // Build request data
+    // --------------------
+    const blogData = {
+      title,
+      excerpt,
+      content,
+      categories,
+      cover_image_url,
+      status,
+    };
+
+    console.log("Blog data to save:", blogData);
+
+    // --------------------
+    // POST to server
+    // --------------------
     const res = await axios.post(
       `${window.baseURL}/api/posts/upload`,
       blogData,
       { headers: { "Content-Type": "application/json" } }
     );
 
-    const data = res.data;
-
-    if (status === "published") {
-      console.log("✅ Saved Published", res.data);
-      statusEl.textContent = data.message;
-      statusEl.classList.add("status-update");
-      setTimeout(() => statusEl.classList.remove("status-update"), 3000);
-      loader.classList.remove("show-face");
-    } else {
-      console.log("✅ Saved to draft", res.data);
-      statusEl.textContent = "blog drafted successfully";
-      statusEl.classList.add("status-update");
-      setTimeout(() => statusEl.classList.remove("status-update"), 3000);
-      loader.classList.remove("show-face");
+    // --------------------
+    // POST-CONDITIONS
+    // --------------------
+    const data = res?.data;
+    if (!data || !data.message) {
+      throw new Error("Invalid response from server.");
     }
 
-    loader.classList.remove("show-face");
-    let load = document.getElementById("load");
-    resetUploadForm();
+    // --------------------
+    // Handle Success
+    // --------------------
+    if (status === "published") {
+      console.log("✅ Blog Published", data);
+      showTemporaryStatus(data.message, "success");
+    } else {
+      console.log("✅ Blog Drafted", data);
+      showTemporaryStatus("Blog drafted successfully", "success");
+    }
+
+    resetUploadForm(); // reset the form
   } catch (err) {
-    console.error("❌ Upload Drafts:", err);
-    statusEl.textContent = data.message;
-    statusEl.classList.add("status-update");
-    statusEl.classList.add("fail");
-    setTimeout(() => statusEl.classList.remove("status-update"), 3000);
+    // --------------------
+    // Exception Handling
+    // --------------------
+
+    // err.response?.data?.message || err.message ||
+    // console.error("❌ Error saving blog:", err);
+    const message = "Failed to save blog.";
+    showTemporaryStatus(message, "fail");
+  } finally {
+    // --------------------
+    // Resource Cleanup
+    // --------------------
+    resetUploadForm(); // reset the form
     loader.classList.remove("show-face");
   }
 };
@@ -212,161 +333,96 @@ const exitPreview = async () => {
   list.classList.remove("display");
 };
 
-const gettingStatusBloggerSuccessful = async () => {
-  console.log("meat");
+const loadCounts = async () => {
+  try {
+    const { data } = await axios.get(`${window.baseURL}/blog/counts`);
+
+    // if (!data?.count) {
+    //   throw new Error("Invalid response structure");
+    // }
+
+    console.log(data);
+    updateCounts(data);
+  } catch (err) {
+    console.error("Failed to load counts:", err);
+    updateCounts([]);
+  }
+};
+
+const updateCounts = (data) => {
+  const publish = document.getElementById("the-published-number");
+  const draft = document.getElementById("the-draft-number");
+
+  const published =
+    data.find((item) => item.status === "published")?.count || 0;
+
+  const drafted = data.find((item) => item.status === "drafted")?.count || 0;
+
+  publish.innerText = Number(published);
+  draft.innerText = Number(drafted);
+};
+
+const loadBlogTableByStatus = async (status) => {
   const list = document.getElementById("get-list");
   list.classList.add("display");
+
   try {
-    const { data } = await axios.get(`${window.baseURL}/blog/status-counts`);
+    const { data } = await axios.get(`${window.baseURL}/blog/posts`);
 
-    // Extract counts
-    const published =
-      data.counts.find((item) => item.status === "published")?.count || 0;
-    const drafted =
-      data.counts.find((item) => item.status === "drafted")?.count || 0;
-
-    // Display counts
-    draft.innerText = drafted;
-    publish.innerText = published;
-
-    // === Render posts into the table ===
-    const tableBody = document.querySelector(".edit-tbody");
-    if (tableBody && data.posts) {
-      tableBody.innerHTML = data.posts
-        .filter((post) => post.status === "published")
-        .map((post, index) => {
-          return `
-            <tr class="edit-tr">
-              <td class="edit-td" data-label="#">${index + 1}</td>
-              <td class="edit-td" data-label="Title">${post.title}</td> 
-              <td class="edit-td" data-label="Excerpt">${post.excerpt}</td>
-              <td class="edit-td" data-label="Categories">${
-                post.categories
-              }</td>
-                <td class="edit-td" data-label="Status">${
-                  post.status.charAt(0).toUpperCase() + post.status.slice(1)
-                }</td>
-            
-              <td class="edit-td edit-actions" data-label="Action">
-                <button class="edit-delete-btn" data-id="${
-                  post.id
-                }">Delete</button>
-              </td>
-            </tr>
-          `;
-        })
-        .join("");
-    }
-
-    // === Delete button event listeners ===
-    document.querySelectorAll(".edit-delete-btn").forEach((btn) => {
-      btn.addEventListener("click", async (e) => {
-        const postId = e.target.getAttribute("data-id");
-        if (confirm("Are you sure you want to delete this post?")) {
-          try {
-            await axios.delete(`${window.baseURL}/blog/${postId}`);
-            alert("Post deleted successfully!");
-            gettingStatusBlog(); // refresh table
-          } catch (error) {
-            console.error("Error deleting post:", error);
-            alert("Failed to delete post.");
-          }
-        }
-      });
-    });
+    renderTable(data, status);
   } catch (err) {
     console.error("Error fetching posts:", err);
   }
 };
-const gettingStatusBloggerDraft = async () => {
-  const list = document.getElementById("get-list");
-  list.classList.add("display");
 
-  try {
-    const { data } = await axios.get(`${window.baseURL}/blog/status-counts`);
+const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
 
-    // Extract counts
-    const published =
-      data.counts.find((item) => item.status === "published")?.count || 0;
-    const drafted =
-      data.counts.find((item) => item.status === "drafted")?.count || 0;
+const renderTable = (data, status) => {
+  const tableBody = document.querySelector(".edit-tbody");
+  if (!tableBody || !data) return;
 
-    // Display counts
-    draft.innerText = drafted;
-    publish.innerText = published;
+  tableBody.innerHTML = data
+    .filter((data) => data.status === status)
+    .map((data, index) => {
+      return `
+          <tr class="edit-tr">
+            <td class="edit-td">${index + 1}</td>
+            <td class="edit-td">${data.title}</td>
+            <td class="edit-td">${data.excerpt}</td>
+            <td class="edit-td">${data.categories}</td>
+            <td class="edit-td">
+              ${capitalize(data.status)}
+            </td>
+            <td class="edit-td edit-actions">
+              ${generateActionButtons(data, status)}
+            </td>
+          </tr>
+        `;
+    })
+    .join("");
+};
 
-    // === Render posts into the table ===
-    const tableBody = document.querySelector(".edit-tbody");
-    if (tableBody && data.posts) {
-      tableBody.innerHTML = data.posts
-        .filter((post) => post.status === "drafted")
-        .map((post, index) => {
-          return `
-            <tr class="edit-tr">
-              <td class="edit-td" data-label="#">${index + 1}</td>
-              <td class="edit-td" data-label="Title">${post.title}</td>
-              <td class="edit-td" data-label="Excerpt">${post.excerpt}</td>
-              <td class="edit-td" data-label="Categories">${
-                post.categories
-              }</td>
-              <td class="edit-td" data-label="Status">${
-                post.status.charAt(0).toUpperCase() + post.status.slice(1)
-              }</td>
-              <td class="edit-td edit-actions" data-label="Action">
-                <button class="edit-publish-btn" data-id="${
-                  post.id
-                }">Publish</button>
-                <button class="edit-delete-btn" data-id="${
-                  post.id
-                }">Delete</button>
-              </td>
-            </tr>
-          `;
-        })
-        .join("");
-    }
-
-    // === DELETE POST EVENT LISTENER ===
-    document.querySelectorAll(".edit-delete-btn").forEach((btn) => {
-      btn.addEventListener("click", async (e) => {
-        const postId = e.target.getAttribute("data-id");
-        if (confirm("Are you sure you want to delete this post?")) {
-          try {
-            await axios.delete(`${window.baseURL}/blog/${postId}`);
-            alert("Post deleted successfully!");
-            gettingStatusBloggerDraft(); // refresh
-          } catch (error) {
-            console.error("Error deleting post:", error);
-            alert("Failed to delete post.");
-          }
-        }
-      });
-    });
-
-    // === PUBLISH POST EVENT LISTENER ===
-    document.querySelectorAll(".edit-publish-btn").forEach((btn) => {
-      btn.addEventListener("click", async (e) => {
-        const postId = e.target.getAttribute("data-id");
-        if (confirm("Do you want to publish this post?")) {
-          try {
-            btn.disabled = true;
-            btn.innerText = "Publishing...";
-            await axios.put(`${window.baseURL}/blog/publish/${postId}`);
-            alert("Post published successfully!");
-            gettingStatusBloggerDraft(); // refresh table
-          } catch (error) {
-            console.error("Error publishing post:", error);
-            alert("Failed to publish post.");
-          } finally {
-            btn.disabled = false;
-            btn.innerText = "Publish";
-          }
-        }
-      });
-    });
-  } catch (err) {
-    console.error("Error fetching posts:", err);
+const generateActionButtons = (data, status) => {
+  if (status === "published") {
+    return `
+        <button class="edit-delete-btn" data-id="${data.id}">
+          Delete
+        </button>
+      `;
   }
+
+  if (status === "drafted") {
+    return `
+        <button class="edit-publish-btn" data-id="${data.id}">
+          Publish
+        </button>
+        <button class="edit-delete-btn" data-id="${data.id}">
+          Delete
+        </button>
+      `;
+  }
+
+  return "";
 };
 
 function resetUploadForm() {
@@ -391,58 +447,8 @@ function resetUploadForm() {
   preview.style.display = "none";
 }
 
-let draft = document.getElementById("the-draft-number");
-let publish = document.getElementById("the-published-number");
-
-gettingStatusBlog = async () => {
-  try {
-    const { data } = await axios.get(`${window.baseURL}/blog/status-counts`);
-    const published =
-      data.counts.find((item) => item.status === "published")?.count || 0;
-    const drafted =
-      data.counts.find((item) => item.status === "drafted")?.count || 0;
-    console.log(drafted, published);
-    draft.innerText = drafted;
-    publish.innerText = published;
-
-    // === Render blog list ===
-    const blogList = document.getElementById("checkList-history");
-    if (blogList && data.posts) {
-      blogList.innerHTML = data.posts
-        .map((post) => {
-          const formattedDate = new Date(post.created_at).toLocaleDateString(
-            "en-US",
-            {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            }
-          );
-
-          return `
-            <li>
-              <div class="the-date-and-status">
-                <span>${formattedDate}</span>
-                <span class="status-for-load ${post.status}">
-                  ${post.status.charAt(0).toUpperCase() + post.status.slice(1)}
-                </span>
-              </div>
-              <div class="the-text-of-the-checkList">
-                ${post.title}
-              </div>
-            </li>
-          `;
-        })
-        .join("");
-    }
-  } catch (err) {
-    console.error("Error fetching posts:", err);
-  }
-};
-
-gettingStatusBlog();
-
 document.addEventListener("DOMContentLoaded", () => {
+  loadCounts();
   // Get user from localStorage
   const user = JSON.parse(localStorage.getItem("user"));
 
