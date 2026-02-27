@@ -337,11 +337,10 @@ const loadCounts = async () => {
   try {
     const { data } = await axios.get(`${window.baseURL}/blog/counts`);
 
-    // if (!data?.count) {
-    //   throw new Error("Invalid response structure");
-    // }
+    if (!data) {
+      throw new Error("Invalid response structure");
+    }
 
-    console.log(data);
     updateCounts(data);
   } catch (err) {
     console.error("Failed to load counts:", err);
@@ -362,14 +361,24 @@ const updateCounts = (data) => {
   draft.innerText = Number(drafted);
 };
 
-const loadBlogTableByStatus = async (status) => {
+let currentPage = 1;
+const LIMIT = 10;
+
+const loadBlogTableByStatus = async (status, page = 1) => {
   const list = document.getElementById("get-list");
   list.classList.add("display");
 
   try {
-    const { data } = await axios.get(`${window.baseURL}/blog/posts`);
+    const { data } = await axios.get(`${window.baseURL}/blog/posts`, {
+      params: {
+        status,
+        page,
+        limit: LIMIT,
+      },
+    });
 
-    renderTable(data, status);
+    renderTable(data.posts);
+    currentPage = page;
   } catch (err) {
     console.error("Error fetching posts:", err);
   }

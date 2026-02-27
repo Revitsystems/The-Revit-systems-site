@@ -20,7 +20,7 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   port: process.env.DB_PORT,
 });
-
+z;
 const app = express();
 const port = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
@@ -346,100 +346,6 @@ app.get("/blog/posts", async (req, res) => {
   } catch (err) {
     console.error("❌ Error fetching posts:", err);
     res.status(500).json({ error: "Failed to fetch posts" });
-  }
-});
-
-// ==========================================
-// 📧 CONTACT FORM EMAIL
-// ==========================================
-
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
-app.post("/contact", async (req, res) => {
-  const { name, email, message } = req.body;
-
-  const mailOptions = {
-    from: `"${name}" <${process.env.EMAIL_USER}>`,
-    to: "revitsystems@gmail.com",
-    subject: `New contact message from ${name}`,
-    html: `<p><strong>From:</strong> ${name} (${email})</p><p>${message}</p>`,
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
-    return res
-      .status(201)
-      .json({ success: true, message: "Email sent successfully" });
-  } catch (error) {
-    console.error("Email send error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Email unsuccessful. Please try again later.",
-    });
-  }
-});
-
-// ✅ Newsletter signup route
-app.post("/newsletter", async (req, res) => {
-  const { email } = req.body;
-
-  // Basic validation
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return res.status(400).json({
-      success: false,
-      message: "Please provide a valid email address.",
-    });
-  }
-
-  try {
-    // ✅ Save email to DB
-    const result = await pool.query(
-      "INSERT INTO newsletter_subscribers (email) VALUES ($1) ON CONFLICT (email) DO NOTHING RETURNING *",
-      [email.trim()]
-    );
-
-    // If already subscribed
-    if (result.rowCount === 0) {
-      return res.status(200).json({
-        success: true,
-        message: "You're already subscribed to our newsletter!",
-      });
-    }
-
-    // ✅ Send welcome email
-    const mailOptions = {
-      from: `"Revit Systems" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "Welcome to Revit Systems Newsletter 🎉",
-      html: `
-        <h2>Hi there 👋,</h2>
-        <p>Welcome to <strong>Revit Systems</strong> — we’re thrilled to have you join our community!</p>
-        <p>Expect product insights, business growth tips, and behind-the-scenes updates from Africa’s fast-rising tech agency 🚀</p>
-        <br />
-        <p>Stay innovative,<br/>The Revit Systems Team</p>
-      `,
-    };
-
-    await transporter.sendMail(mailOptions);
-
-    return res.status(201).json({
-      success: true,
-      message:
-        "Subscribed successfully! Check your inbox for a welcome email 🎉",
-    });
-  } catch (error) {
-    console.error("Newsletter error:", error);
-    return res.status(500).json({
-      success: false,
-      message:
-        "Something went wrong while subscribing. Please try again later.",
-    });
   }
 });
 
