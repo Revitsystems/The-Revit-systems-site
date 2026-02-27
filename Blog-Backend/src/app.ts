@@ -1,29 +1,12 @@
-import { Router } from "express";
-import {
-  createPost,
-  updatePost,
-  deletePost,
-  publishPost,
-  getPosts,
-} from "./controllers/postController";
-import { authenticate } from "./middleware/authMiddleware";
-import { authorize } from "./middleware/roleMiddleware";
+import express from "express";
+import postRoutes from "./routes/postRoutes"; // your post routes file
 
-const router = Router();
+const app = express();
 
-// Get all posts (optionally filter by status)
-router.get("/", getPosts);
+// Middleware, parsing, etc.
+app.use(express.json());
 
-// Create (defaults to draft)
-router.post("/", authenticate, createPost);
+// Mount post routes
+app.use("/posts", postRoutes);
 
-// Update draft or published post
-router.put("/:id", authenticate, updatePost);
-
-// Publish a draft
-router.patch("/:id/publish", authenticate, publishPost);
-
-// Delete post
-router.delete("/:id", authenticate, authorize("admin"), deletePost);
-
-export default router;
+export default app;

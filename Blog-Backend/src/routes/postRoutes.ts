@@ -3,7 +3,7 @@ import {
   createNewPost,
   fetchPosts,
   updateExistingPost,
-  publishPost,
+  publishExistingPost,
   removePost,
 } from "../controllers/postController";
 
@@ -22,7 +22,7 @@ router.post("/", authenticate, createNewPost);
 router.put("/:id", authenticate, updateExistingPost);
 
 // Publish a draft
-router.patch("/:id/publish", authenticate, publishPost);
+router.patch("/:id/publish", authenticate, publishExistingPost);
 
 // Delete post
 router.delete("/:id", authenticate, authorize("admin"), removePost);
