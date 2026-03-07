@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { createUser, findUserByEmail } from "../models/userModel";
+import { createUser, findUserByEmail } from "@/models/userModel.js";
 
 export const register = async (req: Request, res: Response) => {
-  const { name, email, password } = req.body;
+  const { first_name, last_name, email, password } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ message: "Missing fields" });
@@ -17,7 +17,7 @@ export const register = async (req: Request, res: Response) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const user = await createUser(name, email, hashedPassword);
+  const user = await createUser(first_name, last_name, email, hashedPassword);
 
   res.status(201).json({ id: user.id, email: user.email });
 };

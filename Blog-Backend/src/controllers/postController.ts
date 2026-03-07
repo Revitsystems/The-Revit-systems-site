@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { AuthRequest } from "../types/express";
+import { AuthRequest } from "@/types/express.js";
 import {
   createPost,
   getAllPosts,
@@ -7,7 +7,7 @@ import {
   updatePost,
   publishPost,
   deletePost,
-} from "../models/postModel";
+} from "@/models/postModel.js";
 
 export const createNewPost = async (req: AuthRequest, res: Response) => {
   const { categoryId, title, slug, content, excerpt, featuredImage } = req.body;

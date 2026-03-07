@@ -1,5 +1,6 @@
 import express from "express";
-import postRoutes from "./routes/postRoutes"; // your post routes file
+import postRoutes from "@/routes/postRoutes.js"; // your post routes file
+import 
 
 const app = express();
 

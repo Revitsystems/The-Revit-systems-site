@@ -5,10 +5,10 @@ import {
   updateExistingPost,
   publishExistingPost,
   removePost,
-} from "../controllers/postController";
+} from "@/controllers/postController.js";
 
-import { authenticate } from "../middleware/authMiddleware";
-import { authorize } from "../middleware/roleMiddleware";
+import { authenticate } from "@/middleware/authMiddleware.js";
+import { authorize } from "@/middleware/roleMiddleware.js";
 
 const router = Router();
 
