@@ -22,3 +22,12 @@ export const findUserByEmail = async (email: string) => {
   console.log(result.rows[0]);
   return result.rows[0];
 };
+
+export const updateLastLogin = async (userId: string) => {
+  const result = await pool.query(
+    "UPDATE users SET last_login = NOW() WHERE id = $1",
+    [userId]
+  );
+
+  return result;
+};

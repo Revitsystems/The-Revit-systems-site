@@ -3,871 +3,185 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
-    <!-- Font Awesome CDN -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap"
-      rel="stylesheet"
-    />
+    <title>Blog Admin Dashboard</title>
+    <link rel="stylesheet" href="Admin.css" />
+    <!-- Icons -->
     <link
       rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="./Admin.css" />
   </head>
   <body>
-    <div class="loader-holder" id="loader">
-      <div class="loader"></div>
+    <!-- Loader -->
+    <div id="loader" class="loader-container">
+      <div class="spinner"></div>
     </div>
-    <div class="admin-page-container-holder">
-      <div class="admin-page-container">
-        <!-- .the-side-bar -->
-        <div class="the-side-bar-container" id="side-content">
-          <div class="the-side-bar">
-            <div class="the-side-bar-top-content">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="lucide lucide-square-menu-icon lucide-square-menu"
-                onclick="decreaseSideBar()"
-              >
-                <rect width="18" height="18" x="3" y="3" rx="2" />
-                <path d="M7 8h10" />
-                <path d="M7 12h10" />
-                <path d="M7 16h10" />
-              </svg>
-              <!-- <div class="the-icon-holder">
-                    <img src="./Images/Logo/without bg white font.png" alt="" />
-                </div> -->
-            </div>
-            <div class="the-side-bar-mid-content">
-              <ul>
-                <li>
-                  <a href="./dashboard.html"
-                    ><svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="lucide lucide-gauge-icon lucide-gauge"
-                    >
-                      <path d="m12 14 4-4" />
-                      <path d="M3.34 19a10 10 0 1 1 17.32 0" />
-                    </svg>
-                    Dashboard</a
-                  >
-                </li>
-                <li>
-                  <a href="./index.html"
-                    ><svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="lucide lucide-house-plus-icon lucide-house-plus"
-                    >
-                      <path
-                        d="M12.35 21H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 .71-1.53l7-6a2 2 0 0 1 2.58 0l7 6A2 2 0 0 1 21 10v2.35"
-                      />
-                      <path d="M14.8 12.4A1 1 0 0 0 14 12h-4a1 1 0 0 0-1 1v8" />
-                      <path d="M15 18h6" />
-                      <path d="M18 15v6" />
-                    </svg>
-                    Home page</a
-                  >
-                </li>
-                <li>
-                  <a href="./about-us.html">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="lucide lucide-users-round-icon lucide-users-round"
-                    >
-                      <path d="M18 21a8 8 0 0 0-16 0" />
-                      <circle cx="10" cy="8" r="5" />
-                      <path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3" />
-                    </svg>
-                    About Us</a
-                  >
-                </li>
-                <li>
-                  <a href="./services.html"
-                    ><svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="lucide lucide-monitor-cog-icon lucide-monitor-cog"
-                    >
-                      <path d="M12 17v4" />
-                      <path d="m14.305 7.53.923-.382" />
-                      <path d="m15.228 4.852-.923-.383" />
-                      <path d="m16.852 3.228-.383-.924" />
-                      <path d="m16.852 8.772-.383.923" />
-                      <path d="m19.148 3.228.383-.924" />
-                      <path d="m19.53 9.696-.382-.924" />
-                      <path d="m20.772 4.852.924-.383" />
-                      <path d="m20.772 7.148.924.383" />
-                      <path
-                        d="M22 13v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"
-                      />
-                      <path d="M8 21h8" />
-                      <circle cx="18" cy="6" r="3" />
-                    </svg>
-                    Services</a
-                  >
-                </li>
-                <li>
-                  <a href="./resources-page.html"
-                    ><svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="lucide lucide-waypoints-icon lucide-waypoints"
-                    >
-                      <circle cx="12" cy="4.5" r="2.5" />
-                      <path d="m10.2 6.3-3.9 3.9" />
-                      <circle cx="4.5" cy="12" r="2.5" />
-                      <path d="M7 12h10" />
-                      <circle cx="19.5" cy="12" r="2.5" />
-                      <path d="m13.8 17.7 3.9-3.9" />
-                      <circle cx="12" cy="19.5" r="2.5" />
-                    </svg>
-                    Resources</a
-                  >
-                </li>
-                <li>
-                  <a href="./blog.html"
-                    ><svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="lucide lucide-newspaper-icon lucide-newspaper"
-                    >
-                      <path d="M15 18h-5" />
-                      <path d="M18 14h-8" />
-                      <path
-                        d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2"
-                      />
-                      <rect width="8" height="4" x="10" y="6" rx="1" />
-                    </svg>
-                    Blog</a
-                  >
-                </li>
-                <li>
-                  <a href="./contact.html"
-                    ><svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="lucide lucide-mails-icon lucide-mails"
-                    >
-                      <path
-                        d="M17 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 1-1.732"
-                      />
-                      <path d="m22 5.5-6.419 4.179a2 2 0 0 1-2.162 0L7 5.5" />
-                      <rect x="7" y="3" width="15" height="12" rx="2" />
-                    </svg>
-                    Contact Us</a
-                  >
-                </li>
-              </ul>
-            </div>
+
+    <!-- Alert Message Dropdown -->
+    <div id="alert-box" class="alert-box">
+      <span id="alert-icon"></span>
+      <span id="alert-message"></span>
+    </div>
+
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div class="date-display" id="current-date">Date, Month Year</div>
+      <div class="top-right">
+        <div class="notification-wrapper">
+          <i
+            class="fa-solid fa-bell"
+            onclick="toggleDropdown('notif-dropdown')"
+          ></i>
+          <div id="notif-dropdown" class="dropdown-content">
+            <p>New post published successfully</p>
+            <p>Database backup complete</p>
           </div>
         </div>
-        <!-- .the-main-section -->
-        <div class="the-main-content-container" id="main-content">
-          <div class="main-top">
-            <div class="the-main-content">
-              <div class="the-navigation-content">
-                <div class="the-intro-message">
-                  <h3>Welcome, <span id="user-name">Wendu</span></h3>
-                  <p>What do we have planned for today</p>
-                </div>
-                <div class="the-date-time">
-                  <div class="tri">
-                    <div id="date">date</div>
-                    <div id="month">Month</div>
-                    <div id="year">Year</div>
-                  </div>
-                  <div class="the-svg">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="lucide lucide-calendar-days-icon lucide-calendar-days"
-                    >
-                      <path d="M8 2v4" />
-                      <path d="M16 2v4" />
-                      <rect width="18" height="18" x="3" y="4" rx="2" />
-                      <path d="M3 10h18" />
-                      <path d="M8 14h.01" />
-                      <path d="M12 14h.01" />
-                      <path d="M16 14h.01" />
-                      <path d="M8 18h.01" />
-                      <path d="M12 18h.01" />
-                      <path d="M16 18h.01" />
-                    </svg>
-                  </div>
-                </div>
-
-                <div class="profiler">
-                  <div class="the-notification-bar">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="lucide lucide-bell-ring-icon lucide-bell-ring"
-                    >
-                      <path d="M10.268 21a2 2 0 0 0 3.464 0" />
-                      <path d="M22 8c0-2.3-.8-4.3-2-6" />
-                      <path
-                        d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
-                      />
-                      <path d="M4 2C2.8 3.7 2 5.7 2 8" />
-                    </svg>
-                  </div>
-                  <div class="the-profile-bar" onclick="profileShow()">
-                    <img src="" alt="" />
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.7"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="lucide lucide-user-round-icon lucide-user-round"
-                    >
-                      <circle cx="12" cy="8" r="5" />
-                      <path d="M20 21a8 8 0 0 0-16 0" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-              <div class="the-profile-div" id="profile-div">
-                <div class="the-profile-content">
-                  <div class="the-user-information">
-                    <label>User Name</label>
-                    <div class="User-name">Bright</div>
-                    <label>User Email</label>
-                    <div class="User-email">godsbrightc@gmail.com</div>
-                    <label>User Position</label>
-                    <div class="position">Software Developer</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <div class="user-info-wrapper">
+          <div class="user-trigger" onclick="toggleDropdown('user-dropdown')">
+            <span id="header-username">Admin User</span>
+            <i class="fa-solid fa-circle-user"></i>
           </div>
-          <div class="the-main-mid-page-content-holder">
-            <div class="the-main-mid-page-content">
-              <div class="col-1">
-                <div class="the-status-holder">
-                  <div
-                    class="the-Publishedl"
-                    onclick='loadBlogTableByStatus("published")'
-                    ;
-                  >
-                    <div class="svg-s-icon the-success-thumbs-up-icon">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.25"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="lucide lucide-thumbs-up-icon lucide-thumbs-u p"
-                      >
-                        <path d="M7 10v12" />
-                        <path
-                          d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"
-                        />
-                      </svg>
-                    </div>
-                    <div class="textAndNumber">
-                      Published Uploads<span id="the-published-number">0</span>
-                    </div>
-                  </div>
-                  <hr />
-                  <div
-                    class="the-drafted"
-                    onclick="loadBlogTableByStatus('drafted')"
-                    ;
-                  >
-                    <div class="svg-s-icon the-draft-icon">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.25"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="lucide lucide-square-pen-icon lucide-square-pen"
-                      >
-                        <path
-                          d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                        />
-                        <path
-                          d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"
-                        />
-                      </svg>
-                    </div>
-                    <div class="textAndNumber">
-                      Drafted Uploads<span id="the-draft-number">0</span>
-                    </div>
-                  </div>
-                </div>
-                <!-- the upload part of the page                 -->
-                <div class="the-upload">
-                  <div class="the-header-man">Uploads</div>
-                  <div class="load" id="load">
-                    <div class="the-form">
-                      <div class="the-preview">
-                        <img src="" alt="" id="thePreview" />
-                      </div>
-                      <input
-                        type="file"
-                        id="ImgInput"
-                        onchange="imagePreview()"
-                      />
-                    </div>
-                    <div class="the-form">
-                      <input
-                        type="text"
-                        placeholder="Header"
-                        class="up"
-                        id="blog-header"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Introduction Text"
-                        class="up"
-                        id="blog-intro"
-                      />
-                      <textarea
-                        class="text-for-upload"
-                        name=""
-                        placeholder="Write You Full Article Here!"
-                        id="the-text-area"
-                      ></textarea>
-                      <select name="" id="">
-                        <option value="Software Development">
-                          Software Development
-                        </option>
-                        <option value="Digital Marketing">
-                          Digital Marketing
-                        </option>
-                        <option value="Business Education">
-                          Business Education
-                        </option>
-                        <option value="Branding">Branding</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="the-btns">
-                    <button
-                      class="bg-green"
-                      id="the-save-btn"
-                      onclick="sendToCloudinary(event)"
-                    >
-                      Save
-                    </button>
-                    <button
-                      class="bg-orange"
-                      id="the-draft-btn"
-                      onclick="sendToCloudinary(event)"
-                    >
-                      Drafts
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="col-2">
-                <ul class="checkList-history" id="checkList-history">
-                  <li>
-                    <div class="the-date-and-status">
-                      <span>4th, Sept 2025</span>
-                      <span class="status-for-load">Published</span>
-                    </div>
-                    <div class="the-text-of-the-checkList">
-                      From the way things are going now, you would have to
-                      switch to a better school
-                    </div>
-                  </li>
-                  <li>
-                    <div class="the-date-and-status">
-                      <span>4th, Sept 2025</span>
-                      <span class="status-for-load orange">Drafts</span>
-                    </div>
-                    <div class="the-text-of-the-checkList">
-                      From the way things are going now, you would have to
-                      switch to a better school
-                    </div>
-                  </li>
-                  <li>
-                    <div class="the-date-and-status">
-                      <span>4th, Sept 2025</span>
-                      <span class="status-for-load">Published</span>
-                    </div>
-                    <div class="the-text-of-the-checkList">
-                      From the way things are going now, you would have to
-                      switch to a better school
-                    </div>
-                  </li>
-                  <li>
-                    <div class="the-date-and-status">
-                      <span>4th, Sept 2025</span>
-                      <span class="status-for-load orange">Drafts</span>
-                    </div>
-                    <div class="the-text-of-the-checkList">
-                      From the way things are going now, you would have to
-                      switch to a better school
-                    </div>
-                  </li>
-                  <li>
-                    <div class="the-date-and-status">
-                      <span>4th, Sept 2025</span>
-                      <span class="status-for-load">Published</span>
-                    </div>
-                    <div class="the-text-of-the-checkList">
-                      From the way things are going now, you would have to
-                      switch to a better school
-                    </div>
-                  </li>
-                  <li>
-                    <div class="the-date-and-status">
-                      <span>4th, Sept 2025</span>
-                      <span class="status-for-load">Published</span>
-                    </div>
-                    <div class="the-text-of-the-checkList">
-                      From the way things are going now, you would have to
-                      switch to a better school
-                    </div>
-                  </li>
-                  <li>
-                    <div class="the-date-and-status">
-                      <span>4th, Sept 2025</span>
-                      <span class="status-for-load">Published</span>
-                    </div>
-                    <div class="the-text-of-the-checkList">
-                      From the way things are going now, you would have to
-                      switch to a better school
-                    </div>
-                  </li>
-                  <li>
-                    <div class="the-date-and-status">
-                      <span>4th, Sept 2025</span>
-                      <span class="status-for-load">Published</span>
-                    </div>
-                    <div class="the-text-of-the-checkList">
-                      From the way things are going now, you would have to
-                      switch to a better school
-                    </div>
-                  </li>
-                  <li>
-                    <div class="the-date-and-status">
-                      <span>4th, Sept 2025</span>
-                      <span class="status-for-load orange">Drafts</span>
-                    </div>
-                    <div class="the-text-of-the-checkList">
-                      From the way things are going now, you would have to
-                      switch to a better school
-                    </div>
-                  </li>
-                  <li>
-                    <div class="the-date-and-status">
-                      <span>4th, Sept 2025</span>
-                      <span class="status-for-load">Published</span>
-                    </div>
-                    <div class="the-text-of-the-checkList">
-                      From the way things are going now, you would have to
-                      switch to a better school
-                    </div>
-                  </li>
-                  <li>
-                    <div class="the-date-and-status">
-                      <span>4th, Sept 2025</span>
-                      <span class="status-for-load">Published</span>
-                    </div>
-                    <div class="the-text-of-the-checkList">
-                      From the way things are going now, you would have to
-                      switch to a better school
-                    </div>
-                  </li>
-                  <li>
-                    <div class="the-date-and-status">
-                      <span>4th, Sept 2025</span>
-                      <span class="status-for-load">Published</span>
-                    </div>
-                    <div class="the-text-of-the-checkList">
-                      From the way things are going now, you would have to
-                      switch to a better school
-                    </div>
-                  </li>
-                  <li>
-                    <div class="the-date-and-status">
-                      <span>4th, Sept 2025</span>
-                      <span class="status-for-load orange">Drafts</span>
-                    </div>
-                    <div class="the-text-of-the-checkList">
-                      From the way things are going now, you would have to
-                      switch to a better school
-                    </div>
-                  </li>
-                </ul>
-              </div>
-            </div>
+          <div id="user-dropdown" class="dropdown-content">
+            <p><i class="fa-solid fa-user"></i> Profile</p>
+            <p><i class="fa-solid fa-gear"></i> Settings</p>
+            <hr />
+            <p style="color: red">
+              <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </p>
           </div>
         </div>
       </div>
-      <div class="the-pop-up-of-the-status-pages">
-        <div class="the-pop-ups-holder">
-          <div class="the-header">Published Uploads</div>
-          <div class="the-list-holder">
-            <ul>
-              <li>
-                <div class="the-status">
-                  <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Published</div>
-                </div>
-                <div class="the-info">
-                  From the way things are going now, you would have to switch to
-                  a better school
-                </div>
-              </li>
-              <li>
-                <div class="the-status">
-                  <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Published</div>
-                </div>
-                <div class="the-info">
-                  From the way things are going now, you would have to switch to
-                  a better school
-                </div>
-              </li>
-              <li>
-                <div class="the-status">
-                  <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Published</div>
-                </div>
-                <div class="the-info">
-                  From the way things are going now, you would have to switch to
-                  a better school
-                </div>
-              </li>
-              <li>
-                <div class="the-status">
-                  <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Published</div>
-                </div>
-                <div class="the-info">
-                  From the way things are going now, you would have to switch to
-                  a better school
-                </div>
-              </li>
-              <li>
-                <div class="the-status">
-                  <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Published</div>
-                </div>
-                <div class="the-info">
-                  From the way things are going now, you would have to switch to
-                  a better school
-                </div>
-              </li>
-              <li>
-                <div class="the-status">
-                  <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Published</div>
-                </div>
-                <div class="the-info">
-                  From the way things are going now, you would have to switch to
-                  a better school
-                </div>
-              </li>
-              <li>
-                <div class="the-status">
-                  <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Published</div>
-                </div>
-                <div class="the-info">
-                  From the way things are going now, you would have to switch to
-                  a better school
-                </div>
-              </li>
-              <li>
-                <div class="the-status">
-                  <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Published</div>
-                </div>
-                <div class="the-info">
-                  From the way things are going now, you would have to switch to
-                  a better school
-                </div>
-              </li>
-              <li>
-                <div class="the-status">
-                  <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Published</div>
-                </div>
-                <div class="the-info">
-                  From the way things are going now, you would have to switch to
-                  a better school
-                </div>
-              </li>
-              <li>
-                <div class="the-status">
-                  <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Published</div>
-                </div>
-                <div class="the-info">
-                  From the way things are going now, you would have to switch to
-                  a better school
-                </div>
-              </li>
-              <li>
-                <div class="the-status">
-                  <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Published</div>
-                </div>
-                <div class="the-info">
-                  From the way things are going now, you would have to switch to
-                  a better school
-                </div>
-              </li>
-              <li>
-                <div class="the-status">
-                  <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Published</div>
-                </div>
-                <div class="the-info">
-                  From the way things are going now, you would have to switch to
-                  a better school
-                </div>
-              </li>
-              <li>
-                <div class="the-status">
-                  <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Published</div>
-                </div>
-                <div class="the-info">
-                  From the way things are going now, you would have to switch to
-                  a better school
-                </div>
-              </li>
-              <li>
-                <div class="the-status">
-                  <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Published</div>
-                </div>
-                <div class="the-info">
-                  From the way things are going now, you would have to switch to
-                  a better school
-                </div>
-              </li>
-              <li>
-                <div class="the-status">
-                  <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Published</div>
-                </div>
-                <div class="the-info">
-                  From the way things are going now, you would have to switch to
-                  a better school
-                </div>
-              </li>
-              <li>
-                <div class="the-status">
-                  <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Published</div>
-                </div>
-                <div class="the-info">
-                  From the way things are going now, you would have to switch to
-                  a better school
-                </div>
-              </li>
-              <li>
-                <div class="the-status">
-                  <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Published</div>
-                </div>
-                <div class="the-info">
-                  From the way things are going now, you would have to switch to
-                  a better school
-                </div>
-              </li>
-              <li>
-                <div class="the-status">
-                  <div class="the-date">01, sept 2025</div>
-                  <div class="the-status green">Published</div>
-                </div>
-                <div class="the-info">
-                  From the way things are going now, you would have to switch to
-                  a better school
-                </div>
-              </li>
-            </ul>
+    </header>
+
+    <main class="dashboard-container">
+      <!-- Stats Figures -->
+      <section class="stats-row">
+        <div class="stat-card" onclick="openModal('list-modal', 'published')">
+          <i class="fa-solid fa-check-double icon-pub"></i>
+          <div class="stat-info">
+            <h3 id="pub-count">0</h3>
+            <p>Published Posts</p>
           </div>
         </div>
-      </div>
-      <div class="the-Blog-article-page-holder">
-        <div class="the">
-          <div class="the-blog-article" id="the-blog-article">
-            <h1
-              contenteditable="true"
-              data-placeholder="Type your header here!"
-              id="text-header"
-            ></h1>
-            <p
-              contenteditable="true"
-              data-placeholder="Type your content here!"
-              id="text-paragraph"
-            ></p>
+        <div class="stat-card" onclick="openModal('list-modal', 'draft')">
+          <i class="fa-solid fa-file-pen icon-draft"></i>
+          <div class="stat-info">
+            <h3 id="draft-count">0</h3>
+            <p>Drafted Posts</p>
           </div>
+        </div>
+        <div class="user-detail-card">
+          <h4>Logged In As:</h4>
+          <p class="u-name">John Doe</p>
+          <p class="u-role">Administrator</p>
+        </div>
+      </section>
 
-          <button class="save" onclick="cloneTextContentToTextareaTag()">
-            save
+      <!-- Write Blog Section -->
+      <section class="editor-section">
+        <h2><i class="fa-solid fa-pen-nib"></i> Create New Blog</h2>
+        <div class="editor-form">
+          <div class="input-group">
+            <label>Featured Image</label>
+            <input type="file" id="post-image" accept="image/*" />
+          </div>
+          <div class="grid-2">
+            <input type="text" id="post-title" placeholder="Blog Title" />
+            <input type="text" id="post-slug" placeholder="slug-url-path" />
+          </div>
+          <select id="post-category">
+            <option value="">Select Category</option>
+            <option value="software development">Software Development</option>
+            <option value="branding">Branding</option>
+            <option value="business building">Business Building</option>
+            <option value="media">Media</option>
+          </select>
+          <textarea id="post-excerpt" placeholder="Short Excerpt..."></textarea>
+          <textarea
+            id="post-content"
+            placeholder="Write your blog content here..."
+            rows="10"
+          ></textarea>
+          <div class="form-buttons">
+            <button class="btn-draft" onclick="handleSave('draft')">
+              Save Draft
+            </button>
+            <button class="btn-pub" onclick="handleSave('published')">
+              Publish Post
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Database Feed -->
+      <section class="database-feed">
+        <h2><i class="fa-solid fa-database"></i> Database Feed</h2>
+        <table id="db-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="db-body">
+            <!-- Dynamic Rows -->
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <!-- MODAL: List of Published/Drafts -->
+    <div id="list-modal" class="modal-overlay">
+      <div class="modal-content list-view">
+        <div class="modal-header">
+          <h2 id="modal-list-title">Posts</h2>
+          <button class="btn-exit" onclick="closeModal('list-modal')">
+            &times;
           </button>
-          <button class="save" onclick="closeElement()">Quit</button>
         </div>
-      </div>
-      <div class="the-draft-and-successful-listers" id="get-list">
-        <div class="edit-container">
-          <button class="edit-exit-btn" onclick="exitPreview()">Exit</button>
-          <h1>Posts Management</h1>
-
-          <div class="edit-top-bar">
-            <input type="text" placeholder="Search posts..." />
-          </div>
-
-          <table class="edit-table">
-            <thead class="edit-thead">
-              <tr class="edit-tr">
-                <th class="edit-th">#</th>
-                <th class="edit-th">Title</th>
-                <th class="edit-th">Excerpt</th>
-                <th class="edit-th">Categories</th>
-                <th class="edit-th">Status</th>
-                <th class="edit-th">Action</th>
-              </tr>
-            </thead>
-            <tbody class="edit-tbody">
-              <tr class="edit-tr">
-                <td class="edit-td" data-label="#">1</td>
-                <td class="edit-td" data-label="Title">
-                  Introducing Our New Service
-                </td>
-                <td class="edit-td" data-label="Excerpt">
-                  A quick overview of our latest solution...
-                </td>
-                <td class="edit-td" data-label="Categories">Business, Tech</td>
-                <td class="edit-td" data-label="Status">Published</td>
-                <td class="edit-td edit-actions" data-label="Action">
-                  <button>Delete</button>
-                </td>
-              </tr>
-              <tr class="edit-tr">
-                <td class="edit-td" data-label="#">2</td>
-                <td class="edit-td" data-label="Title">Tech Trends 2025</td>
-                <td class="edit-td" data-label="Excerpt">
-                  Exploring future innovations in AI...
-                </td>
-                <td class="edit-td" data-label="Categories">Technology</td>
-                <td class="edit-td" data-label="Status">Draft</td>
-                <td class="edit-td edit-actions" data-label="Action">
-                  <button>Delete</button>
-                </td>
-              </tr>
-              <tr class="edit-tr">
-                <td class="edit-td" data-label="#">3</td>
-                <td class="edit-td" data-label="Title">
-                  Building Scalable Web Apps
-                </td>
-                <td class="edit-td" data-label="Excerpt">
-                  Best practices for backend developers...
-                </td>
-                <td class="edit-td" data-label="Categories">Development</td>
-                <td class="edit-td" data-label="Status">Published</td>
-                <td class="edit-td edit-actions" data-label="Action">
-                  <button>Delete</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="modal-body">
+          <div id="posts-container"></div>
+          <button class="btn-more" onclick="loadMore()">More Posts</button>
         </div>
       </div>
     </div>
-    <div class="status-element" id="status-element">Nothing</div>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="./config.js"></script>
-    <script src="./admin.js"></script>
+
+    <!-- MODAL: Edit Interface -->
+    <div id="edit-modal" class="modal-overlay">
+      <div class="modal-content editor-view">
+        <div class="modal-header">
+          <h2>Edit Post</h2>
+          <button class="btn-exit" onclick="closeModal('edit-modal')">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="text" id="edit-title" class="full-input" />
+          <select id="edit-category" class="full-input">
+            <option value="software development">Software Development</option>
+            <option value="branding">Branding</option>
+            <option value="business building">Business Building</option>
+            <option value="media">Media</option>
+          </select>
+          <textarea id="edit-content" rows="8" class="full-input"></textarea>
+          <div class="form-buttons">
+            <button class="btn-exit" onclick="closeModal('edit-modal')">
+              Exit
+            </button>
+            <button class="btn-draft" onclick="handleEditSave('draft')">
+              Save as Draft
+            </button>
+            <button class="btn-pub" onclick="handleEditSave('published')">
+              Publish
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="admin.js"></script>
   </body>
 </html>
