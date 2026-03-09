@@ -7,6 +7,8 @@ const app = express();
 // Middleware, parsing, etc.
 app.use(express.json());
 
+app.use(express.urlencoded({ extended: true }));
+
 // Mount post routes
 app.use("/posts", postRoutes);
 app.use("/auth", authRoutes);

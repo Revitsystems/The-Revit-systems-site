@@ -4,9 +4,10 @@ import jwt from "jsonwebtoken";
 import { createUser, findUserByEmail } from "@/models/userModel.js";
 
 export const register = async (req: Request, res: Response) => {
-  const { first_name, last_name, email, password } = req.body;
+  console.log(req.body);
+  const { first_name, last_name, email, password_hash } = req.body;
 
-  if (!email || !password) {
+  if (!first_name || !last_name || !email || !password_hash) {
     return res.status(400).json({ message: "Missing fields" });
   }
 
@@ -15,7 +16,7 @@ export const register = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "User already exists" });
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await bcrypt.hash(password_hash, 10);
 
   const user = await createUser(first_name, last_name, email, hashedPassword);
 
@@ -30,7 +31,7 @@ export const login = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Invalid credentials" });
   }
 
-  const isMatch = await bcrypt.compare(password, user.password);
+  const isMatch = await bcrypt.compare(password, user.password_hash);
   if (!isMatch) {
     return res.status(400).json({ message: "Invalid credentials" });
   }

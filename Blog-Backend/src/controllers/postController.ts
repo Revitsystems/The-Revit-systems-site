@@ -12,7 +12,14 @@ import {
 export const createNewPost = async (req: AuthRequest, res: Response) => {
   const { categoryId, title, slug, content, excerpt, featuredImage } = req.body;
 
-  if (!title || !slug || !content) {
+  if (
+    !categoryId ||
+    !title ||
+    !slug ||
+    !content ||
+    !excerpt ||
+    !featuredImage
+  ) {
     return res.status(400).json({
       message: "Title, slug and content are required",
     });
