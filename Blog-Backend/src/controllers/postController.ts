@@ -10,6 +10,7 @@ import {
 } from "@/models/postModel.js";
 
 export const createNewPost = async (req: AuthRequest, res: Response) => {
+  console.log(req.body);
   const { categoryId, title, slug, content, excerpt, featuredImage } = req.body;
 
   if (
@@ -21,7 +22,8 @@ export const createNewPost = async (req: AuthRequest, res: Response) => {
     !featuredImage
   ) {
     return res.status(400).json({
-      message: "Title, slug and content are required",
+      message:
+        "CategoryId, title, slug, content, excerpt, and featuredImage are required",
     });
   }
 
