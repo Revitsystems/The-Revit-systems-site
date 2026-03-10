@@ -46,18 +46,30 @@ export const createPost = async ({
   return result.rows[0];
 };
 
-export const getAllPosts = async (status?: string) => {
-  let query = `SELECT * FROM posts`;
-  const values: any[] = [];
+export const getPosts = async (
+  status: string,
+  limit: number,
+  offset: number
+) => {
+  const result = await pool.query(
+    `
+   SELECT
+  posts.id,
+  posts.title,
+  posts.content,
+  posts.created_at,
+  posts.status,
+  categories.id AS category_id,
+  categories.name AS category
+FROM posts
+JOIN categories
+  ON posts.category_id = categories.id
+WHERE posts.status = $1
+ORDER BY posts.created_at DESC
+LIMIT $2 OFFSET $3;`,
+    [status, limit, offset]
+  );
 
-  if (status) {
-    query += ` WHERE status = $1`;
-    values.push(status);
-  }
-
-  query += ` ORDER BY created_at DESC`;
-
-  const result = await pool.query(query, values);
   return result.rows;
 };
 

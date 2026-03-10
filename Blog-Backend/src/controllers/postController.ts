@@ -1,8 +1,12 @@
 import { Response } from "express";
 import { AuthRequest } from "@/types/express.js";
 import {
+  PaginationQuery,
+  PaginationRequest,
+} from "@/types/pagination.types.js";
+import {
   createPost,
-  getAllPosts,
+  getPosts,
   getPostById,
   updatePost,
   publishPost,
@@ -50,11 +54,21 @@ export const createNewPost = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const fetchPosts = async (req: AuthRequest, res: Response) => {
-  const { status } = req.query;
+export const fetchPosts = async (req: PaginationRequest, res: Response) => {
+  try {
+    const limit = Number(req.query.limit) || 10;
+    const offset = Number(req.query.offset) || 0;
+    const status = String(req.query.status || "published"); // hardcoded, or req.query.status
 
-  const posts = await getAllPosts(status as string);
-  res.json(posts);
+    const posts = await getPosts(status, limit, offset);
+
+    const hasMore = posts.length === limit;
+
+    res.json({ posts, limit, offset, hasMore });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch posts" });
+  }
 };
 
 export const updateExistingPost = async (req: AuthRequest, res: Response) => {

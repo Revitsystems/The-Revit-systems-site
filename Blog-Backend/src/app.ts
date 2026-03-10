@@ -1,8 +1,11 @@
 import express from "express";
+import cors from "cors";
 import postRoutes from "@/routes/postRoutes.js"; // your post routes file
 import authRoutes from "@/routes/authRoutes.js";
 
 const app = express();
+
+app.use(cors());
 
 // Middleware, parsing, etc.
 app.use(express.json());

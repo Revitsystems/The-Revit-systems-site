@@ -487,142 +487,41 @@
 // ============================================
 // MOCK DATABASE
 // ============================================
-const mockDatabase = {
-  posts: [
-    {
-      id: 1,
-      title: "Getting Started with React",
-      slug: "getting-started-with-react",
-      excerpt: "Learn the basics of React and build your first application.",
-      content:
-        "React is a popular JavaScript library for building user interfaces. In this post, we'll explore the fundamentals...",
-      category: "software-development",
-      status: "published",
-      createdAt: "2024-03-01",
-      updatedAt: "2024-03-01",
-      image: null,
-    },
-    {
-      id: 2,
-      title: "Building Your Brand Identity",
-      slug: "building-your-brand-identity",
-      excerpt: "Discover the key elements of creating a strong brand identity.",
-      content:
-        "Your brand identity is more than just a logo. It's the visual and emotional representation of your business...",
-      category: "branding",
-      status: "published",
-      createdAt: "2024-03-02",
-      updatedAt: "2024-03-02",
-      image: null,
-    },
-    {
-      id: 3,
-      title: "Startup Growth Strategies",
-      slug: "startup-growth-strategies",
-      excerpt: "Proven strategies to accelerate your startup's growth.",
-      content:
-        "Growing a startup requires a combination of smart strategies, persistence, and adaptability...",
-      category: "business-building",
-      status: "draft",
-      createdAt: "2024-03-03",
-      updatedAt: "2024-03-04",
-      image: null,
-    },
-    {
-      id: 4,
-      title: "Social Media Marketing Tips",
-      slug: "social-media-marketing-tips",
-      excerpt: "Maximize your social media presence with these expert tips.",
-      content:
-        "Social media has become an essential tool for businesses to connect with their audience...",
-      category: "media",
-      status: "published",
-      createdAt: "2024-03-05",
-      updatedAt: "2024-03-05",
-      image: null,
-    },
-    {
-      id: 5,
-      title: "JavaScript Best Practices",
-      slug: "javascript-best-practices",
-      excerpt: "Write cleaner, more maintainable JavaScript code.",
-      content:
-        "Following best practices in JavaScript can significantly improve your code quality...",
-      category: "software-development",
-      status: "draft",
-      createdAt: "2024-03-06",
-      updatedAt: "2024-03-07",
-      image: null,
-    },
-    {
-      id: 6,
-      title: "Content Creation Guide",
-      slug: "content-creation-guide",
-      excerpt:
-        "Learn how to create engaging content that resonates with your audience.",
-      content:
-        "Content is king in today's digital landscape. Creating valuable content...",
-      category: "media",
-      status: "published",
-      createdAt: "2024-03-08",
-      updatedAt: "2024-03-08",
-      image: null,
-    },
-    {
-      id: 7,
-      title: "E-commerce Strategies",
-      slug: "ecommerce-strategies",
-      excerpt:
-        "Boost your online sales with these proven e-commerce strategies.",
-      content:
-        "Running a successful e-commerce business requires understanding your customers...",
-      category: "business-building",
-      status: "draft",
-      createdAt: "2024-03-09",
-      updatedAt: "2024-03-09",
-      image: null,
-    },
-    {
-      id: 8,
-      title: "Logo Design Principles",
-      slug: "logo-design-principles",
-      excerpt: "Essential principles for creating memorable logos.",
-      content:
-        "A great logo is simple, memorable, and effectively communicates your brand...",
-      category: "branding",
-      status: "published",
-      createdAt: "2024-03-10",
-      updatedAt: "2024-03-10",
-      image: null,
-    },
-  ],
-  user: {
-    name: "Admin User",
-    email: "admin@blog.com",
-    role: "Administrator",
-    joined: "January 15, 2024",
-    lastLogin: new Date().toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    }),
-  },
-};
+let offset = 0;
+const limit = 10;
+
+async function loadPosts() {
+  const res = await fetch(
+    `http://localhost:5000/posts/?limit=${limit}&offset=${offset}`
+  );
+  const data = await res.json();
+
+  const posts = data.posts;
+  console.log(posts);
+  renderRecentPosts(posts);
+  // renderPostRow(posts);
+
+  offset += limit;
+
+  if (!data.hasMore) {
+    hideLoadMoreButton();
+  }
+}
 
 // ============================================
 // STATE MANAGEMENT
 // ============================================
-const state = {
-  posts: [...mockDatabase.posts],
-  user: { ...mockDatabase.user },
-  pagination: {
-    published: { page: 1, limit: 5, total: 0 },
-    drafts: { page: 1, limit: 5, total: 0 },
-    all: { page: 1, limit: 10, total: 0 },
-  },
-  currentFilter: "all",
-  editingPost: null,
-};
+// const state = {
+//   posts: [...mockDatabase.posts],
+//   user: { ...mockDatabase.user },
+//   pagination: {
+//     published: { page: 1, limit: 5, total: 0 },
+//     drafts: { page: 1, limit: 5, total: 0 },
+//     all: { page: 1, limit: 10, total: 0 },
+//   },
+//   currentFilter: "all",
+//   editingPost: null,
+// };
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -707,6 +606,26 @@ function generateSlug(title) {
 // ============================================
 // PAGINATION FUNCTIONS
 // ============================================
+
+// let offset = 0;
+// const limit = 10;
+
+// async function loadPosts() {
+//   const res = await fetch(
+//     `http://localhost:5000/posts/?limit=${limit}&offset=${offset}`
+//   );
+//   const data = await res.json();
+
+//   console.log(data.posts);
+
+//   renderPosts(data.posts);
+
+//   offset += limit;
+
+//   if (!data.hasMore) {
+//     hideLoadMoreButton();
+//   }
+// }
 
 function getPaginatedPosts(posts, page, limit) {
   const start = (page - 1) * limit;
@@ -796,53 +715,61 @@ function updateStats() {
   state.pagination.all.total = Math.ceil(total / state.pagination.all.limit);
 }
 
-function renderPostRow(post, showActions = true) {
-  const actions = showActions
-    ? `
-        <div class="action-bts">
-            <button class="action-btn edit" onclick="openEditModal(${
-              post.id
-            })" title="Edit">
-                <i class="fas fa-edit"></i>
-            </button>
-            <button class="action-btn delete" onclick="openDeleteModal(${
-              post.id
-            })" title="Delete">
-                <i class="fas fa-trash"></i>
-            </button>
-            ${
-              post.status === "draft"
-                ? `
-                <button class="action-btn publish" onclick="publishPost(${post.id})" title="Publish">
-                    <i class="fas fa-check"></i>
-                </button>
-            `
-                : ""
-            }
-        </div>
-    `
-    : "";
+function renderPostRows(posts, showActions = true) {
+  return posts
+    .map((post) => {
+      const actions = showActions
+        ? `
+          <div class="action-btns">
+              <button class="action-btn edit" onclick="openEditModal(${
+                post.id
+              })" title="Edit">
+                  <i class="fas fa-edit"></i>
+              </button>
+              <button class="action-btn delete" onclick="openDeleteModal(${
+                post.id
+              })" title="Delete">
+                  <i class="fas fa-trash"></i>
+              </button>
+              ${
+                post.status === "draft"
+                  ? `
+                  <button class="action-btn publish" onclick="publishPost(${post.id})" title="Publish">
+                      <i class="fas fa-check"></i>
+                  </button>
+              `
+                  : ""
+              }
+          </div>
+      `
+        : "";
 
-  return `
-        <tr data-id="${post.id}">
-            <td>
-                <strong>${post.title}</strong>
-                <br><small class="text-muted">${post.slug}</small>
-            </td>
-            <td>${getCategoryLabel(post.category)}</td>
-            <td><span class="status-badge ${post.status}">${
-    post.status
-  }</span></td>
-            <td>${formatDate(post.createdAt)}</td>
-            <td>${actions}</td>
-        </tr>
-    `;
+      return `
+          <tr data-id="${post.id}">
+              <td>
+                  <strong>${post.title}</strong>
+                  <br><small class="text-muted">${post.content}</small>
+              </td>
+              <td>${getCategoryLabel(post.category)}</td>
+              <td><span class="status-badge ${post.status}">${
+        post.status
+      }</span></td>
+              <td>${formatDate(post.created_at)}</td>
+              <td>${actions}</td>
+          </tr>
+      `;
+    })
+    .join(""); // combine all rows into a single string
 }
 
-function renderRecentPosts() {
+function renderRecentPosts(posts) {
   const tbody = document.getElementById("recent-posts-table");
-  const recent = state.posts.slice(0, 5);
-  tbody.innerHTML = recent.map((post) => renderPostRow(post)).join("");
+
+  // Take the first 5 posts from your state
+  // const recentPosts = state.posts.slice(0, 5);
+
+  // Render them
+  tbody.innerHTML = renderPostRows(posts); // pass the array!
 }
 
 function renderAllPosts() {
@@ -851,7 +778,7 @@ function renderAllPosts() {
   const { page, limit } = state.pagination.all;
   const paginated = getPaginatedPosts(filtered, page, limit);
 
-  tbody.innerHTML = paginated.map((post) => renderPostRow(post)).join("");
+  // tbody.innerHTML = paginated.map((post) => renderPostRow(post)).join("");
 
   const totalPages = Math.ceil(filtered.length / limit);
   renderPagination("posts-pagination", page, totalPages, "all", renderAllPosts);
@@ -995,7 +922,6 @@ function closeModal(modalId) {
 }
 
 function openPublishedModal() {
-  state.pagination.published.page = 1;
   renderPublishedModal();
   openModal("published-modal");
 }
@@ -1382,7 +1308,10 @@ function init() {
     new Date().toLocaleDateString("en-US", dateOptions);
 
   // Set last login
-  document.getElementById("last-login").textContent = state.user.lastLogin;
+  // document.getElementById("last-login").textContent = state.user.lastLogin;
+
+  // load posts
+  loadPosts();
 
   // Initialize stats
   updateStats();
