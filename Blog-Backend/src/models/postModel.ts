@@ -1,5 +1,9 @@
 import { pool } from "@/config/db.js";
 
+// ================================
+// Handles creation of blog posts
+// ================================
+
 export const createPost = async ({
   authorId,
   categoryId,
@@ -46,6 +50,10 @@ export const createPost = async ({
   return result.rows[0];
 };
 
+// =============================================
+// Handles getting of blog posts with pagination
+// =============================================
+
 export const getPosts = async (
   status: string,
   limit: number,
@@ -57,6 +65,7 @@ export const getPosts = async (
   posts.id,
   posts.title,
   posts.content,
+  posts.excerpt,
   posts.created_at,
   posts.status,
   categories.id AS category_id,
@@ -73,6 +82,10 @@ LIMIT $2 OFFSET $3;`,
   return result.rows;
 };
 
+// =============================================
+// Handles getting of blog posts via ID
+// =============================================
+
 export const getPostById = async (id: string) => {
   const result = await pool.query(
     `
@@ -85,6 +98,10 @@ export const getPostById = async (id: string) => {
 
   return result.rows[0]; // returns undefined if not found
 };
+
+// =============================================
+// Handles updating of blog posts via ID
+// =============================================
 
 export const updatePost = async (
   id: string,
@@ -152,6 +169,10 @@ export const updatePost = async (
   return result.rows[0];
 };
 
+// =============================================
+// Handles publishing of blog posts via ID
+// =============================================
+
 export const publishPost = async (id: string) => {
   const result = await pool.query(
     `
@@ -168,6 +189,10 @@ export const publishPost = async (id: string) => {
 
   return result.rows[0];
 };
+
+// =============================================
+// Handles publishing of blog posts via ID
+// =============================================
 
 export const deletePost = async (id: string) => {
   await pool.query(`DELETE FROM posts WHERE id = $1`, [id]);
