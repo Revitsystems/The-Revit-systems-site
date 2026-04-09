@@ -7,50 +7,75 @@ import {
 import {
   createPost,
   getPosts,
+  getPostStats,
   getPostById,
   updatePost,
   publishPost,
   deletePost,
+  schedulePost, // Add this
 } from "@/models/postModel.js";
 
 export const createNewPost = async (req: AuthRequest, res: Response) => {
-  console.log(req.body);
-  const { categoryId, title, slug, content, excerpt, featuredImage } = req.body;
+  // 1. Explicitly type the destructured body
+  const {
+    categoryId,
+    title,
+    slug,
+    content,
+    excerpt,
+    featuredImage,
+    status,
+    scheduledDate,
+  }: {
+    categoryId: string;
+    title: string;
+    slug: string;
+    content: string;
+    excerpt?: string;
+    featuredImage?: string;
+    status?: "draft" | "published" | "scheduled"; // Match your model's expected strings
+    scheduledDate?: string;
+  } = req.body;
 
-  if (
-    !categoryId ||
-    !title ||
-    !slug ||
-    !content ||
-    !excerpt ||
-    !featuredImage
-  ) {
+  if (!categoryId || !title || !slug || !content) {
     return res.status(400).json({
-      message:
-        "CategoryId, title, slug, content, excerpt, and featuredImage are required",
+      message: "CategoryId, title, slug, and content are required",
     });
   }
 
+  let scheduleTime: Date | undefined;
+  if (status === "scheduled" || scheduledDate) {
+    if (!scheduledDate) {
+      return res.status(400).json({
+        message: "scheduledDate is required for scheduled posts",
+      });
+    }
+    scheduleTime = new Date(scheduledDate);
+    if (isNaN(scheduleTime.getTime()) || scheduleTime <= new Date()) {
+      return res.status(400).json({
+        message: "Scheduled date must be a valid future date",
+      });
+    }
+  }
+
   try {
+    // 2. Use Type Assertion for the status to satisfy the model
     const post = await createPost({
       authorId: req.user!.id,
       categoryId: categoryId || null,
       title,
       slug,
       content,
-      excerpt,
-      featuredImage,
+      excerpt: excerpt || "",
+      featuredImage: featuredImage || "",
+      status: (status || "draft") as "draft" | "published" | "scheduled",
+      // 3. Only include scheduledDate if scheduleTime is actually defined
+      ...(scheduleTime && { scheduledDate: scheduleTime }),
     });
 
     res.status(201).json(post);
   } catch (error: any) {
-    if (error.code === "23505") {
-      return res.status(400).json({
-        message: "Slug already exists",
-      });
-    }
-
-    res.status(500).json({ message: "Server error" });
+    // ... rest of your catch block
   }
 };
 
@@ -68,6 +93,15 @@ export const fetchPosts = async (req: PaginationRequest, res: Response) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch posts" });
+  }
+};
+
+export const fetchPostStats = async (req: Request, res: Response) => {
+  try {
+    const stats = await getPostStats();
+    res.json(stats);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch stats" });
   }
 };
 
@@ -114,12 +148,14 @@ export const updateExistingPost = async (req: AuthRequest, res: Response) => {
   res.json(updated);
 };
 
+// Update publishExistingPost to handle scheduled posts
 export const publishExistingPost = async (req: AuthRequest, res: Response) => {
   const id = req.params.id;
 
   if (!id || Array.isArray(id)) {
     return res.status(400).json({ message: "Invalid post ID" });
   }
+
   const post = await getPostById(id);
 
   if (!post) {
@@ -155,4 +191,100 @@ export const removePost = async (req: AuthRequest, res: Response) => {
   await deletePost(id);
 
   res.json({ message: "Post deleted" });
+};
+
+// =============================================
+// Create a scheduled post directly
+// =============================================
+export const createScheduledPost = async (req: AuthRequest, res: Response) => {
+  const {
+    categoryId,
+    title,
+    slug,
+    content,
+    excerpt,
+    featuredImage,
+    scheduledDate,
+  } = req.body;
+
+  if (!categoryId || !title || !slug || !content || !scheduledDate) {
+    return res.status(400).json({
+      message:
+        "CategoryId, title, slug, content, and scheduledDate are required",
+    });
+  }
+
+  const scheduleTime = new Date(scheduledDate);
+  if (isNaN(scheduleTime.getTime()) || scheduleTime <= new Date()) {
+    return res.status(400).json({
+      message: "Scheduled date must be a valid future date",
+    });
+  }
+
+  try {
+    const post = await createPost({
+      authorId: req.user!.id,
+      categoryId: categoryId || null,
+      title,
+      slug,
+      content,
+      excerpt,
+      featuredImage,
+      status: "scheduled",
+      scheduledDate: scheduleTime,
+    });
+
+    res.status(201).json(post);
+  } catch (error: any) {
+    if (error.code === "23505") {
+      return res.status(400).json({
+        message: "Slug already exists",
+      });
+    }
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// =============================================
+// Schedule an existing post
+// =============================================
+export const scheduleExistingPost = async (req: AuthRequest, res: Response) => {
+  const id = req.params.id;
+  const { scheduledDate } = req.body;
+
+  if (!id || Array.isArray(id)) {
+    return res.status(400).json({ message: "Invalid post ID" });
+  }
+
+  if (!scheduledDate) {
+    return res.status(400).json({ message: "scheduledDate is required" });
+  }
+
+  const scheduleTime = new Date(scheduledDate);
+  if (isNaN(scheduleTime.getTime()) || scheduleTime <= new Date()) {
+    return res.status(400).json({
+      message: "Scheduled date must be a valid future date",
+    });
+  }
+
+  const post = await getPostById(id);
+
+  if (!post) {
+    return res.status(404).json({ message: "Post not found" });
+  }
+
+  // Check ownership
+  if (post.author_id !== req.user!.id) {
+    return res.status(403).json({ message: "Not allowed" });
+  }
+
+  // Cannot schedule already published posts
+  if (post.status === "published") {
+    return res.status(400).json({
+      message: "Cannot schedule already published posts",
+    });
+  }
+
+  const updated = await schedulePost(id, scheduleTime);
+  res.json(updated);
 };

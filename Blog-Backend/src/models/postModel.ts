@@ -12,6 +12,8 @@ export const createPost = async ({
   content,
   excerpt,
   featuredImage,
+  status = "draft", // Add this parameter
+  scheduledDate, // Add this
 }: {
   authorId: string;
   categoryId: string | null;
@@ -20,6 +22,8 @@ export const createPost = async ({
   content: string;
   excerpt?: string;
   featuredImage?: string;
+  status?: "draft" | "published" | "scheduled"; // Add this
+  scheduledDate?: Date; // Add this
 }) => {
   const result = await pool.query(
     `
@@ -31,9 +35,10 @@ export const createPost = async ({
       content,
       excerpt,
       featured_image,
-      status
+      status,
+      scheduled_date
     )
-    VALUES ($1,$2,$3,$4,$5,$6,$7,'draft')
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
     RETURNING *
     `,
     [
@@ -44,6 +49,8 @@ export const createPost = async ({
       content,
       excerpt || null,
       featuredImage || null,
+      status,
+      scheduledDate || null,
     ]
   );
 
@@ -68,6 +75,7 @@ export const getPosts = async (
   posts.excerpt,
   posts.created_at,
   posts.status,
+  posts.scheduled_date,
   categories.id AS category_id,
   categories.name AS category
 FROM posts
@@ -80,6 +88,22 @@ LIMIT $2 OFFSET $3;`,
   );
 
   return result.rows;
+};
+// =============================================
+// Handles getting of blog posts stats
+// =============================================
+
+export const getPostStats = async () => {
+  const result = await pool.query(`
+    SELECT
+      COUNT(*) AS total,
+      COUNT(*) FILTER (WHERE status = 'published') AS published,
+      COUNT(*) FILTER (WHERE status = 'draft') AS draft,
+      COUNT(*) FILTER (WHERE status = 'scheduled') AS scheduled
+    FROM posts;
+  `);
+
+  return result.rows[0];
 };
 
 // =============================================
@@ -97,6 +121,27 @@ export const getPostById = async (id: string) => {
   );
 
   return result.rows[0]; // returns undefined if not found
+};
+
+// =============================================
+// Handles updating of schedules of Blog posts via ID
+// =============================================
+
+export const schedulePost = async (id: string, scheduledDate: Date) => {
+  const result = await pool.query(
+    `
+    UPDATE posts
+    SET
+      status = 'scheduled',
+      scheduled_date = $2,
+      updated_at = CURRENT_TIMESTAMP
+    WHERE id = $1
+    RETURNING *
+    `,
+    [id, scheduledDate]
+  );
+
+  return result.rows[0];
 };
 
 // =============================================
@@ -191,7 +236,7 @@ export const publishPost = async (id: string) => {
 };
 
 // =============================================
-// Handles publishing of blog posts via ID
+// Handles deletion of blog posts via ID
 // =============================================
 
 export const deletePost = async (id: string) => {

@@ -1,34 +1,44 @@
+// Updated postRoutes.ts - COMPLETE FILE
+
 import { Router } from "express";
 import {
   createNewPost,
   fetchPosts,
+  fetchPostStats,
   updateExistingPost,
   publishExistingPost,
   removePost,
+  scheduleExistingPost, // Add this
+  createScheduledPost, // Add this
 } from "@/controllers/postController.js";
 
 import { authenticate } from "@/middleware/authMiddleware.js";
-import { authorize } from "@/middleware/roleMiddleware.js";
 
 const router = Router();
 
-// Get posts (optionally filter by status)
-router.get("/", fetchPosts); // works
+// Get posts by status (published, draft, scheduled)
+// Query params: status, limit, offset
+router.get("/", fetchPosts);
 
-// Create (default: draft)
-router.post("/", authenticate, createNewPost); //works
+// Get stats
+router.get("/stats", fetchPostStats);
 
-// Edit draft or published post
-router.put("/:id", authenticate, updateExistingPost); // works
+// Create post (draft by default, or pass status: 'scheduled')
+router.post("/", authenticate, createNewPost);
 
-// Publish a draft
-router.patch("/:id/publish", authenticate, publishExistingPost); //works
+// Create scheduled post directly
+router.post("/schedule", authenticate, createScheduledPost);
+
+// Edit post
+router.put("/:id", authenticate, updateExistingPost);
+
+// Schedule existing post
+router.patch("/:id/schedule", authenticate, scheduleExistingPost);
+
+// Publish post (works for draft or scheduled)
+router.patch("/:id/publish", authenticate, publishExistingPost);
 
 // Delete post
-router.delete(
-  "/:id",
-  authenticate, //authorize("admin"),
-  removePost
-);
+router.delete("/:id", authenticate, removePost);
 
 export default router;
