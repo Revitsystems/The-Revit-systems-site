@@ -5,11 +5,14 @@ export const createUser = async (
   last_name: string,
   email: string,
   password_hash: string,
-  role: string = "user"
+  role: string = "user",
+  status: string = "pending" // Added status parameter
 ) => {
   const result = await pool.query(
-    "INSERT INTO users (first_name, last_name, email, password_hash, role) VALUES ($1,$2,$3,$4,$5) RETURNING *",
-    [first_name, last_name, email, password_hash, role]
+    `INSERT INTO users (first_name, last_name, email, password_hash, role, status) 
+     VALUES ($1, $2, $3, $4, $5, $6) 
+     RETURNING id, email, first_name, last_name, status`,
+    [first_name, last_name, email, password_hash, role, status]
   );
 
   return result.rows[0];

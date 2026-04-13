@@ -822,10 +822,15 @@ body {
   background: var(--white);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-  width: 100%;
+  width: 95%; /* Use more width on mobile */
   max-width: 450px;
   max-height: 90vh;
-  overflow: hidden;
+
+  /* CHANGE THIS: Allow scrolling for the internal content */
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+
   animation: modalPop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
@@ -870,6 +875,7 @@ body {
 }
 
 .modal-form {
+  overflow-y: auto;
   padding: 0 2rem 2rem;
 }
 
@@ -883,6 +889,7 @@ body {
 
 .modal-form .input-group input {
   padding: 0.75rem 1rem;
+  width: 100%;
 }
 
 .modal-actions {
@@ -997,6 +1004,10 @@ body {
   .toast {
     min-width: auto;
     max-width: calc(100vw - 40px);
+  }
+
+  .modal-actions {
+    flex-direction: column;
   }
 }
 

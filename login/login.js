@@ -397,42 +397,63 @@ function setupEventListeners() {
   });
 
   // Sign up form
-  document.getElementById("signup-form").addEventListener("submit", (e) => {
-    e.preventDefault();
+  document
+    .getElementById("signup-form")
+    .addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-    const name = document.getElementById("signup-name").value.trim();
-    const email = document.getElementById("signup-email").value.trim();
-    const password = document.getElementById("signup-password").value;
-    const confirm = document.getElementById("signup-confirm").value;
+      // 1. Get Values
+      const firstName = document
+        .getElementById("signup-first-name")
+        .value.trim();
+      const lastName = document.getElementById("signup-last-name").value.trim();
+      const email = document.getElementById("signup-email").value.trim();
+      const password = document.getElementById("signup-password").value;
+      const confirm = document.getElementById("signup-confirm").value;
 
-    if (!name || !email || !password || !confirm) {
-      showToast("Please fill in all fields", "error");
-      return;
-    }
+      // 2. Client-side Validation
+      if (!firstName || !lastName || !email || !password || !confirm) {
+        showToast("Please fill in all fields", "error");
+        return;
+      }
+      if (password !== confirm) {
+        showToast("Passwords do not match", "error");
+        return;
+      }
 
-    if (!isValidEmail(email)) {
-      showToast("Please enter a valid email address", "error");
-      return;
-    }
+      showLoader("Creating account...");
 
-    if (!isValidPassword(password)) {
-      showToast("Password must be at least 8 characters", "error");
-      return;
-    }
+      try {
+        // 3. The API Call
+        const response = await fetch("http://localhost:5000/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            first_name: firstName, // Mapping to snake_case for backend
+            last_name: lastName,
+            email: email,
+            password: password, // Sending as 'password' for clarity
+          }),
+        });
 
-    if (password !== confirm) {
-      showToast("Passwords do not match", "error");
-      return;
-    }
+        const data = await response.json();
 
-    showLoader("Creating account...");
+        if (!response.ok)
+          throw new Error(data.message || "Registration failed");
 
-    setTimeout(() => {
-      hideLoader();
-      closeModal("signup-modal");
-      showToast("Account created successfully! Please sign in.", "success");
-    }, 1500);
-  });
+        // 4. Success Handling
+        hideLoader();
+        closeModal("signup-modal");
+        // Updated message to reflect the approval logic
+        showToast(
+          "Registration successful! Access is pending admin approval.",
+          "success"
+        );
+      } catch (error) {
+        hideLoader();
+        showToast(error.message, "error");
+      }
+    });
 
   // Social login buttons (demo)
   document.querySelectorAll(".social-btn").forEach((btn) => {
