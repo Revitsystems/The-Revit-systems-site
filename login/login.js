@@ -157,51 +157,61 @@ function checkAuthStatus() {
   const isLoggedIn = sessionStorage.getItem("isLoggedIn") === "true";
   if (isLoggedIn) {
     // Redirect to dashboard
-    window.location.href = "index.html";
+    window.location.href = "/admin/index.html";
   }
 }
 
 /**
  * Login User
  */
-function loginUser(email, password, rememberMe = false) {
+async function loginUser(email, password, rememberMe = false) {
   showLoader("Signing in...");
 
-  // Simulate API call delay
-  setTimeout(() => {
-    // Check credentials (mock authentication)
-    if (
-      email === MOCK_CREDENTIALS.email &&
-      password === MOCK_CREDENTIALS.password
-    ) {
-      // Store session
-      sessionStorage.setItem("isLoggedIn", "true");
-      sessionStorage.setItem("userEmail", email);
-      sessionStorage.setItem("loginTime", new Date().toISOString());
+  try {
+    // 1. Call your actual Express API
+    const response = await fetch("http://localhost:5000/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
 
-      // If remember me, store in localStorage too
-      if (rememberMe) {
-        localStorage.setItem("rememberUser", email);
-      } else {
-        localStorage.removeItem("rememberUser");
-      }
+    const data = await response.json();
 
-      hideLoader();
-      showToast("Login successful! Redirecting...", "success");
+    if (!response.ok) {
+      // Handles 401 (Invalid credentials) or 500 (Server error)
+      throw new Error(data.message || "Login failed");
+    }
 
-      // Redirect to dashboard after a short delay
-      setTimeout(() => {
-        window.location.href = "index.html";
-      }, 1500);
-    } else {
-      hideLoader();
-      showToast("Invalid email or password. Please try again.", "error");
+    // 2. SUCCESS: Store the JWT and Session Info
+    // If "Remember Me" is checked, we use localStorage (persistent)
+    const storage = rememberMe ? localStorage : sessionStorage;
 
-      // Clear password field
-      document.getElementById("password").value = "";
+    storage.setItem("token", data.token);
+    sessionStorage.setItem("isLoggedIn", "true");
+    sessionStorage.setItem("userEmail", email);
+    sessionStorage.setItem("loginTime", new Date().toISOString());
+
+    hideLoader();
+    showToast("Login successful! Redirecting...", "success");
+
+    // 3. Redirect to your dashboard
+    setTimeout(() => {
+      window.location.href = "/admin/index.html";
+    }, 1500);
+  } catch (error) {
+    // 4. ERROR: Handle failed login
+    hideLoader();
+    showToast(error.message, "error");
+
+    // Clear password field for security
+    const passwordInput = document.getElementById("password");
+    if (passwordInput) {
+      passwordInput.value = "";
       clearValidation("password", "password-error");
     }
-  }, 1500);
+  }
 }
 
 /**

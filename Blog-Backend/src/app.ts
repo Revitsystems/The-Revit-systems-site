@@ -1,19 +1,41 @@
 import express from "express";
 import cors from "cors";
-import postRoutes from "@/routes/postRoutes.js"; // your post routes file
+import helmet from "helmet"; // Install this: npm install helmet
+import rateLimit from "express-rate-limit"; // Install this: npm install express-rate-limit
+import postRoutes from "@/routes/postRoutes.js";
 import authRoutes from "@/routes/authRoutes.js";
 
 const app = express();
 
+// 1. Basic Security Headers (Prevents XSS, Click jacking, etc.)
+app.use(helmet());
+
+// 2. CORS and Body Parsing
 app.use(cors());
+app.use(express.json({ limit: "10kb" })); // Protection against Large Payload attacks
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
-// Middleware, parsing, etc.
-app.use(express.json());
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: "Too many requests. Take a breather!",
+});
+app.use(globalLimiter);
 
-app.use(express.urlencoded({ extended: true }));
+// 2. Strict protection for Login/Register
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10, // Exactly what you asked for: 10 attempts per 15 mins
+  message: {
+    status: 429,
+    message: "Too many login attempts. Please try again in 15 minutes.",
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
 
-// Mount post routes
+// Apply the strict limiter ONLY to auth routes
+app.use("/auth", authLimiter, authRoutes);
 app.use("/posts", postRoutes);
-app.use("/auth", authRoutes);
 
 export default app;
