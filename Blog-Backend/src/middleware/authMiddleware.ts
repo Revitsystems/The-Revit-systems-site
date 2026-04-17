@@ -1,9 +1,9 @@
-import { Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express"; // Use standard Request
 import jwt from "jsonwebtoken";
-import { AuthRequest } from "@/types/express.js";
+import { findSessionByTokenId } from "@/models/sessionModel.js";
 
-export const authenticate = (
-  req: AuthRequest,
+export const authenticate = async (
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
@@ -17,12 +17,19 @@ export const authenticate = (
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
       id: string;
       role: string;
+      sid: string;
     };
 
-    req.user = decoded;
+    // 🔥 SESSION VALIDATION (CRITICAL ADDITION)
+    const session = await findSessionByTokenId(decoded.sid);
 
+    if (!session || session.is_revoked) {
+      return res.status(401).json({ message: "Session invalidated" });
+    }
+
+    req.user = decoded;
     next();
   } catch {
-    res.status(401).json({ message: "Invalid token" });
+    return res.status(401).json({ message: "Invalid token" });
   }
 };

@@ -1,18 +1,31 @@
 import express from "express";
 import cors from "cors";
-import helmet from "helmet"; // Install this: npm install helmet
-import rateLimit from "express-rate-limit"; // Install this: npm install express-rate-limit
+import cookieParser from "cookie-parser";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import path from "path";
+import { fileURLToPath } from "url";
+
 import postRoutes from "@/routes/postRoutes.js";
 import authRoutes from "@/routes/authRoutes.js";
 
 const app = express();
 
-// 1. Basic Security Headers (Prevents XSS, Click jacking, etc.)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 app.use(helmet());
 
-// 2. CORS and Body Parsing
-app.use(cors());
-app.use(express.json({ limit: "10kb" })); // Protection against Large Payload attacks
+app.use(
+  cors({
+    origin: "http://localhost:3000", // frontend
+    credentials: true, // REQUIRED for cookies
+  })
+);
+
+app.use(cookieParser());
+
+app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
 const globalLimiter = rateLimit({
@@ -20,22 +33,24 @@ const globalLimiter = rateLimit({
   max: 100,
   message: "Too many requests. Take a breather!",
 });
-app.use(globalLimiter);
 
-// 2. Strict protection for Login/Register
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10, // Exactly what you asked for: 10 attempts per 15 mins
+  max: 10,
   message: {
     status: 429,
-    message: "Too many login attempts. Please try again in 15 minutes.",
+    message: "Too many attempts. Please try again in 15 minutes.",
   },
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
-// Apply the strict limiter ONLY to auth routes
+app.use(express.static(path.join(__dirname, "../../")));
+
+app.set("trust proxy", 1);
+
 app.use("/auth", authLimiter, authRoutes);
+app.use(globalLimiter);
 app.use("/posts", postRoutes);
 
 export default app;

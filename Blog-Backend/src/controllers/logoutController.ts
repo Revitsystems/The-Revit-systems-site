@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import { AuthRequest } from "@/types/express.js";
 
 import {
   revokeSessionByTokenId,
@@ -16,7 +15,7 @@ export const logout = async (req: Request, res: Response) => {
   res.json({ message: "Logged out successfully" });
 };
 
-export const logoutAll = async (req: AuthRequest, res: Response) => {
+export const logoutAll = async (req: Request, res: Response) => {
   const userId = req.user.id;
 
   await revokeAllSessions(userId);

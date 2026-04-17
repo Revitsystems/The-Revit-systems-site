@@ -17,9 +17,9 @@ export const createSession = async ({
 }) => {
   const result = await pool.query(
     `INSERT INTO sessions 
-     (user_id, token_id, refresh_token_hash, user_agent, ip_address, expires_at)
-     VALUES ($1,$2,$3,$4,$5,$6)
-     RETURNING *`,
+      (user_id, token_id, refresh_token_hash, user_agent, ip_address, expires_at)
+      VALUES ($1,$2,$3,$4,$5,$6)
+      RETURNING *`,
     [userId, tokenId, refreshTokenHash, userAgent, ipAddress, expiresAt]
   );
 
@@ -38,8 +38,8 @@ export const findSessionByTokenId = async (tokenId: string) => {
 export const revokeSessionByTokenId = async (tokenId: string) => {
   await pool.query(
     `UPDATE sessions 
-     SET is_revoked = true, updated_at = NOW()
-     WHERE token_id = $1`,
+      SET is_revoked = true, updated_at = NOW()
+      WHERE token_id = $1`,
     [tokenId]
   );
 };

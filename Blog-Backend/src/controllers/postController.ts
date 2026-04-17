@@ -1,5 +1,4 @@
 import { Response } from "express";
-import { AuthRequest } from "@/types/express.js";
 import {
   PaginationQuery,
   PaginationRequest,
@@ -15,7 +14,7 @@ import {
   schedulePost, // Add this
 } from "@/models/postModel.js";
 
-export const createNewPost = async (req: AuthRequest, res: Response) => {
+export const createNewPost = async (req: Request, res: Response) => {
   // 1. Explicitly type the destructured body
   const {
     categoryId,
@@ -105,7 +104,7 @@ export const fetchPostStats = async (req: Request, res: Response) => {
   }
 };
 
-export const updateExistingPost = async (req: AuthRequest, res: Response) => {
+export const updateExistingPost = async (req: Request, res: Response) => {
   const { categoryId, title, slug, content, excerpt, featuredImage } = req.body;
 
   const id = req.params.id;
@@ -149,7 +148,7 @@ export const updateExistingPost = async (req: AuthRequest, res: Response) => {
 };
 
 // Update publishExistingPost to handle scheduled posts
-export const publishExistingPost = async (req: AuthRequest, res: Response) => {
+export const publishExistingPost = async (req: Request, res: Response) => {
   const id = req.params.id;
 
   if (!id || Array.isArray(id)) {
@@ -172,7 +171,7 @@ export const publishExistingPost = async (req: AuthRequest, res: Response) => {
   res.json(updated);
 };
 
-export const removePost = async (req: AuthRequest, res: Response) => {
+export const removePost = async (req: Request, res: Response) => {
   const id = req.params.id;
 
   if (!id || Array.isArray(id)) {
@@ -196,7 +195,7 @@ export const removePost = async (req: AuthRequest, res: Response) => {
 // =============================================
 // Create a scheduled post directly
 // =============================================
-export const createScheduledPost = async (req: AuthRequest, res: Response) => {
+export const createScheduledPost = async (req: Request, res: Response) => {
   const {
     categoryId,
     title,
@@ -248,7 +247,7 @@ export const createScheduledPost = async (req: AuthRequest, res: Response) => {
 // =============================================
 // Schedule an existing post
 // =============================================
-export const scheduleExistingPost = async (req: AuthRequest, res: Response) => {
+export const scheduleExistingPost = async (req: Request, res: Response) => {
   const id = req.params.id;
   const { scheduledDate } = req.body;
 

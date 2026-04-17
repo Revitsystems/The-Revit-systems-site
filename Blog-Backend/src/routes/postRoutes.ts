@@ -21,7 +21,7 @@ const router = Router();
 router.get("/", fetchPosts);
 
 // Get stats
-router.get("/stats", fetchPostStats);
+router.get("/stats", authenticate, fetchPostStats);
 
 // Create post (draft by default, or pass status: 'scheduled')
 router.post("/", authenticate, createNewPost);
