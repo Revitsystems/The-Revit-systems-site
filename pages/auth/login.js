@@ -164,14 +164,16 @@ function checkAuthStatus() {
 /**
  * Login User
  */
-async function loginUser(email, password, rememberMe = false) {
+// At the top of your api.js or login.js
+let accessToken = null; // single source of truth, lives in memory
+
+async function loginUser(email, password) {
   showLoader("Signing in...");
 
   try {
-    console.log();
-    // 1. Call your actual Express API
     const response = await fetch("http://localhost:5000/auth/login", {
       method: "POST",
+      credentials: "include", // ← critical: lets browser save the httpOnly cookie
       headers: {
         "Content-Type": "application/json",
       },
@@ -181,32 +183,22 @@ async function loginUser(email, password, rememberMe = false) {
     const data = await response.json();
 
     if (!response.ok) {
-      // Handles 401 (Invalid credentials) or 500 (Server error)
       throw new Error(data.message || "Login failed");
     }
 
-    // 2. SUCCESS: Store the JWT and Session Info
-    // If "Remember Me" is checked, we use localStorage (persistent)
-    const storage = rememberMe ? localStorage : sessionStorage;
-
-    storage.setItem("token", data.token);
-    sessionStorage.setItem("isLoggedIn", "true");
-    sessionStorage.setItem("userEmail", email);
-    sessionStorage.setItem("loginTime", new Date().toISOString());
+    // Store access token in memory only — backend handles refresh via httpOnly cookie
+    accessToken = data.accessToken; // ← matches what your backend actually returns
 
     hideLoader();
     showToast("Login successful! Redirecting...", "success");
 
-    // 3. Redirect to your dashboard
     setTimeout(() => {
       window.location.href = "/admin/index.html";
     }, 1500);
   } catch (error) {
-    // 4. ERROR: Handle failed login
     hideLoader();
     showToast(error.message, "error");
 
-    // Clear password field for security
     const passwordInput = document.getElementById("password");
     if (passwordInput) {
       passwordInput.value = "";
@@ -214,7 +206,6 @@ async function loginUser(email, password, rememberMe = false) {
     }
   }
 }
-
 /**
  * Logout User (for use in dashboard)
  */

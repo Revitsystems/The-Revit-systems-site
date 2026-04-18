@@ -8,6 +8,7 @@ import { fileURLToPath } from "url";
 
 import postRoutes from "@/routes/postRoutes.js";
 import authRoutes from "@/routes/authRoutes.js";
+import refreshRoutes from "@/routes/refreshRoutes.js";
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.use(express.static(path.join(__dirname, "../../")));
 
 app.set("trust proxy", 1);
 
+app.use("/auth/refresh", refreshRoutes);
 app.use("/auth", authLimiter, authRoutes);
 app.use(globalLimiter);
 app.use("/posts", postRoutes);

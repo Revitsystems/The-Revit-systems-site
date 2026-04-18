@@ -2,13 +2,48 @@
    API.JS — All data fetching & mutations
    Depends on: utils.js, state.js
    Replace mock implementations with real fetch() calls here.
-   ============================================ */
+   ============================================
+   */ // In api.js - top of file
+let accessToken = null; // lives in memory only
 
 const API = {
+  refreshToken: async () => {
+    try {
+      const response = await fetch("http://localhost:5000/auth/refresh", {
+        method: "POST",
+        credentials: "include", // browser sends the httpOnly cookie automatically
+      });
+
+      if (!response.ok) {
+        window.location.href = "/pages/auth/login.html";
+        return false;
+      }
+
+      const data = await response.json();
+      accessToken = data.accessToken; // restore token in memory
+      return true;
+    } catch (error) {
+      // Network error or server down
+      window.location.href = "/pages/auth/login.html";
+      return false;
+    }
+  },
   // ==================
   // POSTS
   // ==================
-  getPostStats: async () => {},
+  getPostStats: async () => {
+    const response = await fetch("http://localhost:5000/api/stats", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`, // because your route uses authenticate middleware
+      },
+    });
+
+    if (!response.ok) throw new Error("Failed to fetch stats");
+
+    return await response.json();
+  },
 
   getPosts: async (filter = "all", page = 1, limit = 10) => {
     return new Promise((resolve) => {
@@ -197,11 +232,20 @@ const API = {
     return new Promise((resolve) => {
       setTimeout(() => {
         if (categoryData.id) {
-          const index = AppState.categories.findIndex((c) => c.id === categoryData.id);
-          AppState.categories[index] = { ...AppState.categories[index], ...categoryData };
+          const index = AppState.categories.findIndex(
+            (c) => c.id === categoryData.id
+          );
+          AppState.categories[index] = {
+            ...AppState.categories[index],
+            ...categoryData,
+          };
           resolve(AppState.categories[index]);
         } else {
-          const newCategory = { id: Utils.generateId(), ...categoryData, count: 0 };
+          const newCategory = {
+            id: Utils.generateId(),
+            ...categoryData,
+            count: 0,
+          };
           AppState.categories.push(newCategory);
           resolve(newCategory);
         }
@@ -238,11 +282,11 @@ const API = {
             bounceRate: Math.floor(Math.random() * 40) + 20,
           })),
           referrers: [
-            { name: "Google",   count: 15420, icon: "google"   },
-            { name: "Direct",   count: 8930,  icon: "link"     },
-            { name: "Twitter",  count: 5420,  icon: "twitter"  },
-            { name: "Facebook", count: 3890,  icon: "facebook" },
-            { name: "LinkedIn", count: 2150,  icon: "linkedin" },
+            { name: "Google", count: 15420, icon: "google" },
+            { name: "Direct", count: 8930, icon: "link" },
+            { name: "Twitter", count: 5420, icon: "twitter" },
+            { name: "Facebook", count: 3890, icon: "facebook" },
+            { name: "LinkedIn", count: 2150, icon: "linkedin" },
           ],
         });
       }, 500);

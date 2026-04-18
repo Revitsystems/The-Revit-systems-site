@@ -44,7 +44,9 @@ function initializeEventListeners() {
   // --- Filter tabs: Posts ---
   document.querySelectorAll("[data-filter]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll("[data-filter]").forEach((b) => b.classList.remove("active"));
+      document
+        .querySelectorAll("[data-filter]")
+        .forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       AppState.filters.posts = btn.dataset.filter;
       AppState.pagination.posts.page = 1;
@@ -55,7 +57,9 @@ function initializeEventListeners() {
   // --- Filter tabs: Media ---
   document.querySelectorAll("[data-media-filter]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll("[data-media-filter]").forEach((b) => b.classList.remove("active"));
+      document
+        .querySelectorAll("[data-media-filter]")
+        .forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       AppState.filters.media = btn.dataset.mediaFilter;
       Renderers.renderMediaGrid();
@@ -65,7 +69,9 @@ function initializeEventListeners() {
   // --- Filter tabs: Comments ---
   document.querySelectorAll("[data-comment-filter]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll("[data-comment-filter]").forEach((b) => b.classList.remove("active"));
+      document
+        .querySelectorAll("[data-comment-filter]")
+        .forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       AppState.filters.comments = btn.dataset.commentFilter;
       Renderers.renderComments();
@@ -75,7 +81,9 @@ function initializeEventListeners() {
   // --- Filter tabs: Users ---
   document.querySelectorAll("[data-user-filter]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll("[data-user-filter]").forEach((b) => b.classList.remove("active"));
+      document
+        .querySelectorAll("[data-user-filter]")
+        .forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       AppState.filters.users = btn.dataset.userFilter;
       Renderers.renderUsers();
@@ -86,10 +94,16 @@ function initializeEventListeners() {
   document.querySelectorAll(".media-view-toggle .view-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const view = btn.dataset.view;
-      document.querySelectorAll(".media-view-toggle .view-btn").forEach((b) => b.classList.remove("active"));
+      document
+        .querySelectorAll(".media-view-toggle .view-btn")
+        .forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
-      document.getElementById("media-grid").classList.toggle("hidden", view !== "grid");
-      document.getElementById("media-list").classList.toggle("hidden", view !== "list");
+      document
+        .getElementById("media-grid")
+        .classList.toggle("hidden", view !== "grid");
+      document
+        .getElementById("media-list")
+        .classList.toggle("hidden", view !== "list");
     });
   });
 
@@ -135,20 +149,34 @@ function initializeEventListeners() {
   document.getElementById("blog-title").addEventListener("blur", () => {
     const slugInput = document.getElementById("blog-slug");
     if (!slugInput.value) {
-      slugInput.value = Utils.slugify(document.getElementById("blog-title").value);
+      slugInput.value = Utils.slugify(
+        document.getElementById("blog-title").value
+      );
     }
   });
 
-  document.getElementById("save-draft-btn").addEventListener("click", Actions.saveDraft);
-  document.getElementById("schedule-btn").addEventListener("click", Actions.schedulePost);
-  document.getElementById("confirm-schedule-btn").addEventListener("click", Actions.confirmSchedule);
+  document
+    .getElementById("save-draft-btn")
+    .addEventListener("click", Actions.saveDraft);
+  document
+    .getElementById("schedule-btn")
+    .addEventListener("click", Actions.schedulePost);
+  document
+    .getElementById("confirm-schedule-btn")
+    .addEventListener("click", Actions.confirmSchedule);
 
   // --- Edit modal ---
-  document.getElementById("edit-draft-btn").addEventListener("click", () => Actions.saveEdit("draft"));
-  document.getElementById("edit-publish-btn").addEventListener("click", () => Actions.saveEdit("published"));
+  document
+    .getElementById("edit-draft-btn")
+    .addEventListener("click", () => Actions.saveEdit("draft"));
+  document
+    .getElementById("edit-publish-btn")
+    .addEventListener("click", () => Actions.saveEdit("published"));
 
   // --- Delete modal ---
-  document.getElementById("confirm-delete-btn").addEventListener("click", Actions.confirmDelete);
+  document
+    .getElementById("confirm-delete-btn")
+    .addEventListener("click", Actions.confirmDelete);
 
   // --- Featured image upload ---
   document.getElementById("blog-image").addEventListener("change", (e) => {
@@ -156,7 +184,9 @@ function initializeEventListeners() {
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        document.getElementById("image-preview").innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+        document.getElementById(
+          "image-preview"
+        ).innerHTML = `<img src="${e.target.result}" alt="Preview">`;
       };
       reader.readAsDataURL(file);
     }
@@ -190,7 +220,9 @@ function initializeEventListeners() {
     if (AppState.selectedMedia) {
       const media = AppState.media.find((m) => m.id === AppState.selectedMedia);
       if (media) {
-        document.getElementById("image-preview").innerHTML = `<img src="${media.url}" alt="Selected">`;
+        document.getElementById(
+          "image-preview"
+        ).innerHTML = `<img src="${media.url}" alt="Selected">`;
       }
       document.getElementById("media-library-modal").classList.add("hidden");
     }
@@ -200,28 +232,44 @@ function initializeEventListeners() {
   document.getElementById("invite-user-btn").addEventListener("click", () => {
     document.getElementById("invite-user-modal").classList.remove("hidden");
   });
-  document.getElementById("send-invite-btn").addEventListener("click", Actions.inviteUser);
+  document
+    .getElementById("send-invite-btn")
+    .addEventListener("click", Actions.inviteUser);
 
   // --- Category management ---
-  document.getElementById("add-category-btn").addEventListener("click", Actions.addCategory);
-  document.getElementById("save-category-btn").addEventListener("click", Actions.saveCategory);
-  document.getElementById("delete-category-btn").addEventListener("click", Actions.deleteCategory);
+  document
+    .getElementById("add-category-btn")
+    .addEventListener("click", Actions.addCategory);
+  document
+    .getElementById("save-category-btn")
+    .addEventListener("click", Actions.saveCategory);
+  document
+    .getElementById("delete-category-btn")
+    .addEventListener("click", Actions.deleteCategory);
 
   // --- Tag management ---
   document.getElementById("add-tag-btn").addEventListener("click", () => {
     document.getElementById("new-tag-input").focus();
   });
-  document.getElementById("quick-add-tag").addEventListener("click", Actions.addTag);
+  document
+    .getElementById("quick-add-tag")
+    .addEventListener("click", Actions.addTag);
   document.getElementById("new-tag-input").addEventListener("keypress", (e) => {
     if (e.key === "Enter") Actions.addTag();
   });
 
   // --- Profile form ---
-  document.getElementById("profile-form").addEventListener("submit", Actions.saveProfile);
+  document
+    .getElementById("profile-form")
+    .addEventListener("submit", Actions.saveProfile);
 
   // --- Analytics period selectors ---
-  document.getElementById("analytics-period")?.addEventListener("change", Renderers.renderAnalytics);
-  document.getElementById("main-analytics-period")?.addEventListener("change", Renderers.renderAnalytics);
+  document
+    .getElementById("analytics-period")
+    ?.addEventListener("change", Renderers.renderAnalytics);
+  document
+    .getElementById("main-analytics-period")
+    ?.addEventListener("change", Renderers.renderAnalytics);
 
   // --- Debounced search ---
   const debouncedSearch = Utils.debounce((type, value) => {
@@ -238,39 +286,49 @@ function initializeEventListeners() {
 
   document.querySelectorAll(".chart-type-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll(".chart-type-btn").forEach((b) => b.classList.remove("active"));
+      document
+        .querySelectorAll(".chart-type-btn")
+        .forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
     });
   });
 
-  document.getElementById("insert-chart-confirm")?.addEventListener("click", () => {
-    const type  = document.querySelector(".chart-type-btn.active").dataset.chartType;
-    const title = document.getElementById("chart-title").value;
+  document
+    .getElementById("insert-chart-confirm")
+    ?.addEventListener("click", () => {
+      const type = document.querySelector(".chart-type-btn.active").dataset
+        .chartType;
+      const title = document.getElementById("chart-title").value;
 
-    if (AppState.editor) {
-      AppState.editor.insertEmbed(
-        AppState.editor.getLength(),
-        "image",
-        `https://quickchart.io/chart?c={type:'${type}',data:{labels:['A','B','C'],datasets:[{label:'${title}',data:[10,20,30]}]}}`
-      );
-    }
+      if (AppState.editor) {
+        AppState.editor.insertEmbed(
+          AppState.editor.getLength(),
+          "image",
+          `https://quickchart.io/chart?c={type:'${type}',data:{labels:['A','B','C'],datasets:[{label:'${title}',data:[10,20,30]}]}}`
+        );
+      }
 
-    document.getElementById("chart-modal").classList.add("hidden");
-    Utils.showToast("Chart inserted", "success");
-  });
+      document.getElementById("chart-modal").classList.add("hidden");
+      Utils.showToast("Chart inserted", "success");
+    });
 
   // --- Bulk comment actions ---
-  document.getElementById("apply-bulk-action")?.addEventListener("click", () => {
-    const action  = document.getElementById("bulk-action-select").value;
-    if (!action) return;
+  document
+    .getElementById("apply-bulk-action")
+    ?.addEventListener("click", () => {
+      const action = document.getElementById("bulk-action-select").value;
+      if (!action) return;
 
-    const checked = document.querySelectorAll(".comment-checkbox:checked");
-    if (checked.length === 0) {
-      Utils.showToast("Please select comments first", "warning");
-      return;
-    }
-    Utils.showToast(`${action} applied to ${checked.length} comments`, "success");
-  });
+      const checked = document.querySelectorAll(".comment-checkbox:checked");
+      if (checked.length === 0) {
+        Utils.showToast("Please select comments first", "warning");
+        return;
+      }
+      Utils.showToast(
+        `${action} applied to ${checked.length} comments`,
+        "success"
+      );
+    });
 
   // --- Pagination global handler ---
   window.changePage = (page) => {
@@ -283,7 +341,11 @@ function initializeEventListeners() {
 // ==================
 // BOOT
 // ==================
-function init() {
+async function init() {
+  // Restore session before anything else runs
+  const ok = await API.refreshToken();
+  if (!ok) return; // redirected to login, stop here
+
   generateMockData();
   initializeEditor();
   initializeEventListeners();
