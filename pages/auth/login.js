@@ -188,6 +188,7 @@ async function loginUser(email, password) {
 
     // Store access token in memory only — backend handles refresh via httpOnly cookie
     accessToken = data.accessToken; // ← matches what your backend actually returns
+    console.log("Received access token:", accessToken); // Debugging line
 
     hideLoader();
     showToast("Login successful! Redirecting...", "success");

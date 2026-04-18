@@ -102,6 +102,7 @@ export const getPostStats = async () => {
       COUNT(*) FILTER (WHERE status = 'scheduled') AS scheduled
     FROM posts;
   `);
+  console.log("Post stats:", result.rows[0]); // Debugging line
 
   return result.rows[0];
 };

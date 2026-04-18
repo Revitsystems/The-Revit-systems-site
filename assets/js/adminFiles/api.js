@@ -6,6 +6,34 @@
    */ // In api.js - top of file
 let accessToken = null; // lives in memory only
 
+const authFetch = async (url, options = {}) => {
+  const response = await fetch(url, {
+    ...options,
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      ...options.headers,
+    },
+  });
+
+  if (response.status === 401) {
+    const refreshed = await API.refreshToken();
+    if (!refreshed) return response; // refreshToken already redirected to login
+    return fetch(url, {
+      // retry once with new token
+      ...options,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        ...options.headers,
+      },
+    });
+  }
+
+  return response; // ← this was missing
+};
 const API = {
   refreshToken: async () => {
     try {
@@ -32,17 +60,11 @@ const API = {
   // POSTS
   // ==================
   getPostStats: async () => {
-    const response = await fetch("http://localhost:5000/api/stats", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`, // because your route uses authenticate middleware
-      },
-    });
-
+    const response = await authFetch("http://localhost:5000/posts/stats");
     if (!response.ok) throw new Error("Failed to fetch stats");
-
-    return await response.json();
+    const stats = await response.json();
+    console.log("Fetched post stats:", stats); // Debugging line
+    return stats;
   },
 
   getPosts: async (filter = "all", page = 1, limit = 10) => {
