@@ -1,0 +1,519 @@
+/* ============================================
+   RENDERERS.JS — All DOM rendering logic
+   Depends on: utils.js, state.js, api.js
+   ============================================ */
+
+const Renderers = {
+  // ==================
+  // DASHBOARD
+  // ==================
+  updateDashboardStats: () => {
+    const published = AppState.posts.filter((p) => p.status === "published").length;
+    const drafts    = AppState.posts.filter((p) => p.status === "draft").length;
+    const scheduled = AppState.posts.filter((p) => p.status === "scheduled").length;
+
+    document.getElementById("published-count").textContent = published;
+    document.getElementById("drafts-count").textContent    = drafts;
+    document.getElementById("scheduled-count").textContent = scheduled;
+    document.getElementById("total-count").textContent     = AppState.posts.length;
+  },
+
+  renderRecentPosts: () => {
+    const tbody = document.getElementById("recent-posts-table");
+    const recent = AppState.posts.slice(0, 5);
+
+    tbody.innerHTML = recent.map((post) => `
+      <tr>
+        <td>${post.title}</td>
+        <td>${post.category}</td>
+        <td><span class="status-badge ${post.status}">${post.status}</span></td>
+        <td>${Utils.formatDate(post.createdAt)}</td>
+        <td>${Utils.formatNumber(post.views)}</td>
+        <td>
+          <div class="action-btns">
+            <button class="action-btn edit" onclick="Actions.editPost('${post.id}')">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="action-btn delete" onclick="Actions.deletePost('${post.id}')">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join("");
+  },
+
+  renderTopPosts: () => {
+    const container = document.getElementById("top-posts-list");
+    const sorted = [...AppState.posts].sort((a, b) => b.views - a.views).slice(0, 5);
+
+    container.innerHTML = sorted.map((post, index) => `
+      <div class="top-post-item">
+        <div class="top-post-rank ${index < 3 ? "top-3" : ""}">${index + 1}</div>
+        <div class="top-post-info">
+          <div class="top-post-title">${post.title}</div>
+          <div class="top-post-meta">${post.category} • ${Utils.formatDate(post.createdAt)}</div>
+        </div>
+        <div class="top-post-views">
+          <div class="top-post-views-count">${Utils.formatNumber(post.views)}</div>
+          <div class="top-post-views-label">views</div>
+        </div>
+      </div>
+    `).join("");
+  },
+
+  // ==================
+  // POSTS
+  // ==================
+  renderPostsTable: async () => {
+    const tbody = document.getElementById("all-posts-table");
+    Utils.showLoader();
+
+    try {
+      const response = await API.getPosts(
+        AppState.filters.posts,
+        AppState.pagination.posts.page
+      );
+
+      tbody.innerHTML = response.posts.map((post) => `
+        <tr>
+          <td>${post.title}</td>
+          <td>${post.category}</td>
+          <td><span class="status-badge ${post.status}">${post.status}</span></td>
+          <td>${
+            post.status === "scheduled"
+              ? Utils.formatDateTime(post.scheduledAt)
+              : Utils.formatDate(post.createdAt)
+          }</td>
+          <td>${Utils.formatNumber(post.views)}</td>
+          <td>
+            <div class="action-btns">
+              ${post.status === "draft" ? `
+                <button class="action-btn publish" onclick="Actions.publishPost('${post.id}')" title="Publish">
+                  <i class="fas fa-check"></i>
+                </button>
+              ` : ""}
+              ${post.status === "scheduled" ? `
+                <button class="action-btn schedule" onclick="Actions.editSchedule('${post.id}')" title="Edit Schedule">
+                  <i class="fas fa-calendar"></i>
+                </button>
+              ` : ""}
+              <button class="action-btn edit" onclick="Actions.editPost('${post.id}')" title="Edit">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="action-btn delete" onclick="Actions.deletePost('${post.id}')" title="Delete">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+
+      AppState.pagination.posts = response.pagination;
+
+      Renderers.renderPagination("posts-pagination", response.pagination, (page) => {
+        AppState.pagination.posts.page = page;
+        Renderers.renderPostsTable();
+      });
+    } catch (error) {
+      Utils.showToast("Failed to load posts", "error");
+    } finally {
+      Utils.hideLoader();
+    }
+  },
+
+  // ==================
+  // MEDIA
+  // ==================
+  renderMediaGrid: async () => {
+    const grid = document.getElementById("media-grid");
+    const list = document.getElementById("media-list-body");
+    Utils.showLoader();
+
+    try {
+      const response = await API.getMedia(AppState.filters.media);
+
+      grid.innerHTML = response.media.map((item) => `
+        <div class="media-item" data-id="${item.id}" onclick="Actions.selectMedia('${item.id}')">
+          <img src="${item.url}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/150'">
+          <div class="media-item-overlay">
+            <div class="media-item-name">${item.name}</div>
+          </div>
+        </div>
+      `).join("");
+
+      list.innerHTML = response.media.map((item) => `
+        <tr>
+          <td><img src="${item.url}" alt="" style="width:50px;height:50px;object-fit:cover;border-radius:4px;"></td>
+          <td>${item.name}</td>
+          <td>${item.type}</td>
+          <td>${item.size}</td>
+          <td>${Utils.formatDate(item.uploadedAt)}</td>
+          <td>
+            <div class="action-btns">
+              <button class="action-btn edit" onclick="Actions.viewMedia('${item.id}')">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="action-btn delete" onclick="Actions.deleteMedia('${item.id}')">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+
+      AppState.pagination.media = response.pagination;
+    } catch (error) {
+      Utils.showToast("Failed to load media", "error");
+    } finally {
+      Utils.hideLoader();
+    }
+  },
+
+  // ==================
+  // COMMENTS
+  // ==================
+  renderComments: async () => {
+    const container = document.getElementById("comments-list");
+    Utils.showLoader();
+
+    try {
+      const response = await API.getComments(AppState.filters.comments);
+
+      container.innerHTML = response.comments.map((comment) => `
+        <div class="comment-item">
+          <input type="checkbox" class="comment-checkbox" data-id="${comment.id}">
+          <div class="comment-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="comment-content">
+            <div class="comment-header">
+              <div>
+                <span class="comment-author">${comment.author}</span>
+                <span class="comment-meta">${comment.email} • ${Utils.formatDateTime(comment.createdAt)}</span>
+              </div>
+              <span class="status-badge ${comment.status}">${comment.status}</span>
+            </div>
+            <div class="comment-text">${comment.text}</div>
+            <div class="comment-post">on <strong>${comment.postTitle}</strong></div>
+            <div class="comment-actions">
+              ${comment.status !== "approved" ? `
+                <button class="approve-btn" onclick="Actions.approveComment('${comment.id}')">
+                  <i class="fas fa-check"></i> Approve
+                </button>
+              ` : ""}
+              <button class="reply-btn" onclick="Actions.replyComment('${comment.id}')">
+                <i class="fas fa-reply"></i> Reply
+              </button>
+              <button class="spam-btn" onclick="Actions.markSpam('${comment.id}')">
+                <i class="fas fa-ban"></i> Spam
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join("");
+
+      const pendingCount = AppState.comments.filter((c) => c.status === "pending").length;
+      document.getElementById("pending-count").textContent   = pendingCount;
+      document.getElementById("comments-badge").textContent  = pendingCount;
+
+      AppState.pagination.comments = response.pagination;
+      Renderers.renderPagination("comments-pagination", response.pagination, (page) => {
+        AppState.pagination.comments.page = page;
+        Renderers.renderComments();
+      });
+    } catch (error) {
+      Utils.showToast("Failed to load comments", "error");
+    } finally {
+      Utils.hideLoader();
+    }
+  },
+
+  // ==================
+  // USERS
+  // ==================
+  renderUsers: async () => {
+    const tbody = document.getElementById("users-table-body");
+    Utils.showLoader();
+
+    try {
+      const response = await API.getUsers(AppState.filters.users);
+
+      tbody.innerHTML = response.users.map((user) => `
+        <tr>
+          <td><input type="checkbox" value="${user.id}"></td>
+          <td>
+            <div class="user-cell">
+              <div class="user-cell-avatar"><i class="fas fa-user"></i></div>
+              <div class="user-cell-info">
+                <span class="user-cell-name">${user.name}</span>
+                <span class="user-cell-email">${user.email}</span>
+              </div>
+            </div>
+          </td>
+          <td><span class="role-badge ${user.role}">${user.role}</span></td>
+          <td><span class="status-badge ${user.status}">${user.status}</span></td>
+          <td>${user.posts}</td>
+          <td>${Utils.formatDate(user.joinedAt)}</td>
+          <td>${Utils.formatDate(user.lastActive)}</td>
+          <td>
+            <div class="action-btns">
+              <button class="action-btn edit" onclick="Actions.editUser('${user.id}')">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="action-btn delete" onclick="Actions.deleteUser('${user.id}')">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+
+      AppState.pagination.users = response.pagination;
+      Renderers.renderPagination("users-pagination", response.pagination, (page) => {
+        AppState.pagination.users.page = page;
+        Renderers.renderUsers();
+      });
+    } catch (error) {
+      Utils.showToast("Failed to load users", "error");
+    } finally {
+      Utils.hideLoader();
+    }
+  },
+
+  // ==================
+  // CATEGORIES & TAGS
+  // ==================
+  renderCategories: async () => {
+    const container = document.getElementById("categories-list");
+
+    try {
+      const categories = await API.getCategories();
+      container.innerHTML = categories.map((cat) => `
+        <div class="taxonomy-item">
+          <div class="taxonomy-info">
+            <span class="taxonomy-name"><i class="fas fa-folder"></i> ${cat.name}</span>
+            <span class="taxonomy-count">${cat.count} posts</span>
+          </div>
+          <div class="taxonomy-actions">
+            <button onclick="Actions.editCategory('${cat.id}')" title="Edit">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button onclick="Actions.deleteCategory('${cat.id}')" title="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      `).join("");
+    } catch (error) {
+      Utils.showToast("Failed to load categories", "error");
+    }
+  },
+
+  renderTags: () => {
+    const container = document.getElementById("tags-cloud");
+    container.innerHTML = AppState.tags.map((tag) => `
+      <span class="tag-item">
+        ${tag.name} (${tag.count})
+        <button class="remove-tag" onclick="Actions.deleteTag('${tag.id}')" title="Remove tag">
+          <i class="fas fa-times"></i>
+        </button>
+      </span>
+    `).join("");
+  },
+
+  renderCategoryOptions: async () => {
+    const selects = ["blog-category", "edit-category", "category-parent"];
+    const categories = await API.getCategories();
+
+    selects.forEach((selectId) => {
+      const select = document.getElementById(selectId);
+      if (!select) return;
+
+      const currentValue = select.value;
+      const placeholder =
+        selectId === "category-parent"
+          ? '<option value="">None (Top Level)</option>'
+          : '<option value="">Select Category</option>';
+
+      select.innerHTML =
+        placeholder +
+        categories.map((cat) => `<option value="${cat.slug}">${cat.name}</option>`).join("");
+
+      if (currentValue) select.value = currentValue;
+    });
+  },
+
+  // ==================
+  // ANALYTICS
+  // ==================
+  renderAnalytics: async () => {
+    Utils.showLoader();
+
+    try {
+      const period = document.getElementById("main-analytics-period")?.value || 30;
+      const data = await API.getAnalytics(period);
+
+      const totalViews = data.trafficData.data.reduce((a, b) => a + b, 0);
+      document.getElementById("analytics-total-views").textContent    = Utils.formatNumber(totalViews);
+      document.getElementById("analytics-unique-visitors").textContent = Utils.formatNumber(Math.floor(totalViews * 0.7));
+      document.getElementById("analytics-avg-time").textContent       = "3:45";
+      document.getElementById("analytics-bounce-rate").textContent    = "42%";
+
+      // Main traffic chart
+      const trafficCtx = document.getElementById("main-traffic-chart");
+      if (trafficCtx) {
+        if (AppState.charts.traffic) AppState.charts.traffic.destroy();
+        AppState.charts.traffic = new Chart(trafficCtx, {
+          type: "line",
+          data: {
+            labels: data.trafficData.labels,
+            datasets: [{
+              label: "Page Views",
+              data: data.trafficData.data,
+              borderColor: "#d17609",
+              backgroundColor: "rgba(209, 118, 9, 0.1)",
+              fill: true,
+              tension: 0.4,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } },
+          },
+        });
+      }
+
+      // Device doughnut chart
+      const deviceCtx = document.getElementById("device-chart");
+      if (deviceCtx) {
+        if (AppState.charts.device) AppState.charts.device.destroy();
+        AppState.charts.device = new Chart(deviceCtx, {
+          type: "doughnut",
+          data: {
+            labels: data.deviceData.labels,
+            datasets: [{
+              data: data.deviceData.data,
+              backgroundColor: ["#d17609", "#2196f3", "#4caf50"],
+            }],
+          },
+          options: { responsive: true, maintainAspectRatio: false },
+        });
+      }
+
+      // Top posts table
+      const topPostsBody = document.getElementById("analytics-top-posts");
+      if (topPostsBody) {
+        topPostsBody.innerHTML = data.topPosts.map((post, index) => `
+          <tr>
+            <td>#${index + 1}</td>
+            <td>${post.title}</td>
+            <td>${Utils.formatNumber(post.views)}</td>
+            <td>${Utils.formatNumber(post.uniqueViews)}</td>
+            <td>${Math.floor(post.avgTime / 60)}:${(post.avgTime % 60).toString().padStart(2, "0")}</td>
+            <td>${post.bounceRate}%</td>
+          </tr>
+        `).join("");
+      }
+
+      // Referrers
+      const referrersContainer = document.getElementById("referrers-list");
+      if (referrersContainer) {
+        const maxCount = Math.max(...data.referrers.map((r) => r.count));
+        referrersContainer.innerHTML = data.referrers.map((ref) => `
+          <div class="referrer-item">
+            <div class="referrer-info">
+              <div class="referrer-icon"><i class="fab fa-${ref.icon}"></i></div>
+              <span class="referrer-name">${ref.name}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:1rem;">
+              <div class="referrer-bar">
+                <div class="referrer-bar-fill" style="width:${(ref.count / maxCount) * 100}%"></div>
+              </div>
+              <span class="referrer-count">${Utils.formatNumber(ref.count)}</span>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      // Dashboard preview chart (7-day)
+      const previewCtx = document.getElementById("traffic-chart");
+      if (previewCtx) {
+        if (AppState.charts.preview) AppState.charts.preview.destroy();
+        AppState.charts.preview = new Chart(previewCtx, {
+          type: "line",
+          data: {
+            labels: data.trafficData.labels.slice(-7),
+            datasets: [{
+              label: "Views",
+              data: data.trafficData.data.slice(-7),
+              borderColor: "#d17609",
+              backgroundColor: "rgba(209, 118, 9, 0.1)",
+              fill: true,
+              tension: 0.4,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } },
+          },
+        });
+
+        const weekViews = data.trafficData.data.slice(-7).reduce((a, b) => a + b, 0);
+        document.getElementById("total-views").textContent     = Utils.formatNumber(weekViews);
+        document.getElementById("unique-visitors").textContent = Utils.formatNumber(Math.floor(weekViews * 0.7));
+      }
+    } catch (error) {
+      Utils.showToast("Failed to load analytics", "error");
+    } finally {
+      Utils.hideLoader();
+    }
+  },
+
+  // ==================
+  // SHARED
+  // ==================
+  renderPagination: (containerId, pagination, onPageChange) => {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = `
+      <button class="page-btn" onclick="window.changePage(${pagination.page - 1})" ${pagination.page === 1 ? "disabled" : ""}>
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <span class="page-info">Page ${pagination.page} of ${pagination.totalPages}</span>
+      <button class="page-btn" onclick="window.changePage(${pagination.page + 1})" ${pagination.page >= pagination.totalPages ? "disabled" : ""}>
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    `;
+
+    window.currentPageCallback = onPageChange;
+  },
+
+  renderNotifications: () => {
+    const list = document.getElementById("notification-list");
+    const notifications = [
+      { icon: "comment",      text: 'New comment on "Getting Started with React"', time: "5 min ago",  unread: true  },
+      { icon: "user",         text: "New user registration: john@example.com",     time: "1 hour ago", unread: true  },
+      { icon: "calendar",     text: "Post scheduled for tomorrow",                 time: "2 hours ago",unread: true  },
+      { icon: "exclamation",  text: "System update completed",                     time: "1 day ago",  unread: false },
+    ];
+
+    list.innerHTML = notifications.map((n) => `
+      <div class="notification-item ${n.unread ? "unread" : ""}">
+        <i class="fas fa-${n.icon}"></i>
+        <div class="notification-content">
+          <p>${n.text}</p>
+          <span class="time">${n.time}</span>
+        </div>
+      </div>
+    `).join("");
+
+    document.getElementById("notification-badge").textContent =
+      notifications.filter((n) => n.unread).length;
+  },
+};

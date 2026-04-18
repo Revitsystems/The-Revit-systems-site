@@ -18,7 +18,7 @@ app.use(helmet());
 
 app.use(
   cors({
-    origin: "http://localhost:3000", // frontend
+    origin: "http://127.0.0.1:5501", // frontend
     credentials: true, // REQUIRED for cookies
   })
 );
