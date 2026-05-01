@@ -74,7 +74,7 @@ const Actions = {
       Actions.resetBlogForm();
       Actions.showSection("posts");
     } catch (error) {
-      Utils.showToast("Failed to save draft", "error");
+      Utils.showToast(error.message || "Failed to save draft", "error");
     } finally {
       Utils.hideLoader();
     }
@@ -106,7 +106,7 @@ const Actions = {
       Actions.resetBlogForm();
       Actions.showSection("posts");
     } catch (error) {
-      Utils.showToast("Failed to schedule post", "error");
+      Utils.showToast(error.message || "Failed to schedule post", "error");
     } finally {
       Utils.hideLoader();
     }
@@ -114,18 +114,20 @@ const Actions = {
 
   publishPost: async (postId) => {
     if (postId) {
+      // Publishing an existing post from the posts table
       Utils.showLoader();
       try {
-        await API.updatePost(postId, { status: "published" });
+        await API.publishPost(postId);
         Utils.showToast("Post published successfully", "success");
         Renderers.renderPostsTable();
         Renderers.updateDashboardStats();
       } catch (error) {
-        Utils.showToast("Failed to publish post", "error");
+        Utils.showToast(error.message || "Failed to publish post", "error");
       } finally {
         Utils.hideLoader();
       }
     } else {
+      // Publishing from the write form
       const formData = Actions.getBlogFormData();
       if (!formData.title || !formData.content) {
         Utils.showToast("Please fill in all required fields", "warning");
@@ -138,7 +140,7 @@ const Actions = {
         Actions.resetBlogForm();
         Actions.showSection("posts");
       } catch (error) {
-        Utils.showToast("Failed to publish post", "error");
+        Utils.showToast(error.message || "Failed to publish post", "error");
       } finally {
         Utils.hideLoader();
       }
@@ -153,11 +155,11 @@ const Actions = {
     document.getElementById("edit-id").value       = id;
     document.getElementById("edit-title").value    = post.title;
     document.getElementById("edit-slug").value     = post.slug;
-    document.getElementById("edit-excerpt").value  = post.excerpt;
-    document.getElementById("edit-content").value  = post.content;
-    document.getElementById("edit-category").value = post.category;
-    document.getElementById("edit-status-display").textContent  = post.status;
-    document.getElementById("edit-status-display").className    = `status-display ${post.status}`;
+    document.getElementById("edit-excerpt").value  = post.excerpt || "";
+    document.getElementById("edit-content").value  = post.content || "";
+    document.getElementById("edit-category").value = post.category_id || post.category || "";
+    document.getElementById("edit-status-display").textContent = post.status;
+    document.getElementById("edit-status-display").className  = `status-display ${post.status}`;
 
     Renderers.renderCategoryOptions();
     document.getElementById("edit-modal").classList.remove("hidden");
@@ -166,11 +168,11 @@ const Actions = {
   saveEdit: async (status) => {
     const id = document.getElementById("edit-id").value;
     const postData = {
-      title:    document.getElementById("edit-title").value,
-      slug:     document.getElementById("edit-slug").value,
-      excerpt:  document.getElementById("edit-excerpt").value,
-      content:  document.getElementById("edit-content").value,
-      category: document.getElementById("edit-category").value,
+      title:      document.getElementById("edit-title").value,
+      slug:       document.getElementById("edit-slug").value,
+      excerpt:    document.getElementById("edit-excerpt").value,
+      content:    document.getElementById("edit-content").value,
+      categoryId: document.getElementById("edit-category").value,
       status,
     };
     Utils.showLoader();
@@ -181,7 +183,7 @@ const Actions = {
       Renderers.renderPostsTable();
       Renderers.updateDashboardStats();
     } catch (error) {
-      Utils.showToast("Failed to update post", "error");
+      Utils.showToast(error.message || "Failed to update post", "error");
     } finally {
       Utils.hideLoader();
     }
@@ -203,7 +205,7 @@ const Actions = {
       Renderers.renderPostsTable();
       Renderers.updateDashboardStats();
     } catch (error) {
-      Utils.showToast("Failed to delete post", "error");
+      Utils.showToast(error.message || "Failed to delete post", "error");
     } finally {
       Utils.hideLoader();
     }
@@ -214,8 +216,10 @@ const Actions = {
     if (!post) return;
 
     document.getElementById("schedule-preview-title").textContent    = post.title;
-    document.getElementById("schedule-preview-category").textContent = post.category;
-    document.getElementById("schedule-date").value = post.scheduledAt ? post.scheduledAt.slice(0, 16) : "";
+    document.getElementById("schedule-preview-category").textContent = post.category || "";
+    document.getElementById("schedule-date").value = post.scheduled_date
+      ? new Date(post.scheduled_date).toISOString().slice(0, 16)
+      : "";
     document.getElementById("schedule-post-modal").classList.remove("hidden");
 
     document.getElementById("confirm-schedule-btn").onclick = async () => {
@@ -223,12 +227,12 @@ const Actions = {
       if (!newDate) return;
       Utils.showLoader();
       try {
-        await API.updatePost(id, { scheduledAt: newDate });
+        await API.schedulePost(id, newDate);
         Utils.showToast("Schedule updated successfully", "success");
         document.getElementById("schedule-post-modal").classList.add("hidden");
         Renderers.renderPostsTable();
       } catch (error) {
-        Utils.showToast("Failed to update schedule", "error");
+        Utils.showToast(error.message || "Failed to update schedule", "error");
       } finally {
         Utils.hideLoader();
       }
@@ -236,13 +240,14 @@ const Actions = {
   },
 
   // ==================
-  // MEDIA
+  // MEDIA  (still mock — no backend endpoint yet)
   // ==================
   selectMedia: (id) => {
+    document.querySelectorAll(".media-item").forEach((item) => item.classList.remove("selected"));
+    const item = document.querySelector(`.media-item[data-id="${id}"]`);
+    if (item) item.classList.add("selected");
     AppState.selectedMedia = id;
-    document.querySelectorAll(".media-item").forEach((item) => {
-      item.classList.toggle("selected", item.dataset.id === id);
-    });
+
     const selectBtn = document.getElementById("select-media-btn");
     if (selectBtn) selectBtn.disabled = false;
   },
@@ -274,26 +279,42 @@ const Actions = {
       Utils.showToast("Comment approved", "success");
       Renderers.renderComments();
     } catch (error) {
-      Utils.showToast("Failed to approve comment", "error");
+      Utils.showToast(error.message || "Failed to approve comment", "error");
     } finally {
       Utils.hideLoader();
     }
   },
 
-  replyComment: (id) => {
+  replyComment: async (id) => {
     const comment = AppState.comments.find((c) => c.id === id);
+    if (!comment) return;
+
     const reply = prompt(`Reply to ${comment.author}:`);
-    if (reply) Utils.showToast("Reply posted", "success");
+    if (!reply || !reply.trim()) return;
+
+    Utils.showLoader();
+    try {
+      await authFetch(`${BASE_URL}/comments/${id}/reply`, {
+        method: "POST",
+        body: JSON.stringify({ commentText: reply.trim() }),
+      });
+      Utils.showToast("Reply posted successfully", "success");
+      Renderers.renderComments();
+    } catch (error) {
+      Utils.showToast("Failed to post reply", "error");
+    } finally {
+      Utils.hideLoader();
+    }
   },
 
   markSpam: async (id) => {
     Utils.showLoader();
     try {
-      await API.updateComment(id, "spam");
+      await API.updateComment(id, "spam"); // maps to "rejected" inside API.updateComment
       Utils.showToast("Comment marked as spam", "warning");
       Renderers.renderComments();
     } catch (error) {
-      Utils.showToast("Failed to mark as spam", "error");
+      Utils.showToast(error.message || "Failed to mark as spam", "error");
     } finally {
       Utils.hideLoader();
     }
@@ -305,7 +326,6 @@ const Actions = {
   inviteUser: async () => {
     const email   = document.getElementById("invite-email").value;
     const role    = document.getElementById("invite-role").value;
-    const message = document.getElementById("invite-message").value;
 
     if (!email) {
       Utils.showToast("Please enter an email", "warning");
@@ -313,13 +333,13 @@ const Actions = {
     }
     Utils.showLoader();
     try {
-      await API.inviteUser(email, role, message);
-      Utils.showToast("Invitation sent successfully", "success");
+      await API.inviteUser(email, role);
+      Utils.showToast("User registered with pending status", "success");
       document.getElementById("invite-user-modal").classList.add("hidden");
       document.getElementById("invite-form").reset();
       Renderers.renderUsers();
     } catch (error) {
-      Utils.showToast("Failed to send invitation", "error");
+      Utils.showToast(error.message || "Failed to invite user", "error");
     } finally {
       Utils.hideLoader();
     }
@@ -352,12 +372,12 @@ const Actions = {
     const cat = AppState.categories.find((c) => c.id === id);
     if (!cat) return;
 
-    document.getElementById("category-modal-title").textContent  = "Edit Category";
-    document.getElementById("edit-category-id").value            = cat.id;
-    document.getElementById("category-name").value               = cat.name;
-    document.getElementById("category-slug").value               = cat.slug;
-    document.getElementById("category-description").value        = cat.description || "";
-    document.getElementById("category-parent").value             = cat.parent || "";
+    document.getElementById("category-modal-title").textContent = "Edit Category";
+    document.getElementById("edit-category-id").value           = cat.id;
+    document.getElementById("category-name").value              = cat.name;
+    document.getElementById("category-slug").value              = cat.slug || "";
+    document.getElementById("category-description").value       = cat.description || "";
+    document.getElementById("category-parent").value            = cat.parent_id || "";
     document.getElementById("delete-category-btn").classList.remove("hidden");
     Renderers.renderCategoryOptions();
     document.getElementById("category-modal").classList.remove("hidden");
@@ -384,7 +404,7 @@ const Actions = {
       Renderers.renderCategories();
       Renderers.renderCategoryOptions();
     } catch (error) {
-      Utils.showToast("Failed to save category", "error");
+      Utils.showToast(error.message || "Failed to save category", "error");
     } finally {
       Utils.hideLoader();
     }
@@ -400,27 +420,42 @@ const Actions = {
       document.getElementById("category-modal").classList.add("hidden");
       Renderers.renderCategories();
     } catch (error) {
-      Utils.showToast("Failed to delete category", "error");
+      Utils.showToast(error.message || "Failed to delete category", "error");
     } finally {
       Utils.hideLoader();
     }
   },
 
-  addTag: () => {
+  // Tags now hit the real backend
+  addTag: async () => {
     const input = document.getElementById("new-tag-input");
     const name = input.value.trim();
     if (!name) return;
 
-    AppState.tags.push({ id: Utils.generateId(), name, count: 0 });
-    input.value = "";
-    Renderers.renderTags();
-    Utils.showToast("Tag added", "success");
+    Utils.showLoader();
+    try {
+      await API.createTag(name);
+      input.value = "";
+      Renderers.renderTags();
+      Utils.showToast("Tag added", "success");
+    } catch (error) {
+      Utils.showToast(error.message || "Failed to add tag", "error");
+    } finally {
+      Utils.hideLoader();
+    }
   },
 
-  deleteTag: (id) => {
-    AppState.tags = AppState.tags.filter((t) => t.id !== id);
-    Renderers.renderTags();
-    Utils.showToast("Tag removed", "success");
+  deleteTag: async (id) => {
+    Utils.showLoader();
+    try {
+      await API.deleteTag(id);
+      Renderers.renderTags();
+      Utils.showToast("Tag removed", "success");
+    } catch (error) {
+      Utils.showToast(error.message || "Failed to remove tag", "error");
+    } finally {
+      Utils.hideLoader();
+    }
   },
 
   // ==================
@@ -434,18 +469,21 @@ const Actions = {
     AppState.currentUser.name  = name;
     AppState.currentUser.email = email;
 
-    document.getElementById("profile-name").textContent          = name;
-    document.getElementById("profile-email").textContent         = email;
-    document.getElementById("dropdown-user-name").textContent    = name;
-    document.getElementById("dropdown-user-email").textContent   = email;
+    document.getElementById("profile-name").textContent        = name;
+    document.getElementById("profile-email").textContent       = email;
+    document.getElementById("dropdown-user-name").textContent  = name;
+    document.getElementById("dropdown-user-email").textContent = email;
 
     Utils.showToast("Profile updated successfully", "success");
   },
 
-  logoutUser: () => {
-    if (confirm("Are you sure you want to logout?")) {
-      Utils.showToast("Logged out successfully", "success");
-      setTimeout(() => { window.location.href = "/pages/auth/login.html"; }, 1000);
+  // Now calls the real logout endpoint
+  logoutUser: async () => {
+    if (!confirm("Are you sure you want to logout?")) return;
+    try {
+      await API.logout();
+    } catch {
+      // logout redirects regardless
     }
   },
 

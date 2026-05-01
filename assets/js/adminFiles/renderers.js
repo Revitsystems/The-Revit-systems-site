@@ -7,15 +7,27 @@ const Renderers = {
   // ==================
   // DASHBOARD
   // ==================
-  updateDashboardStats: () => {
-    const published = AppState.posts.filter((p) => p.status === "published").length;
-    const drafts    = AppState.posts.filter((p) => p.status === "draft").length;
-    const scheduled = AppState.posts.filter((p) => p.status === "scheduled").length;
 
-    document.getElementById("published-count").textContent = published;
-    document.getElementById("drafts-count").textContent    = drafts;
-    document.getElementById("scheduled-count").textContent = scheduled;
-    document.getElementById("total-count").textContent     = AppState.posts.length;
+  // Pulls real post stats from the backend
+  updateDashboardStats: async () => {
+    try {
+      const stats = await API.getPostStats();
+
+      document.getElementById("published-count").textContent = stats.published || 0;
+      document.getElementById("drafts-count").textContent    = stats.draft     || 0;
+      document.getElementById("scheduled-count").textContent = stats.scheduled || 0;
+      document.getElementById("total-count").textContent     = stats.total     || 0;
+    } catch {
+      // Fall back to AppState counts if the request fails
+      const published = AppState.posts.filter((p) => p.status === "published").length;
+      const drafts    = AppState.posts.filter((p) => p.status === "draft").length;
+      const scheduled = AppState.posts.filter((p) => p.status === "scheduled").length;
+
+      document.getElementById("published-count").textContent = published;
+      document.getElementById("drafts-count").textContent    = drafts;
+      document.getElementById("scheduled-count").textContent = scheduled;
+      document.getElementById("total-count").textContent     = AppState.posts.length;
+    }
   },
 
   renderRecentPosts: () => {
@@ -25,10 +37,10 @@ const Renderers = {
     tbody.innerHTML = recent.map((post) => `
       <tr>
         <td>${post.title}</td>
-        <td>${post.category}</td>
+        <td>${post.category || post.category_id || "—"}</td>
         <td><span class="status-badge ${post.status}">${post.status}</span></td>
-        <td>${Utils.formatDate(post.createdAt)}</td>
-        <td>${Utils.formatNumber(post.views)}</td>
+        <td>${Utils.formatDate(post.created_at || post.createdAt)}</td>
+        <td>${Utils.formatNumber(post.view_count || post.views || 0)}</td>
         <td>
           <div class="action-btns">
             <button class="action-btn edit" onclick="Actions.editPost('${post.id}')">
@@ -45,17 +57,19 @@ const Renderers = {
 
   renderTopPosts: () => {
     const container = document.getElementById("top-posts-list");
-    const sorted = [...AppState.posts].sort((a, b) => b.views - a.views).slice(0, 5);
+    const sorted = [...AppState.posts]
+      .sort((a, b) => (b.view_count || b.views || 0) - (a.view_count || a.views || 0))
+      .slice(0, 5);
 
     container.innerHTML = sorted.map((post, index) => `
       <div class="top-post-item">
         <div class="top-post-rank ${index < 3 ? "top-3" : ""}">${index + 1}</div>
         <div class="top-post-info">
           <div class="top-post-title">${post.title}</div>
-          <div class="top-post-meta">${post.category} • ${Utils.formatDate(post.createdAt)}</div>
+          <div class="top-post-meta">${post.category || "—"} • ${Utils.formatDate(post.created_at || post.createdAt)}</div>
         </div>
         <div class="top-post-views">
-          <div class="top-post-views-count">${Utils.formatNumber(post.views)}</div>
+          <div class="top-post-views-count">${Utils.formatNumber(post.view_count || post.views || 0)}</div>
           <div class="top-post-views-label">views</div>
         </div>
       </div>
@@ -75,17 +89,20 @@ const Renderers = {
         AppState.pagination.posts.page
       );
 
+      // Keep AppState in sync so dashboard and top posts renderers work
+      AppState.posts = response.posts;
+
       tbody.innerHTML = response.posts.map((post) => `
         <tr>
           <td>${post.title}</td>
-          <td>${post.category}</td>
+          <td>${post.category || post.category_id || "—"}</td>
           <td><span class="status-badge ${post.status}">${post.status}</span></td>
           <td>${
             post.status === "scheduled"
-              ? Utils.formatDateTime(post.scheduledAt)
-              : Utils.formatDate(post.createdAt)
+              ? Utils.formatDateTime(post.scheduled_date || post.scheduledAt)
+              : Utils.formatDate(post.created_at || post.createdAt)
           }</td>
-          <td>${Utils.formatNumber(post.views)}</td>
+          <td>${Utils.formatNumber(post.view_count || post.views || 0)}</td>
           <td>
             <div class="action-btns">
               ${post.status === "draft" ? `
@@ -190,7 +207,7 @@ const Renderers = {
             <div class="comment-header">
               <div>
                 <span class="comment-author">${comment.author}</span>
-                <span class="comment-meta">${comment.email} • ${Utils.formatDateTime(comment.createdAt)}</span>
+                <span class="comment-meta">${comment.email || "Staff"} • ${Utils.formatDateTime(comment.createdAt)}</span>
               </div>
               <span class="status-badge ${comment.status}">${comment.status}</span>
             </div>
@@ -213,15 +230,7 @@ const Renderers = {
         </div>
       `).join("");
 
-      const pendingCount = AppState.comments.filter((c) => c.status === "pending").length;
-      document.getElementById("pending-count").textContent   = pendingCount;
-      document.getElementById("comments-badge").textContent  = pendingCount;
-
       AppState.pagination.comments = response.pagination;
-      Renderers.renderPagination("comments-pagination", response.pagination, (page) => {
-        AppState.pagination.comments.page = page;
-        Renderers.renderComments();
-      });
     } catch (error) {
       Utils.showToast("Failed to load comments", "error");
     } finally {
@@ -233,29 +242,28 @@ const Renderers = {
   // USERS
   // ==================
   renderUsers: async () => {
-    const tbody = document.getElementById("users-table-body");
+    const container = document.getElementById("users-list");
     Utils.showLoader();
 
     try {
       const response = await API.getUsers(AppState.filters.users);
 
-      tbody.innerHTML = response.users.map((user) => `
+      container.innerHTML = response.users.map((user) => `
         <tr>
-          <td><input type="checkbox" value="${user.id}"></td>
           <td>
-            <div class="user-cell">
-              <div class="user-cell-avatar"><i class="fas fa-user"></i></div>
-              <div class="user-cell-info">
-                <span class="user-cell-name">${user.name}</span>
-                <span class="user-cell-email">${user.email}</span>
+            <div class="user-info">
+              <div class="user-avatar"><i class="fas fa-user"></i></div>
+              <div>
+                <div class="user-name">${user.name || user.display_name || (user.first_name + " " + user.last_name)}</div>
+                <div class="user-email">${user.email}</div>
               </div>
             </div>
           </td>
           <td><span class="role-badge ${user.role}">${user.role}</span></td>
           <td><span class="status-badge ${user.status}">${user.status}</span></td>
-          <td>${user.posts}</td>
-          <td>${Utils.formatDate(user.joinedAt)}</td>
-          <td>${Utils.formatDate(user.lastActive)}</td>
+          <td>${user.posts ?? "—"}</td>
+          <td>${user.joinedAt ? Utils.formatDate(user.joinedAt) : user.created_at ? Utils.formatDate(user.created_at) : "—"}</td>
+          <td>${user.lastActive ? Utils.formatDate(user.lastActive) : user.last_active_at ? Utils.formatDate(user.last_active_at) : "—"}</td>
           <td>
             <div class="action-btns">
               <button class="action-btn edit" onclick="Actions.editUser('${user.id}')">
@@ -270,10 +278,6 @@ const Renderers = {
       `).join("");
 
       AppState.pagination.users = response.pagination;
-      Renderers.renderPagination("users-pagination", response.pagination, (page) => {
-        AppState.pagination.users.page = page;
-        Renderers.renderUsers();
-      });
     } catch (error) {
       Utils.showToast("Failed to load users", "error");
     } finally {
@@ -286,62 +290,139 @@ const Renderers = {
   // ==================
   renderCategories: async () => {
     const container = document.getElementById("categories-list");
+    Utils.showLoader();
 
     try {
       const categories = await API.getCategories();
+
       container.innerHTML = categories.map((cat) => `
-        <div class="taxonomy-item">
-          <div class="taxonomy-info">
-            <span class="taxonomy-name"><i class="fas fa-folder"></i> ${cat.name}</span>
-            <span class="taxonomy-count">${cat.count} posts</span>
+        <div class="category-item">
+          <div class="category-info">
+            <div class="category-name">${cat.name}</div>
+            <div class="category-meta">
+              ${cat.slug ? `/${cat.slug}` : ""} 
+              ${cat.description ? `• ${cat.description}` : ""}
+              ${cat.parent_id ? `• Sub-category` : ""}
+            </div>
           </div>
-          <div class="taxonomy-actions">
-            <button onclick="Actions.editCategory('${cat.id}')" title="Edit">
+          <div class="action-btns">
+            <button class="action-btn edit" onclick="Actions.editCategory('${cat.id}')">
               <i class="fas fa-edit"></i>
-            </button>
-            <button onclick="Actions.deleteCategory('${cat.id}')" title="Delete">
-              <i class="fas fa-trash"></i>
             </button>
           </div>
         </div>
       `).join("");
     } catch (error) {
       Utils.showToast("Failed to load categories", "error");
+    } finally {
+      Utils.hideLoader();
     }
   },
 
-  renderTags: () => {
+  // Tags now fetched from the backend
+  renderTags: async () => {
     const container = document.getElementById("tags-cloud");
-    container.innerHTML = AppState.tags.map((tag) => `
-      <span class="tag-item">
-        ${tag.name} (${tag.count})
-        <button class="remove-tag" onclick="Actions.deleteTag('${tag.id}')" title="Remove tag">
-          <i class="fas fa-times"></i>
-        </button>
-      </span>
-    `).join("");
+
+    try {
+      const tags = await API.getTags();
+
+      container.innerHTML = tags.map((tag) => `
+        <span class="tag-item">
+          ${tag.name}
+          <button class="remove-tag" onclick="Actions.deleteTag('${tag.id}')" title="Remove tag">
+            <i class="fas fa-times"></i>
+          </button>
+        </span>
+      `).join("");
+    } catch {
+      // Fall back to AppState if fetch fails
+      container.innerHTML = AppState.tags.map((tag) => `
+        <span class="tag-item">
+          ${tag.name}
+          <button class="remove-tag" onclick="Actions.deleteTag('${tag.id}')" title="Remove tag">
+            <i class="fas fa-times"></i>
+          </button>
+        </span>
+      `).join("");
+    }
   },
 
+  // Categories fetched from backend and used to populate select dropdowns
   renderCategoryOptions: async () => {
     const selects = ["blog-category", "edit-category", "category-parent"];
-    const categories = await API.getCategories();
 
-    selects.forEach((selectId) => {
-      const select = document.getElementById(selectId);
-      if (!select) return;
+    try {
+      const categories = await API.getCategories();
 
-      const currentValue = select.value;
-      const placeholder =
-        selectId === "category-parent"
-          ? '<option value="">None (Top Level)</option>'
-          : '<option value="">Select Category</option>';
+      selects.forEach((selectId) => {
+        const select = document.getElementById(selectId);
+        if (!select) return;
 
-      select.innerHTML =
-        placeholder +
-        categories.map((cat) => `<option value="${cat.slug}">${cat.name}</option>`).join("");
+        const currentValue = select.value;
+        const placeholder =
+          selectId === "category-parent"
+            ? '<option value="">None (Top Level)</option>'
+            : '<option value="">Select Category</option>';
 
-      if (currentValue) select.value = currentValue;
-    });
+        select.innerHTML =
+          placeholder +
+          categories.map((cat) => `<option value="${cat.id}">${cat.name}</option>`).join("");
+
+        if (currentValue) select.value = currentValue;
+      });
+    } catch {
+      // silently fail — dropdowns stay empty
+    }
+  },
+
+  // ==================
+  // NOTIFICATIONS
+  // ==================
+  renderNotifications: async () => {
+    const list    = document.getElementById("notification-list");
+    const badge   = document.getElementById("notification-badge");
+
+    try {
+      const [notifData, countData] = await Promise.all([
+        API.getNotifications(10),
+        API.getUnreadCount(),
+      ]);
+
+      const notifications = notifData.notifications || [];
+
+      list.innerHTML = notifications.length > 0
+        ? notifications.map((n) => `
+            <div class="notification-item ${!n.is_read ? "unread" : ""}" onclick="API.markNotificationRead('${n.id}')">
+              <i class="fas fa-bell"></i>
+              <div class="notification-content">
+                <p>${n.message}</p>
+                <span class="time">${Utils.formatDateTime(n.created_at)}</span>
+              </div>
+            </div>
+          `).join("")
+        : `<div class="notification-item"><div class="notification-content"><p>No notifications</p></div></div>`;
+
+      badge.textContent = countData.unreadCount || 0;
+
+    } catch {
+      // Fall back to static placeholder notifications
+      const fallback = [
+        { icon: "comment", text: "New comment pending moderation", time: "Just now", unread: true },
+        { icon: "calendar", text: "Scheduled post will publish soon", time: "1 hour ago", unread: false },
+      ];
+
+      list.innerHTML = fallback.map((n) => `
+        <div class="notification-item ${n.unread ? "unread" : ""}">
+          <i class="fas fa-${n.icon}"></i>
+          <div class="notification-content">
+            <p>${n.text}</p>
+            <span class="time">${n.time}</span>
+          </div>
+        </div>
+      `).join("");
+
+      badge.textContent = fallback.filter((n) => n.unread).length;
+    }
   },
 
   // ==================
@@ -355,10 +436,10 @@ const Renderers = {
       const data = await API.getAnalytics(period);
 
       const totalViews = data.trafficData.data.reduce((a, b) => a + b, 0);
-      document.getElementById("analytics-total-views").textContent    = Utils.formatNumber(totalViews);
+      document.getElementById("analytics-total-views").textContent     = Utils.formatNumber(totalViews);
       document.getElementById("analytics-unique-visitors").textContent = Utils.formatNumber(Math.floor(totalViews * 0.7));
-      document.getElementById("analytics-avg-time").textContent       = "3:45";
-      document.getElementById("analytics-bounce-rate").textContent    = "42%";
+      document.getElementById("analytics-avg-time").textContent        = "3:45";
+      document.getElementById("analytics-bounce-rate").textContent     = "42%";
 
       // Main traffic chart
       const trafficCtx = document.getElementById("main-traffic-chart");
@@ -421,7 +502,7 @@ const Renderers = {
       // Referrers
       const referrersContainer = document.getElementById("referrers-list");
       if (referrersContainer) {
-        const maxCount = Math.max(...data.referrers.map((r) => r.count));
+        const maxCount = Math.max(...data.referrers.map((r) => r.count), 1);
         referrersContainer.innerHTML = data.referrers.map((ref) => `
           <div class="referrer-item">
             <div class="referrer-info">
@@ -492,28 +573,5 @@ const Renderers = {
     `;
 
     window.currentPageCallback = onPageChange;
-  },
-
-  renderNotifications: () => {
-    const list = document.getElementById("notification-list");
-    const notifications = [
-      { icon: "comment",      text: 'New comment on "Getting Started with React"', time: "5 min ago",  unread: true  },
-      { icon: "user",         text: "New user registration: john@example.com",     time: "1 hour ago", unread: true  },
-      { icon: "calendar",     text: "Post scheduled for tomorrow",                 time: "2 hours ago",unread: true  },
-      { icon: "exclamation",  text: "System update completed",                     time: "1 day ago",  unread: false },
-    ];
-
-    list.innerHTML = notifications.map((n) => `
-      <div class="notification-item ${n.unread ? "unread" : ""}">
-        <i class="fas fa-${n.icon}"></i>
-        <div class="notification-content">
-          <p>${n.text}</p>
-          <span class="time">${n.time}</span>
-        </div>
-      </div>
-    `).join("");
-
-    document.getElementById("notification-badge").textContent =
-      notifications.filter((n) => n.unread).length;
   },
 };

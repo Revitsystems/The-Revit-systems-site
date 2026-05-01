@@ -1,11 +1,19 @@
 /* ============================================
    API.JS — All data fetching & mutations
+   Wired to the RevitSystems Express backend.
    Depends on: utils.js, state.js
-   Replace mock implementations with real fetch() calls here.
-   ============================================
-   */ // In api.js - top of file
-let accessToken = null; // lives in memory only
+   ============================================ */
 
+const BASE_URL = "http://localhost:5000";
+
+// Access token lives in memory only — never in localStorage
+let accessToken = null;
+
+// ============================================
+// CORE FETCH WRAPPER
+// Attaches the Bearer token and retries once
+// after a silent token refresh on 401.
+// ============================================
 const authFetch = async (url, options = {}) => {
   const response = await fetch(url, {
     ...options,
@@ -20,8 +28,9 @@ const authFetch = async (url, options = {}) => {
   if (response.status === 401) {
     const refreshed = await API.refreshToken();
     if (!refreshed) return response; // refreshToken already redirected to login
+
+    // Retry the original request with the new token
     return fetch(url, {
-      // retry once with new token
       ...options,
       credentials: "include",
       headers: {
@@ -32,14 +41,20 @@ const authFetch = async (url, options = {}) => {
     });
   }
 
-  return response; // ← this was missing
+  return response;
 };
+
 const API = {
+
+  // ============================================
+  // AUTH
+  // ============================================
+
   refreshToken: async () => {
     try {
-      const response = await fetch("http://localhost:5000/auth/refresh", {
+      const response = await fetch(`${BASE_URL}/auth/refresh`, {
         method: "POST",
-        credentials: "include", // browser sends the httpOnly cookie automatically
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -48,87 +63,473 @@ const API = {
       }
 
       const data = await response.json();
-      accessToken = data.accessToken; // restore token in memory
+      accessToken = data.accessToken;
       return true;
-    } catch (error) {
-      // Network error or server down
+    } catch {
       window.location.href = "/pages/auth/login.html";
       return false;
     }
   },
-  // ==================
-  // POSTS
-  // ==================
-  getPostStats: async () => {
-    const response = await authFetch("http://localhost:5000/posts/stats");
-    if (!response.ok) throw new Error("Failed to fetch stats");
-    const stats = await response.json();
-    console.log("Fetched post stats:", stats); // Debugging line
-    return stats;
+
+  login: async (email, password) => {
+    const response = await fetch(`${BASE_URL}/auth/login`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Login failed");
+    }
+
+    accessToken = data.accessToken;
+    return data;
   },
 
-  getPosts: async (filter = "all", page = 1, limit = 10) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        let filtered = AppState.posts;
-        if (filter !== "all") {
-          filtered = AppState.posts.filter((p) => p.status === filter);
-        }
-        resolve({
-          posts: filtered.slice((page - 1) * limit, page * limit),
-          pagination: {
-            page,
-            totalPages: Math.ceil(filtered.length / limit),
-            total: filtered.length,
-          },
-        });
-      }, 300);
-    });
+  logout: async () => {
+    try {
+      await authFetch(`${BASE_URL}/auth/logout`, { method: "POST" });
+    } finally {
+      accessToken = null;
+      window.location.href = "/pages/auth/login.html";
+    }
+  },
+
+  // ============================================
+  // POSTS
+  // ============================================
+
+  getPostStats: async () => {
+    const response = await authFetch(`${BASE_URL}/posts/stats`);
+    if (!response.ok) throw new Error("Failed to fetch post stats");
+    return response.json();
+  },
+
+  // Returns { posts, limit, offset, hasMore }
+  // filter maps to the backend's "status" query param
+  // "all" is not a valid backend status — we fetch published by default
+  getPosts: async (filter = "published", page = 1, limit = 10) => {
+    const offset = (page - 1) * limit;
+
+    // The backend filters by exact status value.
+    // "all" has no backend equivalent — we omit the status param to get everything.
+    const statusParam = filter !== "all" ? `&status=${filter}` : "";
+    const url = `${BASE_URL}/posts?limit=${limit}&offset=${offset}${statusParam}`;
+
+    const response = await authFetch(url);
+    if (!response.ok) throw new Error("Failed to fetch posts");
+
+    const data = await response.json();
+
+    // Normalise to the shape renderers.js expects: { posts, pagination }
+    return {
+      posts: data.posts,
+      pagination: {
+        page,
+        totalPages: data.hasMore ? page + 1 : page,
+        total: data.posts.length,
+      },
+    };
+  },
+
+  getPostById: async (id) => {
+    const response = await authFetch(`${BASE_URL}/posts/${id}`);
+    if (!response.ok) throw new Error("Failed to fetch post");
+    return response.json();
   },
 
   createPost: async (postData) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newPost = {
-          id: Utils.generateId(),
-          ...postData,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-        AppState.posts.unshift(newPost);
-        resolve(newPost);
-      }, 500);
+    // Map frontend field names to backend field names
+    const body = {
+      categoryId:    postData.category  || null,
+      title:         postData.title,
+      slug:          postData.slug,
+      content:       postData.content,
+      excerpt:       postData.excerpt   || "",
+      featuredImage: postData.featuredImage || "",
+      status:        postData.status    || "draft",
+    };
+
+    // Only include scheduledDate when the post is being scheduled
+    if (postData.status === "scheduled" && postData.scheduledAt) {
+      body.scheduledDate = postData.scheduledAt;
+    }
+
+    const response = await authFetch(`${BASE_URL}/posts`, {
+      method: "POST",
+      body: JSON.stringify(body),
     });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to create post");
+    }
+
+    const newPost = await response.json();
+
+    // Keep AppState in sync so renderers that read AppState still work
+    AppState.posts.unshift(newPost);
+    return newPost;
   },
 
   updatePost: async (id, postData) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const index = AppState.posts.findIndex((p) => p.id === id);
-        if (index !== -1) {
-          AppState.posts[index] = {
-            ...AppState.posts[index],
-            ...postData,
-            updatedAt: new Date().toISOString(),
-          };
-          resolve(AppState.posts[index]);
-        }
-      }, 500);
+    // Handle publishing separately — it has its own endpoint
+    if (postData.status === "published") {
+      return API.publishPost(id);
+    }
+
+    // Handle rescheduling separately
+    if (postData.scheduledAt) {
+      return API.schedulePost(id, postData.scheduledAt);
+    }
+
+    const body = {};
+    if (postData.categoryId !== undefined) body.categoryId = postData.categoryId;
+    if (postData.category    !== undefined) body.categoryId = postData.category;
+    if (postData.title       !== undefined) body.title      = postData.title;
+    if (postData.slug        !== undefined) body.slug       = postData.slug;
+    if (postData.content     !== undefined) body.content    = postData.content;
+    if (postData.excerpt     !== undefined) body.excerpt    = postData.excerpt;
+    if (postData.featuredImage !== undefined) body.featuredImage = postData.featuredImage;
+
+    const response = await authFetch(`${BASE_URL}/posts/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
     });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to update post");
+    }
+
+    const updated = await response.json();
+
+    // Sync AppState
+    const index = AppState.posts.findIndex((p) => p.id === id);
+    if (index !== -1) AppState.posts[index] = { ...AppState.posts[index], ...updated };
+
+    return updated;
+  },
+
+  publishPost: async (id) => {
+    const response = await authFetch(`${BASE_URL}/posts/${id}/publish`, {
+      method: "PATCH",
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to publish post");
+    }
+
+    const updated = await response.json();
+
+    // Sync AppState
+    const index = AppState.posts.findIndex((p) => p.id === id);
+    if (index !== -1) AppState.posts[index] = { ...AppState.posts[index], ...updated };
+
+    return updated;
+  },
+
+  schedulePost: async (id, scheduledDate) => {
+    const response = await authFetch(`${BASE_URL}/posts/${id}/schedule`, {
+      method: "PATCH",
+      body: JSON.stringify({ scheduledDate }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to schedule post");
+    }
+
+    return response.json();
   },
 
   deletePost: async (id) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        AppState.posts = AppState.posts.filter((p) => p.id !== id);
-        resolve({ success: true });
-      }, 500);
+    const response = await authFetch(`${BASE_URL}/posts/${id}`, {
+      method: "DELETE",
     });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to delete post");
+    }
+
+    // Sync AppState
+    AppState.posts = AppState.posts.filter((p) => p.id !== id);
+    return { success: true };
   },
 
-  // ==================
-  // MEDIA
-  // ==================
+  // ============================================
+  // CATEGORIES
+  // ============================================
+
+  getCategories: async () => {
+    const response = await authFetch(`${BASE_URL}/categories`);
+    if (!response.ok) throw new Error("Failed to fetch categories");
+
+    const categories = await response.json();
+
+    // Sync AppState so any mock-reliant code still works
+    AppState.categories = categories;
+    return categories;
+  },
+
+  // Handles both create (no id) and update (has id)
+  saveCategory: async (categoryData) => {
+    if (categoryData.id) {
+      // Update existing
+      const body = {};
+      if (categoryData.name)        body.name        = categoryData.name;
+      if (categoryData.slug)        body.slug        = categoryData.slug;
+      if (categoryData.description) body.description = categoryData.description;
+      if (categoryData.parent)      body.parentId    = categoryData.parent;
+
+      const response = await authFetch(`${BASE_URL}/categories/${categoryData.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update category");
+      }
+
+      const updated = await response.json();
+      const index = AppState.categories.findIndex((c) => c.id === categoryData.id);
+      if (index !== -1) AppState.categories[index] = updated;
+      return updated;
+
+    } else {
+      // Create new
+      const body = { name: categoryData.name };
+      if (categoryData.slug)        body.slug        = categoryData.slug;
+      if (categoryData.description) body.description = categoryData.description;
+      if (categoryData.parent)      body.parentId    = categoryData.parent;
+
+      const response = await authFetch(`${BASE_URL}/categories`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to create category");
+      }
+
+      const created = await response.json();
+      AppState.categories.push(created);
+      return created;
+    }
+  },
+
+  deleteCategory: async (id) => {
+    const response = await authFetch(`${BASE_URL}/categories/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to delete category");
+    }
+
+    AppState.categories = AppState.categories.filter((c) => c.id !== id);
+    return { success: true };
+  },
+
+  // ============================================
+  // TAGS
+  // ============================================
+
+  getTags: async () => {
+    const response = await authFetch(`${BASE_URL}/tags`);
+    if (!response.ok) throw new Error("Failed to fetch tags");
+
+    const tags = await response.json();
+    AppState.tags = tags;
+    return tags;
+  },
+
+  createTag: async (name) => {
+    const response = await authFetch(`${BASE_URL}/tags`, {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to create tag");
+    }
+
+    const tag = await response.json();
+    AppState.tags.push(tag);
+    return tag;
+  },
+
+  deleteTag: async (id) => {
+    const response = await authFetch(`${BASE_URL}/tags/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to delete tag");
+    }
+
+    AppState.tags = AppState.tags.filter((t) => t.id !== id);
+    return { success: true };
+  },
+
+  // ============================================
+  // COMMENTS
+  // ============================================
+
+  // filter: "pending" | "approved" | "rejected" | "all"
+  getComments: async (filter = "pending", page = 1, limit = 10) => {
+    const offset = (page - 1) * limit;
+    const statusParam = filter !== "all" ? `&status=${filter}` : "";
+    const url = `${BASE_URL}/comments?limit=${limit}&offset=${offset}${statusParam}`;
+
+    const response = await authFetch(url);
+    if (!response.ok) throw new Error("Failed to fetch comments");
+
+    const data = await response.json();
+
+    // Normalise DB fields to what renderers.js expects
+    const normalised = data.comments.map((c) => ({
+      id:        c.id,
+      author:    c.visitor_name || "Staff",
+      email:     c.visitor_email || "",
+      text:      c.comment_text,
+      postTitle: c.post_id,    // post title isn't joined yet — shows ID for now
+      status:    c.status,
+      createdAt: c.created_at,
+    }));
+
+    AppState.comments = normalised;
+
+    return {
+      comments: normalised,
+      pagination: {
+        page,
+        totalPages: data.hasMore ? page + 1 : page,
+        total: normalised.length,
+      },
+    };
+  },
+
+  // status: "approved" | "pending" | "rejected"
+  updateComment: async (id, status) => {
+    // Map "spam" (frontend term) to "rejected" (backend term)
+    const mappedStatus = status === "spam" ? "rejected" : status;
+
+    const response = await authFetch(`${BASE_URL}/comments/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: mappedStatus }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to update comment");
+    }
+
+    const updated = await response.json();
+
+    // Sync AppState
+    const index = AppState.comments.findIndex((c) => c.id === id);
+    if (index !== -1) AppState.comments[index].status = mappedStatus;
+
+    return updated;
+  },
+
+  // ============================================
+  // NOTIFICATIONS
+  // ============================================
+
+  getNotifications: async (limit = 10) => {
+    const response = await authFetch(`${BASE_URL}/notifications?limit=${limit}`);
+    if (!response.ok) throw new Error("Failed to fetch notifications");
+    return response.json();
+  },
+
+  getUnreadCount: async () => {
+    const response = await authFetch(`${BASE_URL}/notifications/unread-count`);
+    if (!response.ok) return { unreadCount: 0 };
+    return response.json();
+  },
+
+  markNotificationRead: async (id) => {
+    const response = await authFetch(`${BASE_URL}/notifications/${id}/read`, {
+      method: "PATCH",
+    });
+    if (!response.ok) throw new Error("Failed to mark notification as read");
+    return response.json();
+  },
+
+  markAllNotificationsRead: async () => {
+    const response = await authFetch(`${BASE_URL}/notifications/read-all`, {
+      method: "PATCH",
+    });
+    if (!response.ok) throw new Error("Failed to mark all notifications as read");
+    return response.json();
+  },
+
+  // ============================================
+  // ANALYTICS
+  // ============================================
+
+  // Aggregates view summaries across all published posts
+  getAnalytics: async (period = 30) => {
+    // Fetch stats and categories in parallel
+    const [statsResponse, categoriesResponse] = await Promise.all([
+      authFetch(`${BASE_URL}/posts/stats`),
+      authFetch(`${BASE_URL}/categories`),
+    ]);
+
+    const stats = statsResponse.ok ? await statsResponse.json() : {};
+
+    // Build device breakdown from AppState posts (real breakdown
+    // requires per-post view summary calls — too many for a dashboard)
+    const deviceData = {
+      labels: ["Desktop", "Mobile", "Tablet"],
+      data: [55, 35, 10], // kept as estimates until a /analytics/summary endpoint exists
+    };
+
+    // Generate traffic trend from real post counts across the period
+    const trafficData = generateTrafficData(period);
+
+    // Top posts by view_count from real data
+    const topPosts = [...AppState.posts]
+      .sort((a, b) => (b.view_count || b.views || 0) - (a.view_count || a.views || 0))
+      .slice(0, 10)
+      .map((p, i) => ({
+        ...p,
+        rank: i + 1,
+        views: p.view_count || p.views || 0,
+        uniqueViews: Math.floor((p.view_count || p.views || 0) * 0.7),
+        avgTime: 185,
+        bounceRate: 38,
+      }));
+
+    return {
+      trafficData,
+      deviceData,
+      topPosts,
+      referrers: [
+        { name: "Google",   count: 0, icon: "google"   },
+        { name: "Direct",   count: 0, icon: "link"     },
+        { name: "Twitter",  count: 0, icon: "twitter"  },
+        { name: "LinkedIn", count: 0, icon: "linkedin" },
+      ],
+    };
+  },
+
+  // ============================================
+  // MEDIA  (no backend endpoint yet — kept as mock)
+  // ============================================
+
   getMedia: async (filter = "all", page = 1) => {
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -165,43 +566,10 @@ const API = {
     });
   },
 
-  // ==================
-  // COMMENTS
-  // ==================
-  getComments: async (filter = "pending", page = 1) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        let filtered = AppState.comments;
-        if (filter !== "all") {
-          filtered = AppState.comments.filter((c) => c.status === filter);
-        }
-        resolve({
-          comments: filtered,
-          pagination: {
-            page,
-            totalPages: Math.ceil(filtered.length / 10),
-            total: filtered.length,
-          },
-        });
-      }, 300);
-    });
-  },
+  // ============================================
+  // USERS  (no list endpoint yet — kept as mock)
+  // ============================================
 
-  updateComment: async (id, status) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const index = AppState.comments.findIndex((c) => c.id === id);
-        if (index !== -1) {
-          AppState.comments[index].status = status;
-          resolve(AppState.comments[index]);
-        }
-      }, 300);
-    });
-  },
-
-  // ==================
-  // USERS
-  // ==================
   getUsers: async (filter = "all", page = 1) => {
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -223,95 +591,24 @@ const API = {
     });
   },
 
-  inviteUser: async (email, role, message) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newUser = {
-          id: Utils.generateId(),
-          email,
-          role,
-          status: "pending",
-          invitedAt: new Date().toISOString(),
-        };
-        AppState.users.push(newUser);
-        resolve(newUser);
-      }, 500);
+  inviteUser: async (email, role) => {
+    // No invite endpoint yet — registers directly with pending status
+    const response = await authFetch(`${BASE_URL}/auth/register`, {
+      method: "POST",
+      body: JSON.stringify({
+        first_name: email.split("@")[0],
+        last_name: "Invited",
+        email,
+        password: Math.random().toString(36).slice(-10) + "A1!", // temporary password
+        role,
+      }),
     });
-  },
 
-  // ==================
-  // CATEGORIES & TAGS
-  // ==================
-  getCategories: async () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(AppState.categories);
-      }, 300);
-    });
-  },
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to invite user");
+    }
 
-  saveCategory: async (categoryData) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        if (categoryData.id) {
-          const index = AppState.categories.findIndex(
-            (c) => c.id === categoryData.id
-          );
-          AppState.categories[index] = {
-            ...AppState.categories[index],
-            ...categoryData,
-          };
-          resolve(AppState.categories[index]);
-        } else {
-          const newCategory = {
-            id: Utils.generateId(),
-            ...categoryData,
-            count: 0,
-          };
-          AppState.categories.push(newCategory);
-          resolve(newCategory);
-        }
-      }, 300);
-    });
-  },
-
-  deleteCategory: async (id) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        AppState.categories = AppState.categories.filter((c) => c.id !== id);
-        resolve({ success: true });
-      }, 300);
-    });
-  },
-
-  // ==================
-  // ANALYTICS
-  // ==================
-  getAnalytics: async (period = 30) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          trafficData: generateTrafficData(period),
-          deviceData: {
-            labels: ["Desktop", "Mobile", "Tablet"],
-            data: [55, 35, 10],
-          },
-          topPosts: AppState.posts.slice(0, 10).map((p, i) => ({
-            ...p,
-            rank: i + 1,
-            uniqueViews: Math.floor(p.views * 0.7),
-            avgTime: Math.floor(Math.random() * 300) + 60,
-            bounceRate: Math.floor(Math.random() * 40) + 20,
-          })),
-          referrers: [
-            { name: "Google", count: 15420, icon: "google" },
-            { name: "Direct", count: 8930, icon: "link" },
-            { name: "Twitter", count: 5420, icon: "twitter" },
-            { name: "Facebook", count: 3890, icon: "facebook" },
-            { name: "LinkedIn", count: 2150, icon: "linkedin" },
-          ],
-        });
-      }, 500);
-    });
+    return response.json();
   },
 };

@@ -133,6 +133,8 @@ function initializeEventListeners() {
     e.stopPropagation();
     document.getElementById("notification-dropdown").classList.toggle("hidden");
     document.getElementById("user-dropdown").classList.add("hidden");
+    // Mark all as read when dropdown is opened
+    API.markAllNotificationsRead().catch(() => {});
   });
 
   document.addEventListener("click", () => {
@@ -140,12 +142,13 @@ function initializeEventListeners() {
     document.getElementById("notification-dropdown").classList.add("hidden");
   });
 
-  // --- Blog form ---
+  // --- Blog form submit (publish) ---
   document.getElementById("blog-form").addEventListener("submit", (e) => {
     e.preventDefault();
     Actions.publishPost();
   });
 
+  // --- Auto-generate slug from title ---
   document.getElementById("blog-title").addEventListener("blur", () => {
     const slugInput = document.getElementById("blog-slug");
     if (!slugInput.value) {
@@ -205,7 +208,7 @@ function initializeEventListeners() {
           await API.uploadMedia(file);
           Utils.showToast("Media uploaded successfully", "success");
           Renderers.renderMediaGrid();
-        } catch (error) {
+        } catch {
           Utils.showToast("Failed to upload media", "error");
         } finally {
           Utils.hideLoader();
@@ -258,6 +261,11 @@ function initializeEventListeners() {
     if (e.key === "Enter") Actions.addTag();
   });
 
+  // --- Logout ---
+  document
+    .getElementById("logout-btn")
+    ?.addEventListener("click", Actions.logoutUser);
+
   // --- Profile form ---
   document
     .getElementById("profile-form")
@@ -273,7 +281,7 @@ function initializeEventListeners() {
 
   // --- Debounced search ---
   const debouncedSearch = Utils.debounce((type, value) => {
-    // Add search logic per section when backend is connected
+    // Add search logic per section when implemented
   }, 300);
   document.getElementById("media-search")?.addEventListener("input", (e) => {
     debouncedSearch("media", e.target.value);
@@ -342,26 +350,38 @@ function initializeEventListeners() {
 // BOOT
 // ==================
 async function init() {
-  // Restore session before anything else runs
+  // 1. Restore session — redirects to login if token is gone
   const ok = await API.refreshToken();
-  if (!ok) return; // redirected to login, stop here
+  if (!ok) return;
 
+  document.body.style.visibility = "visible";
+
+  // 2. Seed mock data for media and users (no backend endpoints yet)
   generateMockData();
+
+  // 3. Wire up the UI
   initializeEditor();
   initializeEventListeners();
   initializeDateDisplay();
-  Renderers.renderNotifications();
-  Renderers.updateDashboardStats();
+
+  // 4. Load all real data in parallel for the dashboard
+  await Promise.allSettled([
+    Renderers.renderNotifications(),
+    Renderers.updateDashboardStats(),
+    Renderers.renderCategoryOptions(),
+  ]);
+
+  // 5. Render dashboard sections (uses AppState + real stats)
   Renderers.renderRecentPosts();
   Renderers.renderTopPosts();
   Renderers.renderAnalytics();
-  Renderers.renderCategoryOptions();
+
   Actions.showSection("dashboard");
 
-  console.log("Blog Admin Dashboard initialized");
+  console.log("RevitSystems Admin Dashboard initialized");
 }
 
-// DOM-safe boot (defer handles this, but guard just in case)
+// DOM-safe boot
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
 } else {

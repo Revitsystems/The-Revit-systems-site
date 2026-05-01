@@ -14,7 +14,7 @@ import { authorize } from "@/middleware/roleMiddleware.js";
 const router = Router();
 
 router.post("/register", register);
-router.post("/login", login); // ... existing imports
+router.post("/login", login);
 router.post("/refresh", refresh);
 router.post("/forgot-password", requestPasswordReset); // The "Send Email" step
 router.post("/reset-password", resetPassword); // The "Update Password" step

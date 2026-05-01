@@ -4,14 +4,6 @@
  */
 
 // ============================================
-// MOCK CREDENTIALS (For demo purposes)
-// ============================================
-const MOCK_CREDENTIALS = {
-  email: "admin@blog.com",
-  password: "admin123",
-};
-
-// ============================================
 // STATE
 // ============================================
 const state = {
@@ -153,11 +145,15 @@ function clearValidation(inputId, errorId) {
 /**
  * Check if user is already logged in
  */
-function checkAuthStatus() {
-  const isLoggedIn = sessionStorage.getItem("isLoggedIn") === "true";
-  if (isLoggedIn) {
-    // Redirect to dashboard
-    window.location.href = "/admin/index.html";
+async function checkAuthStatus() {
+  try {
+    const ok = await API.refreshToken();
+
+    if (ok) {
+      window.location.href = "/admin/index.html";
+    }
+  } catch (error) {
+    console.log("No active session");
   }
 }
 
