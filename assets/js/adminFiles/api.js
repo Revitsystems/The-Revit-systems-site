@@ -45,7 +45,6 @@ const authFetch = async (url, options = {}) => {
 };
 
 const API = {
-
   // ============================================
   // AUTH
   // ============================================
@@ -144,13 +143,13 @@ const API = {
   createPost: async (postData) => {
     // Map frontend field names to backend field names
     const body = {
-      categoryId:    postData.category  || null,
-      title:         postData.title,
-      slug:          postData.slug,
-      content:       postData.content,
-      excerpt:       postData.excerpt   || "",
+      categoryId: postData.category || null,
+      title: postData.title,
+      slug: postData.slug,
+      content: postData.content,
+      excerpt: postData.excerpt || "",
       featuredImage: postData.featuredImage || "",
-      status:        postData.status    || "draft",
+      status: postData.status || "draft",
     };
 
     // Only include scheduledDate when the post is being scheduled
@@ -187,13 +186,15 @@ const API = {
     }
 
     const body = {};
-    if (postData.categoryId !== undefined) body.categoryId = postData.categoryId;
-    if (postData.category    !== undefined) body.categoryId = postData.category;
-    if (postData.title       !== undefined) body.title      = postData.title;
-    if (postData.slug        !== undefined) body.slug       = postData.slug;
-    if (postData.content     !== undefined) body.content    = postData.content;
-    if (postData.excerpt     !== undefined) body.excerpt    = postData.excerpt;
-    if (postData.featuredImage !== undefined) body.featuredImage = postData.featuredImage;
+    if (postData.categoryId !== undefined)
+      body.categoryId = postData.categoryId;
+    if (postData.category !== undefined) body.categoryId = postData.category;
+    if (postData.title !== undefined) body.title = postData.title;
+    if (postData.slug !== undefined) body.slug = postData.slug;
+    if (postData.content !== undefined) body.content = postData.content;
+    if (postData.excerpt !== undefined) body.excerpt = postData.excerpt;
+    if (postData.featuredImage !== undefined)
+      body.featuredImage = postData.featuredImage;
 
     const response = await authFetch(`${BASE_URL}/posts/${id}`, {
       method: "PUT",
@@ -209,7 +210,8 @@ const API = {
 
     // Sync AppState
     const index = AppState.posts.findIndex((p) => p.id === id);
-    if (index !== -1) AppState.posts[index] = { ...AppState.posts[index], ...updated };
+    if (index !== -1)
+      AppState.posts[index] = { ...AppState.posts[index], ...updated };
 
     return updated;
   },
@@ -228,7 +230,8 @@ const API = {
 
     // Sync AppState
     const index = AppState.posts.findIndex((p) => p.id === id);
-    if (index !== -1) AppState.posts[index] = { ...AppState.posts[index], ...updated };
+    if (index !== -1)
+      AppState.posts[index] = { ...AppState.posts[index], ...updated };
 
     return updated;
   },
@@ -274,6 +277,7 @@ const API = {
 
     // Sync AppState so any mock-reliant code still works
     AppState.categories = categories;
+    console.log("Fetched categories:", categories);
     return categories;
   },
 
@@ -282,15 +286,18 @@ const API = {
     if (categoryData.id) {
       // Update existing
       const body = {};
-      if (categoryData.name)        body.name        = categoryData.name;
-      if (categoryData.slug)        body.slug        = categoryData.slug;
+      if (categoryData.name) body.name = categoryData.name;
+      if (categoryData.slug) body.slug = categoryData.slug;
       if (categoryData.description) body.description = categoryData.description;
-      if (categoryData.parent)      body.parentId    = categoryData.parent;
+      if (categoryData.parent) body.parentId = categoryData.parent;
 
-      const response = await authFetch(`${BASE_URL}/categories/${categoryData.id}`, {
-        method: "PATCH",
-        body: JSON.stringify(body),
-      });
+      const response = await authFetch(
+        `${BASE_URL}/categories/${categoryData.id}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();
@@ -298,16 +305,17 @@ const API = {
       }
 
       const updated = await response.json();
-      const index = AppState.categories.findIndex((c) => c.id === categoryData.id);
+      const index = AppState.categories.findIndex(
+        (c) => c.id === categoryData.id
+      );
       if (index !== -1) AppState.categories[index] = updated;
       return updated;
-
     } else {
       // Create new
       const body = { name: categoryData.name };
-      if (categoryData.slug)        body.slug        = categoryData.slug;
+      if (categoryData.slug) body.slug = categoryData.slug;
       if (categoryData.description) body.description = categoryData.description;
-      if (categoryData.parent)      body.parentId    = categoryData.parent;
+      if (categoryData.parent) body.parentId = categoryData.parent;
 
       const response = await authFetch(`${BASE_URL}/categories`, {
         method: "POST",
@@ -340,49 +348,6 @@ const API = {
   },
 
   // ============================================
-  // TAGS
-  // ============================================
-
-  getTags: async () => {
-    const response = await authFetch(`${BASE_URL}/tags`);
-    if (!response.ok) throw new Error("Failed to fetch tags");
-
-    const tags = await response.json();
-    AppState.tags = tags;
-    return tags;
-  },
-
-  createTag: async (name) => {
-    const response = await authFetch(`${BASE_URL}/tags`, {
-      method: "POST",
-      body: JSON.stringify({ name }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Failed to create tag");
-    }
-
-    const tag = await response.json();
-    AppState.tags.push(tag);
-    return tag;
-  },
-
-  deleteTag: async (id) => {
-    const response = await authFetch(`${BASE_URL}/tags/${id}`, {
-      method: "DELETE",
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Failed to delete tag");
-    }
-
-    AppState.tags = AppState.tags.filter((t) => t.id !== id);
-    return { success: true };
-  },
-
-  // ============================================
   // COMMENTS
   // ============================================
 
@@ -399,12 +364,12 @@ const API = {
 
     // Normalise DB fields to what renderers.js expects
     const normalised = data.comments.map((c) => ({
-      id:        c.id,
-      author:    c.visitor_name || "Staff",
-      email:     c.visitor_email || "",
-      text:      c.comment_text,
-      postTitle: c.post_id,    // post title isn't joined yet — shows ID for now
-      status:    c.status,
+      id: c.id,
+      author: c.visitor_name || "Staff",
+      email: c.visitor_email || "",
+      text: c.comment_text,
+      postTitle: c.post_id, // post title isn't joined yet — shows ID for now
+      status: c.status,
       createdAt: c.created_at,
     }));
 
@@ -449,7 +414,9 @@ const API = {
   // ============================================
 
   getNotifications: async (limit = 10) => {
-    const response = await authFetch(`${BASE_URL}/notifications?limit=${limit}`);
+    const response = await authFetch(
+      `${BASE_URL}/notifications?limit=${limit}`
+    );
     if (!response.ok) throw new Error("Failed to fetch notifications");
     return response.json();
   },
@@ -472,7 +439,8 @@ const API = {
     const response = await authFetch(`${BASE_URL}/notifications/read-all`, {
       method: "PATCH",
     });
-    if (!response.ok) throw new Error("Failed to mark all notifications as read");
+    if (!response.ok)
+      throw new Error("Failed to mark all notifications as read");
     return response.json();
   },
 
@@ -502,7 +470,10 @@ const API = {
 
     // Top posts by view_count from real data
     const topPosts = [...AppState.posts]
-      .sort((a, b) => (b.view_count || b.views || 0) - (a.view_count || a.views || 0))
+      .sort(
+        (a, b) =>
+          (b.view_count || b.views || 0) - (a.view_count || a.views || 0)
+      )
       .slice(0, 10)
       .map((p, i) => ({
         ...p,
@@ -518,9 +489,9 @@ const API = {
       deviceData,
       topPosts,
       referrers: [
-        { name: "Google",   count: 0, icon: "google"   },
-        { name: "Direct",   count: 0, icon: "link"     },
-        { name: "Twitter",  count: 0, icon: "twitter"  },
+        { name: "Google", count: 0, icon: "google" },
+        { name: "Direct", count: 0, icon: "link" },
+        { name: "Twitter", count: 0, icon: "twitter" },
         { name: "LinkedIn", count: 0, icon: "linkedin" },
       ],
     };

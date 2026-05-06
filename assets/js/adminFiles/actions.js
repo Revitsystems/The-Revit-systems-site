@@ -8,8 +8,12 @@ const Actions = {
   // NAVIGATION
   // ==================
   showSection: (sectionName) => {
-    document.querySelectorAll(".section").forEach((s) => s.classList.remove("active"));
-    document.querySelectorAll(".nav-item").forEach((n) => n.classList.remove("active"));
+    document
+      .querySelectorAll(".section")
+      .forEach((s) => s.classList.remove("active"));
+    document
+      .querySelectorAll(".nav-item")
+      .forEach((n) => n.classList.remove("active"));
 
     const targetSection = document.getElementById(`${sectionName}-section`);
     if (targetSection) targetSection.classList.add("active");
@@ -62,11 +66,18 @@ const Actions = {
   // POSTS
   // ==================
   saveDraft: async () => {
-    const formData = Actions.getBlogFormData();
+    let formData;
+    try {
+      formData = await Actions.getBlogFormData(); // ← await
+    } catch {
+      return; // image upload failed, stop here
+    }
+
     if (!formData.title) {
       Utils.showToast("Please enter a title", "warning");
       return;
     }
+
     Utils.showLoader();
     try {
       await API.createPost({ ...formData, status: "draft" });
@@ -80,14 +91,27 @@ const Actions = {
     }
   },
 
-  schedulePost: () => {
-    const formData = Actions.getBlogFormData();
+  schedulePost: async () => {
+    let formData;
+    try {
+      formData = await Actions.getBlogFormData(); // ← await
+    } catch {
+      return;
+    }
+
     if (!formData.title) {
       Utils.showToast("Please enter a title", "warning");
       return;
     }
-    document.getElementById("schedule-preview-title").textContent    = formData.title;
-    document.getElementById("schedule-preview-category").textContent = formData.category || "Uncategorized";
+
+    document.getElementById("schedule-preview-title").textContent =
+      formData.title;
+    document.getElementById("schedule-preview-category").textContent =
+      formData.category || "Uncategorized";
+
+    // Store form data so confirmSchedule can use it without re-uploading
+    AppState.pendingFormData = formData;
+
     document.getElementById("schedule-post-modal").classList.remove("hidden");
   },
 
@@ -97,12 +121,21 @@ const Actions = {
       Utils.showToast("Please select a date and time", "warning");
       return;
     }
-    const formData = Actions.getBlogFormData();
+
+    // Use the already-prepared form data — image already uploaded
+    const formData = AppState.pendingFormData;
+    if (!formData) return;
+
     Utils.showLoader();
     try {
-      await API.createPost({ ...formData, status: "scheduled", scheduledAt: scheduleDate });
+      await API.createPost({
+        ...formData,
+        status: "scheduled",
+        scheduledAt: scheduleDate,
+      });
       Utils.showToast("Post scheduled successfully", "scheduled");
       document.getElementById("schedule-post-modal").classList.add("hidden");
+      AppState.pendingFormData = null;
       Actions.resetBlogForm();
       Actions.showSection("posts");
     } catch (error) {
@@ -114,7 +147,7 @@ const Actions = {
 
   publishPost: async (postId) => {
     if (postId) {
-      // Publishing an existing post from the posts table
+      // Publishing existing post from table — no form involved
       Utils.showLoader();
       try {
         await API.publishPost(postId);
@@ -128,11 +161,18 @@ const Actions = {
       }
     } else {
       // Publishing from the write form
-      const formData = Actions.getBlogFormData();
+      let formData;
+      try {
+        formData = await Actions.getBlogFormData(); // ← await
+      } catch {
+        return;
+      }
+
       if (!formData.title || !formData.content) {
         Utils.showToast("Please fill in all required fields", "warning");
         return;
       }
+
       Utils.showLoader();
       try {
         await API.createPost({ ...formData, status: "published" });
@@ -152,14 +192,17 @@ const Actions = {
     if (!post) return;
 
     AppState.editingPostId = id;
-    document.getElementById("edit-id").value       = id;
-    document.getElementById("edit-title").value    = post.title;
-    document.getElementById("edit-slug").value     = post.slug;
-    document.getElementById("edit-excerpt").value  = post.excerpt || "";
-    document.getElementById("edit-content").value  = post.content || "";
-    document.getElementById("edit-category").value = post.category_id || post.category || "";
+    document.getElementById("edit-id").value = id;
+    document.getElementById("edit-title").value = post.title;
+    document.getElementById("edit-slug").value = post.slug;
+    document.getElementById("edit-excerpt").value = post.excerpt || "";
+    document.getElementById("edit-content").value = post.content || "";
+    document.getElementById("edit-category").value =
+      post.category_id || post.category || "";
     document.getElementById("edit-status-display").textContent = post.status;
-    document.getElementById("edit-status-display").className  = `status-display ${post.status}`;
+    document.getElementById(
+      "edit-status-display"
+    ).className = `status-display ${post.status}`;
 
     Renderers.renderCategoryOptions();
     document.getElementById("edit-modal").classList.remove("hidden");
@@ -168,10 +211,10 @@ const Actions = {
   saveEdit: async (status) => {
     const id = document.getElementById("edit-id").value;
     const postData = {
-      title:      document.getElementById("edit-title").value,
-      slug:       document.getElementById("edit-slug").value,
-      excerpt:    document.getElementById("edit-excerpt").value,
-      content:    document.getElementById("edit-content").value,
+      title: document.getElementById("edit-title").value,
+      slug: document.getElementById("edit-slug").value,
+      excerpt: document.getElementById("edit-excerpt").value,
+      content: document.getElementById("edit-content").value,
       categoryId: document.getElementById("edit-category").value,
       status,
     };
@@ -215,8 +258,9 @@ const Actions = {
     const post = AppState.posts.find((p) => p.id === id);
     if (!post) return;
 
-    document.getElementById("schedule-preview-title").textContent    = post.title;
-    document.getElementById("schedule-preview-category").textContent = post.category || "";
+    document.getElementById("schedule-preview-title").textContent = post.title;
+    document.getElementById("schedule-preview-category").textContent =
+      post.category || "";
     document.getElementById("schedule-date").value = post.scheduled_date
       ? new Date(post.scheduled_date).toISOString().slice(0, 16)
       : "";
@@ -243,7 +287,9 @@ const Actions = {
   // MEDIA  (still mock — no backend endpoint yet)
   // ==================
   selectMedia: (id) => {
-    document.querySelectorAll(".media-item").forEach((item) => item.classList.remove("selected"));
+    document
+      .querySelectorAll(".media-item")
+      .forEach((item) => item.classList.remove("selected"));
     const item = document.querySelector(`.media-item[data-id="${id}"]`);
     if (item) item.classList.add("selected");
     AppState.selectedMedia = id;
@@ -324,8 +370,8 @@ const Actions = {
   // USERS
   // ==================
   inviteUser: async () => {
-    const email   = document.getElementById("invite-email").value;
-    const role    = document.getElementById("invite-role").value;
+    const email = document.getElementById("invite-email").value;
+    const role = document.getElementById("invite-role").value;
 
     if (!email) {
       Utils.showToast("Please enter an email", "warning");
@@ -357,10 +403,11 @@ const Actions = {
   },
 
   // ==================
-  // CATEGORIES & TAGS
+  // CATEGORIES
   // ==================
   addCategory: () => {
-    document.getElementById("category-modal-title").textContent = "Add Category";
+    document.getElementById("category-modal-title").textContent =
+      "Add Category";
     document.getElementById("category-form").reset();
     document.getElementById("edit-category-id").value = "";
     document.getElementById("delete-category-btn").classList.add("hidden");
@@ -372,12 +419,14 @@ const Actions = {
     const cat = AppState.categories.find((c) => c.id === id);
     if (!cat) return;
 
-    document.getElementById("category-modal-title").textContent = "Edit Category";
-    document.getElementById("edit-category-id").value           = cat.id;
-    document.getElementById("category-name").value              = cat.name;
-    document.getElementById("category-slug").value              = cat.slug || "";
-    document.getElementById("category-description").value       = cat.description || "";
-    document.getElementById("category-parent").value            = cat.parent_id || "";
+    document.getElementById("category-modal-title").textContent =
+      "Edit Category";
+    document.getElementById("edit-category-id").value = cat.id;
+    document.getElementById("category-name").value = cat.name;
+    document.getElementById("category-slug").value = cat.slug || "";
+    document.getElementById("category-description").value =
+      cat.description || "";
+    document.getElementById("category-parent").value = cat.parent_id || "";
     document.getElementById("delete-category-btn").classList.remove("hidden");
     Renderers.renderCategoryOptions();
     document.getElementById("category-modal").classList.remove("hidden");
@@ -386,11 +435,11 @@ const Actions = {
   saveCategory: async () => {
     const id = document.getElementById("edit-category-id").value;
     const categoryData = {
-      id:          id || null,
-      name:        document.getElementById("category-name").value,
-      slug:        document.getElementById("category-slug").value,
+      id: id || null,
+      name: document.getElementById("category-name").value,
+      slug: document.getElementById("category-slug").value,
       description: document.getElementById("category-description").value,
-      parent:      document.getElementById("category-parent").value || null,
+      parent: document.getElementById("category-parent").value || null,
     };
     if (!categoryData.name) {
       Utils.showToast("Please enter a category name", "warning");
@@ -426,52 +475,20 @@ const Actions = {
     }
   },
 
-  // Tags now hit the real backend
-  addTag: async () => {
-    const input = document.getElementById("new-tag-input");
-    const name = input.value.trim();
-    if (!name) return;
-
-    Utils.showLoader();
-    try {
-      await API.createTag(name);
-      input.value = "";
-      Renderers.renderTags();
-      Utils.showToast("Tag added", "success");
-    } catch (error) {
-      Utils.showToast(error.message || "Failed to add tag", "error");
-    } finally {
-      Utils.hideLoader();
-    }
-  },
-
-  deleteTag: async (id) => {
-    Utils.showLoader();
-    try {
-      await API.deleteTag(id);
-      Renderers.renderTags();
-      Utils.showToast("Tag removed", "success");
-    } catch (error) {
-      Utils.showToast(error.message || "Failed to remove tag", "error");
-    } finally {
-      Utils.hideLoader();
-    }
-  },
-
   // ==================
   // PROFILE
   // ==================
   saveProfile: async (e) => {
     e.preventDefault();
-    const name  = document.getElementById("profile-display-name").value;
+    const name = document.getElementById("profile-display-name").value;
     const email = document.getElementById("profile-email-edit").value;
 
-    AppState.currentUser.name  = name;
+    AppState.currentUser.name = name;
     AppState.currentUser.email = email;
 
-    document.getElementById("profile-name").textContent        = name;
-    document.getElementById("profile-email").textContent       = email;
-    document.getElementById("dropdown-user-name").textContent  = name;
+    document.getElementById("profile-name").textContent = name;
+    document.getElementById("profile-email").textContent = email;
+    document.getElementById("dropdown-user-name").textContent = name;
     document.getElementById("dropdown-user-email").textContent = email;
 
     Utils.showToast("Profile updated successfully", "success");
@@ -490,25 +507,44 @@ const Actions = {
   // ==================
   // HELPERS
   // ==================
-  getBlogFormData: () => {
+  getBlogFormData: async () => {
     const content = AppState.editor ? AppState.editor.root.innerHTML : "";
+
+    // If a file has been selected but not yet uploaded, upload it now
+    const fileInput = document.getElementById("blog-image");
+    const file = fileInput.files[0];
+    console.log("Selected file:", file);
+
+    if (file) {
+      try {
+        AppState.featuredImageUrl = await uploadToCloudinary(file);
+      } catch (err) {
+        console.error("Upload error:", err);
+        Utils.showToast("Image upload failed", "error");
+        throw new Error("Image upload failed"); // stop the post from saving
+      }
+    }
+
     return {
-      title:         document.getElementById("blog-title").value,
-      slug:          document.getElementById("blog-slug").value || Utils.slugify(document.getElementById("blog-title").value),
-      excerpt:       document.getElementById("blog-excerpt").value,
+      title: document.getElementById("blog-title").value,
+      slug:
+        document.getElementById("blog-slug").value ||
+        Utils.slugify(document.getElementById("blog-title").value),
+      excerpt: document.getElementById("blog-excerpt").value,
       content,
-      category:      document.getElementById("blog-category").value,
-      tags:          document.getElementById("blog-tags").value.split(",").map((t) => t.trim()).filter((t) => t),
-      featuredImage: document.getElementById("image-preview").querySelector("img")?.src || null,
+      category: document.getElementById("blog-category").value,
+      featuredImage: AppState.featuredImageUrl || null,
     };
   },
 
   resetBlogForm: () => {
     document.getElementById("blog-form").reset();
     if (AppState.editor) AppState.editor.setContents([]);
+    AppState.featuredImageUrl = null;
+    AppState.pendingFormData = null; // ← add this
     document.getElementById("image-preview").innerHTML = `
-      <i class="fas fa-cloud-upload-alt"></i>
-      <p>Click to upload image</p>
-    `;
+    <i class="fas fa-cloud-upload-alt"></i>
+    <p>Click to upload image</p>
+  `;
   },
 };

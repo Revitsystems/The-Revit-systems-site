@@ -58,9 +58,13 @@ function generateMockData() {
     AppState.posts.push({
       id: Utils.generateId(),
       title: `Blog Post ${i}: ${
-        ["Getting Started", "Advanced Tips", "Best Practices", "Complete Guide", "Tutorial"][
-          Math.floor(Math.random() * 5)
-        ]
+        [
+          "Getting Started",
+          "Advanced Tips",
+          "Best Practices",
+          "Complete Guide",
+          "Tutorial",
+        ][Math.floor(Math.random() * 5)]
       } ${
         ["with React", "for Beginners", "in 2024", "Explained", "Deep Dive"][
           Math.floor(Math.random() * 5)
@@ -70,16 +74,18 @@ function generateMockData() {
       excerpt: `This is a brief excerpt for blog post ${i}. It provides a summary of what readers can expect.`,
       content: "<p>Full blog post content here...</p>",
       category: categories[Math.floor(Math.random() * categories.length)],
-      tags: ["javascript", "webdev", "tutorial"],
       status: status,
       views: Math.floor(Math.random() * 10000),
       createdAt: date.toISOString(),
       updatedAt: date.toISOString(),
       scheduledAt:
         status === "scheduled"
-          ? new Date(Date.now() + Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString()
+          ? new Date(
+              Date.now() + Math.random() * 7 * 24 * 60 * 60 * 1000
+            ).toISOString()
           : null,
       featuredImage: null,
+      pendingFormData: null,
     });
   }
 
@@ -89,11 +95,15 @@ function generateMockData() {
     const type = mediaTypes[Math.floor(Math.random() * mediaTypes.length)];
     AppState.media.push({
       id: Utils.generateId(),
-      name: `media-file-${i}.${type === "image" ? "jpg" : type === "video" ? "mp4" : "pdf"}`,
+      name: `media-file-${i}.${
+        type === "image" ? "jpg" : type === "video" ? "mp4" : "pdf"
+      }`,
       type: type,
       size: `${Math.floor(Math.random() * 10) + 1} MB`,
       url: `https://via.placeholder.com/150?text=Media+${i}`,
-      uploadedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+      uploadedAt: new Date(
+        Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000
+      ).toISOString(),
     });
   }
 
@@ -106,7 +116,9 @@ function generateMockData() {
       text: `This is a sample comment ${i}. Great article! Thanks for sharing.`,
       postTitle: `Blog Post ${Math.floor(Math.random() * 25) + 1}`,
       status: Math.random() > 0.5 ? "pending" : "approved",
-      createdAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+      createdAt: new Date(
+        Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000
+      ).toISOString(),
     });
   }
 
@@ -120,8 +132,12 @@ function generateMockData() {
       role: roles[Math.floor(Math.random() * roles.length)],
       status: "active",
       posts: Math.floor(Math.random() * 20),
-      joinedAt: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
-      lastActive: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+      joinedAt: new Date(
+        Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      lastActive: new Date(
+        Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000
+      ).toISOString(),
     });
   }
 
@@ -136,20 +152,6 @@ function generateMockData() {
       parent: null,
     });
   });
-
-  // Tags
-  const tagNames = [
-    "javascript", "react", "css", "html", "nodejs", "python",
-    "design", "ui", "ux", "webdev", "frontend", "backend",
-    "database", "api", "tutorial",
-  ];
-  tagNames.forEach((tag) => {
-    AppState.tags.push({
-      id: Utils.generateId(),
-      name: tag,
-      count: Math.floor(Math.random() * 15),
-    });
-  });
 }
 
 function generateTrafficData(days) {
@@ -160,7 +162,9 @@ function generateTrafficData(days) {
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
-    labels.push(date.toLocaleDateString("en-US", { month: "short", day: "numeric" }));
+    labels.push(
+      date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    );
     data.push(Math.floor(Math.random() * 1000) + 500);
   }
 

@@ -8,13 +8,41 @@
 // INITIALIZERS
 // ==================
 function initializeEditor() {
-  if (document.getElementById("editor")) {
-    AppState.editor = new Quill("#editor", {
-      theme: "snow",
-      modules: { toolbar: "#editor-toolbar" },
-      placeholder: "Write your blog content here...",
-    });
-  }
+  if (!document.getElementById("editor")) return;
+
+  AppState.editor = new Quill("#editor", {
+    theme: "snow",
+    modules: {
+      toolbar: {
+        container: "#editor-toolbar",
+        handlers: {
+          image: () => {
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = "image/*";
+
+            input.onchange = async () => {
+              const file = input.files[0];
+              if (!file) return;
+
+              try {
+                const url = await uploadToCloudinary(file);
+                const range = AppState.editor.getSelection(true);
+                AppState.editor.insertEmbed(range.index, "image", url);
+                AppState.editor.setSelection(range.index + 1);
+                Utils.showToast("Image inserted", "success");
+              } catch {
+                Utils.showToast("Failed to upload image", "error");
+              }
+            };
+
+            input.click();
+          },
+        },
+      },
+    },
+    placeholder: "Write your blog content here...",
+  });
 }
 
 function initializeDateDisplay() {
@@ -184,52 +212,71 @@ function initializeEventListeners() {
   // --- Featured image upload ---
   document.getElementById("blog-image").addEventListener("change", (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        document.getElementById(
-          "image-preview"
-        ).innerHTML = `<img src="${e.target.result}" alt="Preview">`;
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    const allowedTypes = ["image/png", "image/jpeg"];
+
+    if (!allowedTypes.includes(file.type)) {
+      Utils.showToast("Only PNG, JPG, and JPEG images are allowed", "error");
+      return;
     }
+
+    const maxSize = 8 * 1024 * 1024; // 8MB
+
+    if (file.size > maxSize) {
+      Utils.showToast("Image must be less than 8MB", "error");
+      return;
+    }
+
+    if (AppState.previewUrl) {
+      URL.revokeObjectURL(AppState.previewUrl);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    AppState.previewUrl = previewUrl;
+
+    const previewContainer = document.getElementById("image-preview");
+    previewContainer.innerHTML = `<img src="${previewUrl}" alt="Preview">`;
+
+    AppState.featuredImageFile = file;
+    Utils.showToast("Image selected", "success");
   });
 
   // --- Media library upload ---
-  document.getElementById("upload-media-btn").addEventListener("click", () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*,video/*,.pdf,.doc,.docx";
-    input.onchange = async (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        Utils.showLoader();
-        try {
-          await API.uploadMedia(file);
-          Utils.showToast("Media uploaded successfully", "success");
-          Renderers.renderMediaGrid();
-        } catch {
-          Utils.showToast("Failed to upload media", "error");
-        } finally {
-          Utils.hideLoader();
-        }
-      }
-    };
-    input.click();
-  });
+  // document.getElementById("upload-media-btn").addEventListener("click", () => {
+  //   const input = document.createElement("input");
+  //   input.type = "file";
+  //   input.accept = "image/*,video/*,.pdf,.doc,.docx";
+  //   input.onchange = async (e) => {
+  //     const file = e.target.files[0];
+  //     if (file) {
+  //       Utils.showLoader();
+  //       try {
+  //         await API.uploadMedia(file);
+  //         Utils.showToast("Media uploaded successfully", "success");
+  //         Renderers.renderMediaGrid();
+  //       } catch {
+  //         Utils.showToast("Failed to upload media", "error");
+  //       } finally {
+  //         Utils.hideLoader();
+  //       }
+  //     }
+  //   };
+  //   input.click();
+  // });
 
   // --- Media library modal selection ---
-  document.getElementById("select-media-btn")?.addEventListener("click", () => {
-    if (AppState.selectedMedia) {
-      const media = AppState.media.find((m) => m.id === AppState.selectedMedia);
-      if (media) {
-        document.getElementById(
-          "image-preview"
-        ).innerHTML = `<img src="${media.url}" alt="Selected">`;
-      }
-      document.getElementById("media-library-modal").classList.add("hidden");
-    }
-  });
+  // document.getElementById("select-media-btn")?.addEventListener("click", () => {
+  //   if (AppState.selectedMedia) {
+  //     const media = AppState.media.find((m) => m.id === AppState.selectedMedia);
+  //     if (media) {
+  //       document.getElementById(
+  //         "image-preview"
+  //       ).innerHTML = `<img src="${media.url}" alt="Selected">`;
+  //     }
+  //     document.getElementById("media-library-modal").classList.add("hidden");
+  //   }
+  // });
 
   // --- User management ---
   document.getElementById("invite-user-btn").addEventListener("click", () => {
@@ -249,17 +296,6 @@ function initializeEventListeners() {
   document
     .getElementById("delete-category-btn")
     .addEventListener("click", Actions.deleteCategory);
-
-  // --- Tag management ---
-  document.getElementById("add-tag-btn").addEventListener("click", () => {
-    document.getElementById("new-tag-input").focus();
-  });
-  document
-    .getElementById("quick-add-tag")
-    .addEventListener("click", Actions.addTag);
-  document.getElementById("new-tag-input").addEventListener("keypress", (e) => {
-    if (e.key === "Enter") Actions.addTag();
-  });
 
   // --- Logout ---
   document
@@ -353,8 +389,6 @@ async function init() {
   // 1. Restore session — redirects to login if token is gone
   const ok = await API.refreshToken();
   if (!ok) return;
-
-  document.body.style.visibility = "visible";
 
   // 2. Seed mock data for media and users (no backend endpoints yet)
   generateMockData();

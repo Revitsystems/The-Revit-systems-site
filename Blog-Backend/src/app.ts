@@ -13,10 +13,8 @@ import refreshRoutes from "@/routes/refreshRoutes.js";
 
 // ── New routes ────────────────────────────────────────────────
 import categoryRoutes from "@/routes/categoryRoutes.js";
-import tagRoutes from "@/routes/tagRoutes.js";
 import { postCommentRouter, commentRouter } from "@/routes/commentRoutes.js";
 import postAnalyticsRoutes from "@/routes/postAnalyticsRoutes.js";
-import postTagRoutes from "@/routes/postTagRoutes.js";
 import notificationRoutes from "@/routes/notificationRoutes.js";
 
 const app = express();
@@ -71,14 +69,12 @@ app.use("/posts", postRoutes);
 
 // ── Post-scoped sub-resources (new) ──────────────────────────
 // These use mergeParams: true internally so :postId flows through
-app.use("/posts/:postId", postCommentRouter);   // GET|POST /posts/:postId/comments
+app.use("/posts/:postId", postCommentRouter); // GET|POST /posts/:postId/comments
 app.use("/posts/:postId", postAnalyticsRoutes); // POST|GET /posts/:postId/views, /referrers
-app.use("/posts/:postId", postTagRoutes);       // GET|POST|PUT|DELETE /posts/:postId/tags
 
 // ── Standalone resource routes (new) ─────────────────────────
 app.use("/categories", categoryRoutes);
-app.use("/tags", tagRoutes);
-app.use("/comments", commentRouter);           // Admin moderation + replies
+app.use("/comments", commentRouter); // Admin moderation + replies
 app.use("/notifications", notificationRoutes);
 
 export default app;

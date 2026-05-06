@@ -13,20 +13,27 @@ const Renderers = {
     try {
       const stats = await API.getPostStats();
 
-      document.getElementById("published-count").textContent = stats.published || 0;
-      document.getElementById("drafts-count").textContent    = stats.draft     || 0;
-      document.getElementById("scheduled-count").textContent = stats.scheduled || 0;
-      document.getElementById("total-count").textContent     = stats.total     || 0;
+      document.getElementById("published-count").textContent =
+        stats.published || 0;
+      document.getElementById("drafts-count").textContent = stats.draft || 0;
+      document.getElementById("scheduled-count").textContent =
+        stats.scheduled || 0;
+      document.getElementById("total-count").textContent = stats.total || 0;
     } catch {
       // Fall back to AppState counts if the request fails
-      const published = AppState.posts.filter((p) => p.status === "published").length;
-      const drafts    = AppState.posts.filter((p) => p.status === "draft").length;
-      const scheduled = AppState.posts.filter((p) => p.status === "scheduled").length;
+      const published = AppState.posts.filter(
+        (p) => p.status === "published"
+      ).length;
+      const drafts = AppState.posts.filter((p) => p.status === "draft").length;
+      const scheduled = AppState.posts.filter(
+        (p) => p.status === "scheduled"
+      ).length;
 
       document.getElementById("published-count").textContent = published;
-      document.getElementById("drafts-count").textContent    = drafts;
+      document.getElementById("drafts-count").textContent = drafts;
       document.getElementById("scheduled-count").textContent = scheduled;
-      document.getElementById("total-count").textContent     = AppState.posts.length;
+      document.getElementById("total-count").textContent =
+        AppState.posts.length;
     }
   },
 
@@ -34,7 +41,9 @@ const Renderers = {
     const tbody = document.getElementById("recent-posts-table");
     const recent = AppState.posts.slice(0, 5);
 
-    tbody.innerHTML = recent.map((post) => `
+    tbody.innerHTML = recent
+      .map(
+        (post) => `
       <tr>
         <td>${post.title}</td>
         <td>${post.category || post.category_id || "—"}</td>
@@ -43,37 +52,56 @@ const Renderers = {
         <td>${Utils.formatNumber(post.view_count || post.views || 0)}</td>
         <td>
           <div class="action-btns">
-            <button class="action-btn edit" onclick="Actions.editPost('${post.id}')">
+            <button class="action-btn edit" onclick="Actions.editPost('${
+              post.id
+            }')">
               <i class="fas fa-edit"></i>
             </button>
-            <button class="action-btn delete" onclick="Actions.deletePost('${post.id}')">
+            <button class="action-btn delete" onclick="Actions.deletePost('${
+              post.id
+            }')">
               <i class="fas fa-trash"></i>
             </button>
           </div>
         </td>
       </tr>
-    `).join("");
+    `
+      )
+      .join("");
   },
 
   renderTopPosts: () => {
     const container = document.getElementById("top-posts-list");
     const sorted = [...AppState.posts]
-      .sort((a, b) => (b.view_count || b.views || 0) - (a.view_count || a.views || 0))
+      .sort(
+        (a, b) =>
+          (b.view_count || b.views || 0) - (a.view_count || a.views || 0)
+      )
       .slice(0, 5);
 
-    container.innerHTML = sorted.map((post, index) => `
+    container.innerHTML = sorted
+      .map(
+        (post, index) => `
       <div class="top-post-item">
-        <div class="top-post-rank ${index < 3 ? "top-3" : ""}">${index + 1}</div>
+        <div class="top-post-rank ${index < 3 ? "top-3" : ""}">${
+          index + 1
+        }</div>
         <div class="top-post-info">
           <div class="top-post-title">${post.title}</div>
-          <div class="top-post-meta">${post.category || "—"} • ${Utils.formatDate(post.created_at || post.createdAt)}</div>
+          <div class="top-post-meta">${
+            post.category || "—"
+          } • ${Utils.formatDate(post.created_at || post.createdAt)}</div>
         </div>
         <div class="top-post-views">
-          <div class="top-post-views-count">${Utils.formatNumber(post.view_count || post.views || 0)}</div>
+          <div class="top-post-views-count">${Utils.formatNumber(
+            post.view_count || post.views || 0
+          )}</div>
           <div class="top-post-views-label">views</div>
         </div>
       </div>
-    `).join("");
+    `
+      )
+      .join("");
   },
 
   // ==================
@@ -92,11 +120,15 @@ const Renderers = {
       // Keep AppState in sync so dashboard and top posts renderers work
       AppState.posts = response.posts;
 
-      tbody.innerHTML = response.posts.map((post) => `
+      tbody.innerHTML = response.posts
+        .map(
+          (post) => `
         <tr>
           <td>${post.title}</td>
           <td>${post.category || post.category_id || "—"}</td>
-          <td><span class="status-badge ${post.status}">${post.status}</span></td>
+          <td><span class="status-badge ${post.status}">${
+            post.status
+          }</span></td>
           <td>${
             post.status === "scheduled"
               ? Utils.formatDateTime(post.scheduled_date || post.scheduledAt)
@@ -105,33 +137,51 @@ const Renderers = {
           <td>${Utils.formatNumber(post.view_count || post.views || 0)}</td>
           <td>
             <div class="action-btns">
-              ${post.status === "draft" ? `
+              ${
+                post.status === "draft"
+                  ? `
                 <button class="action-btn publish" onclick="Actions.publishPost('${post.id}')" title="Publish">
                   <i class="fas fa-check"></i>
                 </button>
-              ` : ""}
-              ${post.status === "scheduled" ? `
+              `
+                  : ""
+              }
+              ${
+                post.status === "scheduled"
+                  ? `
                 <button class="action-btn schedule" onclick="Actions.editSchedule('${post.id}')" title="Edit Schedule">
                   <i class="fas fa-calendar"></i>
                 </button>
-              ` : ""}
-              <button class="action-btn edit" onclick="Actions.editPost('${post.id}')" title="Edit">
+              `
+                  : ""
+              }
+              <button class="action-btn edit" onclick="Actions.editPost('${
+                post.id
+              }')" title="Edit">
                 <i class="fas fa-edit"></i>
               </button>
-              <button class="action-btn delete" onclick="Actions.deletePost('${post.id}')" title="Delete">
+              <button class="action-btn delete" onclick="Actions.deletePost('${
+                post.id
+              }')" title="Delete">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
           </td>
         </tr>
-      `).join("");
+      `
+        )
+        .join("");
 
       AppState.pagination.posts = response.pagination;
 
-      Renderers.renderPagination("posts-pagination", response.pagination, (page) => {
-        AppState.pagination.posts.page = page;
-        Renderers.renderPostsTable();
-      });
+      Renderers.renderPagination(
+        "posts-pagination",
+        response.pagination,
+        (page) => {
+          AppState.pagination.posts.page = page;
+          Renderers.renderPostsTable();
+        }
+      );
     } catch (error) {
       Utils.showToast("Failed to load posts", "error");
     } finally {
@@ -150,34 +200,48 @@ const Renderers = {
     try {
       const response = await API.getMedia(AppState.filters.media);
 
-      grid.innerHTML = response.media.map((item) => `
+      grid.innerHTML = response.media
+        .map(
+          (item) => `
         <div class="media-item" data-id="${item.id}" onclick="Actions.selectMedia('${item.id}')">
           <img src="${item.url}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/150'">
           <div class="media-item-overlay">
             <div class="media-item-name">${item.name}</div>
           </div>
         </div>
-      `).join("");
+      `
+        )
+        .join("");
 
-      list.innerHTML = response.media.map((item) => `
+      list.innerHTML = response.media
+        .map(
+          (item) => `
         <tr>
-          <td><img src="${item.url}" alt="" style="width:50px;height:50px;object-fit:cover;border-radius:4px;"></td>
+          <td><img src="${
+            item.url
+          }" alt="" style="width:50px;height:50px;object-fit:cover;border-radius:4px;"></td>
           <td>${item.name}</td>
           <td>${item.type}</td>
           <td>${item.size}</td>
           <td>${Utils.formatDate(item.uploadedAt)}</td>
           <td>
             <div class="action-btns">
-              <button class="action-btn edit" onclick="Actions.viewMedia('${item.id}')">
+              <button class="action-btn edit" onclick="Actions.viewMedia('${
+                item.id
+              }')">
                 <i class="fas fa-eye"></i>
               </button>
-              <button class="action-btn delete" onclick="Actions.deleteMedia('${item.id}')">
+              <button class="action-btn delete" onclick="Actions.deleteMedia('${
+                item.id
+              }')">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
           </td>
         </tr>
-      `).join("");
+      `
+        )
+        .join("");
 
       AppState.pagination.media = response.pagination;
     } catch (error) {
@@ -197,9 +261,13 @@ const Renderers = {
     try {
       const response = await API.getComments(AppState.filters.comments);
 
-      container.innerHTML = response.comments.map((comment) => `
+      container.innerHTML = response.comments
+        .map(
+          (comment) => `
         <div class="comment-item">
-          <input type="checkbox" class="comment-checkbox" data-id="${comment.id}">
+          <input type="checkbox" class="comment-checkbox" data-id="${
+            comment.id
+          }">
           <div class="comment-avatar">
             <i class="fas fa-user"></i>
           </div>
@@ -207,28 +275,44 @@ const Renderers = {
             <div class="comment-header">
               <div>
                 <span class="comment-author">${comment.author}</span>
-                <span class="comment-meta">${comment.email || "Staff"} • ${Utils.formatDateTime(comment.createdAt)}</span>
+                <span class="comment-meta">${
+                  comment.email || "Staff"
+                } • ${Utils.formatDateTime(comment.createdAt)}</span>
               </div>
-              <span class="status-badge ${comment.status}">${comment.status}</span>
+              <span class="status-badge ${comment.status}">${
+            comment.status
+          }</span>
             </div>
             <div class="comment-text">${comment.text}</div>
-            <div class="comment-post">on <strong>${comment.postTitle}</strong></div>
+            <div class="comment-post">on <strong>${
+              comment.postTitle
+            }</strong></div>
             <div class="comment-actions">
-              ${comment.status !== "approved" ? `
+              ${
+                comment.status !== "approved"
+                  ? `
                 <button class="approve-btn" onclick="Actions.approveComment('${comment.id}')">
                   <i class="fas fa-check"></i> Approve
                 </button>
-              ` : ""}
-              <button class="reply-btn" onclick="Actions.replyComment('${comment.id}')">
+              `
+                  : ""
+              }
+              <button class="reply-btn" onclick="Actions.replyComment('${
+                comment.id
+              }')">
                 <i class="fas fa-reply"></i> Reply
               </button>
-              <button class="spam-btn" onclick="Actions.markSpam('${comment.id}')">
+              <button class="spam-btn" onclick="Actions.markSpam('${
+                comment.id
+              }')">
                 <i class="fas fa-ban"></i> Spam
               </button>
             </div>
           </div>
         </div>
-      `).join("");
+      `
+        )
+        .join("");
 
       AppState.pagination.comments = response.pagination;
     } catch (error) {
@@ -248,34 +332,60 @@ const Renderers = {
     try {
       const response = await API.getUsers(AppState.filters.users);
 
-      container.innerHTML = response.users.map((user) => `
+      container.innerHTML = response.users
+        .map(
+          (user) => `
         <tr>
           <td>
             <div class="user-info">
               <div class="user-avatar"><i class="fas fa-user"></i></div>
               <div>
-                <div class="user-name">${user.name || user.display_name || (user.first_name + " " + user.last_name)}</div>
+                <div class="user-name">${
+                  user.name ||
+                  user.display_name ||
+                  user.first_name + " " + user.last_name
+                }</div>
                 <div class="user-email">${user.email}</div>
               </div>
             </div>
           </td>
           <td><span class="role-badge ${user.role}">${user.role}</span></td>
-          <td><span class="status-badge ${user.status}">${user.status}</span></td>
+          <td><span class="status-badge ${user.status}">${
+            user.status
+          }</span></td>
           <td>${user.posts ?? "—"}</td>
-          <td>${user.joinedAt ? Utils.formatDate(user.joinedAt) : user.created_at ? Utils.formatDate(user.created_at) : "—"}</td>
-          <td>${user.lastActive ? Utils.formatDate(user.lastActive) : user.last_active_at ? Utils.formatDate(user.last_active_at) : "—"}</td>
+          <td>${
+            user.joinedAt
+              ? Utils.formatDate(user.joinedAt)
+              : user.created_at
+              ? Utils.formatDate(user.created_at)
+              : "—"
+          }</td>
+          <td>${
+            user.lastActive
+              ? Utils.formatDate(user.lastActive)
+              : user.last_active_at
+              ? Utils.formatDate(user.last_active_at)
+              : "—"
+          }</td>
           <td>
             <div class="action-btns">
-              <button class="action-btn edit" onclick="Actions.editUser('${user.id}')">
+              <button class="action-btn edit" onclick="Actions.editUser('${
+                user.id
+              }')">
                 <i class="fas fa-edit"></i>
               </button>
-              <button class="action-btn delete" onclick="Actions.deleteUser('${user.id}')">
+              <button class="action-btn delete" onclick="Actions.deleteUser('${
+                user.id
+              }')">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
           </td>
         </tr>
-      `).join("");
+      `
+        )
+        .join("");
 
       AppState.pagination.users = response.pagination;
     } catch (error) {
@@ -286,68 +396,8 @@ const Renderers = {
   },
 
   // ==================
-  // CATEGORIES & TAGS
+  // CATEGORIES
   // ==================
-  renderCategories: async () => {
-    const container = document.getElementById("categories-list");
-    Utils.showLoader();
-
-    try {
-      const categories = await API.getCategories();
-
-      container.innerHTML = categories.map((cat) => `
-        <div class="category-item">
-          <div class="category-info">
-            <div class="category-name">${cat.name}</div>
-            <div class="category-meta">
-              ${cat.slug ? `/${cat.slug}` : ""} 
-              ${cat.description ? `• ${cat.description}` : ""}
-              ${cat.parent_id ? `• Sub-category` : ""}
-            </div>
-          </div>
-          <div class="action-btns">
-            <button class="action-btn edit" onclick="Actions.editCategory('${cat.id}')">
-              <i class="fas fa-edit"></i>
-            </button>
-          </div>
-        </div>
-      `).join("");
-    } catch (error) {
-      Utils.showToast("Failed to load categories", "error");
-    } finally {
-      Utils.hideLoader();
-    }
-  },
-
-  // Tags now fetched from the backend
-  renderTags: async () => {
-    const container = document.getElementById("tags-cloud");
-
-    try {
-      const tags = await API.getTags();
-
-      container.innerHTML = tags.map((tag) => `
-        <span class="tag-item">
-          ${tag.name}
-          <button class="remove-tag" onclick="Actions.deleteTag('${tag.id}')" title="Remove tag">
-            <i class="fas fa-times"></i>
-          </button>
-        </span>
-      `).join("");
-    } catch {
-      // Fall back to AppState if fetch fails
-      container.innerHTML = AppState.tags.map((tag) => `
-        <span class="tag-item">
-          ${tag.name}
-          <button class="remove-tag" onclick="Actions.deleteTag('${tag.id}')" title="Remove tag">
-            <i class="fas fa-times"></i>
-          </button>
-        </span>
-      `).join("");
-    }
-  },
-
-  // Categories fetched from backend and used to populate select dropdowns
   renderCategoryOptions: async () => {
     const selects = ["blog-category", "edit-category", "category-parent"];
 
@@ -359,6 +409,7 @@ const Renderers = {
         if (!select) return;
 
         const currentValue = select.value;
+
         const placeholder =
           selectId === "category-parent"
             ? '<option value="">None (Top Level)</option>'
@@ -366,12 +417,14 @@ const Renderers = {
 
         select.innerHTML =
           placeholder +
-          categories.map((cat) => `<option value="${cat.id}">${cat.name}</option>`).join("");
+          categories
+            .map((cat) => `<option value="${cat.id}">${cat.name}</option>`)
+            .join("");
 
         if (currentValue) select.value = currentValue;
       });
-    } catch {
-      // silently fail — dropdowns stay empty
+    } catch (error) {
+      console.error("Failed to load category options:", error);
     }
   },
 
@@ -379,8 +432,8 @@ const Renderers = {
   // NOTIFICATIONS
   // ==================
   renderNotifications: async () => {
-    const list    = document.getElementById("notification-list");
-    const badge   = document.getElementById("notification-badge");
+    const list = document.getElementById("notification-list");
+    const badge = document.getElementById("notification-badge");
 
     try {
       const [notifData, countData] = await Promise.all([
@@ -390,28 +443,46 @@ const Renderers = {
 
       const notifications = notifData.notifications || [];
 
-      list.innerHTML = notifications.length > 0
-        ? notifications.map((n) => `
-            <div class="notification-item ${!n.is_read ? "unread" : ""}" onclick="API.markNotificationRead('${n.id}')">
+      list.innerHTML =
+        notifications.length > 0
+          ? notifications
+              .map(
+                (n) => `
+            <div class="notification-item ${
+              !n.is_read ? "unread" : ""
+            }" onclick="API.markNotificationRead('${n.id}')">
               <i class="fas fa-bell"></i>
               <div class="notification-content">
                 <p>${n.message}</p>
                 <span class="time">${Utils.formatDateTime(n.created_at)}</span>
               </div>
             </div>
-          `).join("")
-        : `<div class="notification-item"><div class="notification-content"><p>No notifications</p></div></div>`;
+          `
+              )
+              .join("")
+          : `<div class="notification-item"><div class="notification-content"><p>No notifications</p></div></div>`;
 
       badge.textContent = countData.unreadCount || 0;
-
     } catch {
       // Fall back to static placeholder notifications
       const fallback = [
-        { icon: "comment", text: "New comment pending moderation", time: "Just now", unread: true },
-        { icon: "calendar", text: "Scheduled post will publish soon", time: "1 hour ago", unread: false },
+        {
+          icon: "comment",
+          text: "New comment pending moderation",
+          time: "Just now",
+          unread: true,
+        },
+        {
+          icon: "calendar",
+          text: "Scheduled post will publish soon",
+          time: "1 hour ago",
+          unread: false,
+        },
       ];
 
-      list.innerHTML = fallback.map((n) => `
+      list.innerHTML = fallback
+        .map(
+          (n) => `
         <div class="notification-item ${n.unread ? "unread" : ""}">
           <i class="fas fa-${n.icon}"></i>
           <div class="notification-content">
@@ -419,7 +490,9 @@ const Renderers = {
             <span class="time">${n.time}</span>
           </div>
         </div>
-      `).join("");
+      `
+        )
+        .join("");
 
       badge.textContent = fallback.filter((n) => n.unread).length;
     }
@@ -432,14 +505,17 @@ const Renderers = {
     Utils.showLoader();
 
     try {
-      const period = document.getElementById("main-analytics-period")?.value || 30;
+      const period =
+        document.getElementById("main-analytics-period")?.value || 30;
       const data = await API.getAnalytics(period);
 
       const totalViews = data.trafficData.data.reduce((a, b) => a + b, 0);
-      document.getElementById("analytics-total-views").textContent     = Utils.formatNumber(totalViews);
-      document.getElementById("analytics-unique-visitors").textContent = Utils.formatNumber(Math.floor(totalViews * 0.7));
-      document.getElementById("analytics-avg-time").textContent        = "3:45";
-      document.getElementById("analytics-bounce-rate").textContent     = "42%";
+      document.getElementById("analytics-total-views").textContent =
+        Utils.formatNumber(totalViews);
+      document.getElementById("analytics-unique-visitors").textContent =
+        Utils.formatNumber(Math.floor(totalViews * 0.7));
+      document.getElementById("analytics-avg-time").textContent = "3:45";
+      document.getElementById("analytics-bounce-rate").textContent = "42%";
 
       // Main traffic chart
       const trafficCtx = document.getElementById("main-traffic-chart");
@@ -449,14 +525,16 @@ const Renderers = {
           type: "line",
           data: {
             labels: data.trafficData.labels,
-            datasets: [{
-              label: "Page Views",
-              data: data.trafficData.data,
-              borderColor: "#d17609",
-              backgroundColor: "rgba(209, 118, 9, 0.1)",
-              fill: true,
-              tension: 0.4,
-            }],
+            datasets: [
+              {
+                label: "Page Views",
+                data: data.trafficData.data,
+                borderColor: "#d17609",
+                backgroundColor: "rgba(209, 118, 9, 0.1)",
+                fill: true,
+                tension: 0.4,
+              },
+            ],
           },
           options: {
             responsive: true,
@@ -475,10 +553,12 @@ const Renderers = {
           type: "doughnut",
           data: {
             labels: data.deviceData.labels,
-            datasets: [{
-              data: data.deviceData.data,
-              backgroundColor: ["#d17609", "#2196f3", "#4caf50"],
-            }],
+            datasets: [
+              {
+                data: data.deviceData.data,
+                backgroundColor: ["#d17609", "#2196f3", "#4caf50"],
+              },
+            ],
           },
           options: { responsive: true, maintainAspectRatio: false },
         });
@@ -487,36 +567,52 @@ const Renderers = {
       // Top posts table
       const topPostsBody = document.getElementById("analytics-top-posts");
       if (topPostsBody) {
-        topPostsBody.innerHTML = data.topPosts.map((post, index) => `
+        topPostsBody.innerHTML = data.topPosts
+          .map(
+            (post, index) => `
           <tr>
             <td>#${index + 1}</td>
             <td>${post.title}</td>
             <td>${Utils.formatNumber(post.views)}</td>
             <td>${Utils.formatNumber(post.uniqueViews)}</td>
-            <td>${Math.floor(post.avgTime / 60)}:${(post.avgTime % 60).toString().padStart(2, "0")}</td>
+            <td>${Math.floor(post.avgTime / 60)}:${(post.avgTime % 60)
+              .toString()
+              .padStart(2, "0")}</td>
             <td>${post.bounceRate}%</td>
           </tr>
-        `).join("");
+        `
+          )
+          .join("");
       }
 
       // Referrers
       const referrersContainer = document.getElementById("referrers-list");
       if (referrersContainer) {
         const maxCount = Math.max(...data.referrers.map((r) => r.count), 1);
-        referrersContainer.innerHTML = data.referrers.map((ref) => `
+        referrersContainer.innerHTML = data.referrers
+          .map(
+            (ref) => `
           <div class="referrer-item">
             <div class="referrer-info">
-              <div class="referrer-icon"><i class="fab fa-${ref.icon}"></i></div>
+              <div class="referrer-icon"><i class="fab fa-${
+                ref.icon
+              }"></i></div>
               <span class="referrer-name">${ref.name}</span>
             </div>
             <div style="display:flex;align-items:center;gap:1rem;">
               <div class="referrer-bar">
-                <div class="referrer-bar-fill" style="width:${(ref.count / maxCount) * 100}%"></div>
+                <div class="referrer-bar-fill" style="width:${
+                  (ref.count / maxCount) * 100
+                }%"></div>
               </div>
-              <span class="referrer-count">${Utils.formatNumber(ref.count)}</span>
+              <span class="referrer-count">${Utils.formatNumber(
+                ref.count
+              )}</span>
             </div>
           </div>
-        `).join("");
+        `
+          )
+          .join("");
       }
 
       // Dashboard preview chart (7-day)
@@ -527,14 +623,16 @@ const Renderers = {
           type: "line",
           data: {
             labels: data.trafficData.labels.slice(-7),
-            datasets: [{
-              label: "Views",
-              data: data.trafficData.data.slice(-7),
-              borderColor: "#d17609",
-              backgroundColor: "rgba(209, 118, 9, 0.1)",
-              fill: true,
-              tension: 0.4,
-            }],
+            datasets: [
+              {
+                label: "Views",
+                data: data.trafficData.data.slice(-7),
+                borderColor: "#d17609",
+                backgroundColor: "rgba(209, 118, 9, 0.1)",
+                fill: true,
+                tension: 0.4,
+              },
+            ],
           },
           options: {
             responsive: true,
@@ -544,9 +642,13 @@ const Renderers = {
           },
         });
 
-        const weekViews = data.trafficData.data.slice(-7).reduce((a, b) => a + b, 0);
-        document.getElementById("total-views").textContent     = Utils.formatNumber(weekViews);
-        document.getElementById("unique-visitors").textContent = Utils.formatNumber(Math.floor(weekViews * 0.7));
+        const weekViews = data.trafficData.data
+          .slice(-7)
+          .reduce((a, b) => a + b, 0);
+        document.getElementById("total-views").textContent =
+          Utils.formatNumber(weekViews);
+        document.getElementById("unique-visitors").textContent =
+          Utils.formatNumber(Math.floor(weekViews * 0.7));
       }
     } catch (error) {
       Utils.showToast("Failed to load analytics", "error");
@@ -563,11 +665,17 @@ const Renderers = {
     if (!container) return;
 
     container.innerHTML = `
-      <button class="page-btn" onclick="window.changePage(${pagination.page - 1})" ${pagination.page === 1 ? "disabled" : ""}>
+      <button class="page-btn" onclick="window.changePage(${
+        pagination.page - 1
+      })" ${pagination.page === 1 ? "disabled" : ""}>
         <i class="fas fa-chevron-left"></i>
       </button>
-      <span class="page-info">Page ${pagination.page} of ${pagination.totalPages}</span>
-      <button class="page-btn" onclick="window.changePage(${pagination.page + 1})" ${pagination.page >= pagination.totalPages ? "disabled" : ""}>
+      <span class="page-info">Page ${pagination.page} of ${
+      pagination.totalPages
+    }</span>
+      <button class="page-btn" onclick="window.changePage(${
+        pagination.page + 1
+      })" ${pagination.page >= pagination.totalPages ? "disabled" : ""}>
         <i class="fas fa-chevron-right"></i>
       </button>
     `;

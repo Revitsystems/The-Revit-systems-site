@@ -9,8 +9,6 @@ export const findUserByEmail = async (email: string) => {
     "SELECT id, first_name, last_name, email, password_hash, role, status FROM users WHERE email = $1",
     [email]
   );
-  // Helpful for your Fedora dev terminal to see what's being returned
-  console.log("User found:", result.rows[0]?.email || "None");
   return result.rows[0];
 };
 
