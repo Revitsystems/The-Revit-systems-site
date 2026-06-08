@@ -2186,7 +2186,7 @@ hr {
   background-position: center;
 }
 .abt-icon-top .abt-icon-image {
-  background-image: url("./Images/The\ Team\ Image/28b6c0e924138de6bc4e924d5171b8442770fd52 (1).jpg");
+  background-image: url("../Image/team-image/Mr Noble.jpg");
 }
 
 .abt-icon-bottom .abt-icon-image {
@@ -2508,7 +2508,7 @@ hr {
 .abt-author-image {
   width: 60px;
   height: 60px;
-  background-image: url("./Images/The/ Team/ Image/28b6c0e924138de6bc4e924d5171b8442770fd52 (1).jpg");
+  background-image: url("../Image/team-image/Mr Noble.jpg");
   background-size: cover;
   background-position: center;
   border-radius: 50%;

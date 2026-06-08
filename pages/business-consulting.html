@@ -20,20 +20,19 @@
       rel="stylesheet"
     />
     <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-    <link rel="stylesheet" href="./style.css" />
-    <link
       rel="icon"
       type="image/png"
       href="https://res.cloudinary.com/dmvltush8/image/upload/v1760973008/favicon_qdd9zl.png"
     />
-    <script defer src="./script.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../assets/css/style.css" />
+    <script defer src="../assets/js/script.js"></script>
   </head>
 
   <body>
-    <!-- Main wrapper for the entire page content -->
     <div class="revit-container">
       <!-- Header section containing the navigation bar -->
       <header id="header">
@@ -50,7 +49,7 @@
               </div>
               <!-- Unordered list for navigation menu items -->
               <ul class="nav-links">
-                <li><a href="./index.html">Home</a></li>
+                <li><a href="../index.html">Home</a></li>
                 <li><a href="./about-us.html">About Us</a></li>
                 <li><a href="./services.html">Services</a></li>
                 <li><a href="./resources-page.html">Resources</a></li>
@@ -104,7 +103,7 @@
 
         <nav class="menu-nav">
           <ul>
-            <li><a href="./index.html">Home</a></li>
+            <li><a href="../index.html">Home</a></li>
             <li><a href="./about-us.html">About Us</a></li>
             <li><a href="./services.html">Services</a></li>
             <li><a href="./resources-page.html">Resources</a></li>
@@ -117,14 +116,15 @@
           Signed in as <strong>you@example.com</strong>
         </div>
       </aside>
-      <!-- Main container for the page's core sections -->
+
       <div class="container">
-        <!-- Hero -->
+        <!-- ===== HERO ===== -->
+
         <section
           class="sub-service-hero"
           loading="lazy"
           style="
-            background-image: url('https://res.cloudinary.com/dmvltush8/image/upload/v1760972752/Gemini_Generated_Image_ojpc88ojpc88ojpc_fagyby.png');
+            background-image: url('https://res.cloudinary.com/dmvltush8/image/upload/v1760973157/business_consulting_gydtje.png');
           "
         >
           <!-- tv (Guidelines / Knowledge) -->
@@ -139,13 +139,11 @@
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            class="lucide lucide-tv-minimal-play-icon lucide-tv-minimal-play"
+            class="lucide lucide-activity-icon lucide-activity"
           >
             <path
-              d="M15.033 9.44a.647.647 0 0 1 0 1.12l-4.065 2.352a.645.645 0 0 1-.968-.56V7.648a.645.645 0 0 1 .967-.56z"
+              d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"
             />
-            <path d="M7 21h10" />
-            <rect width="20" height="14" x="2" y="3" rx="2" />
           </svg>
           <!-- Pen Nib (Design / Creativity) -->
           <svg
@@ -159,13 +157,13 @@
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            class="lucide lucide-goal-icon lucide-goal"
+            class="lucide lucide-briefcase-business-icon lucide-briefcase-business"
           >
-            <path d="M12 13V2l8 4-8 4" />
-            <path d="M20.561 10.222a9 9 0 1 1-12.55-5.29" />
-            <path d="M8.002 9.997a5 5 0 1 0 8.9 2.02" />
+            <path d="M12 12h.01" />
+            <path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+            <path d="M22 13a18.15 18.15 0 0 1-20 0" />
+            <rect width="20" height="14" x="2" y="6" rx="2" />
           </svg>
-
           <!-- Dog Tag (Identity / Recognition) -->
           <svg
             class="sub-icon sub-icon--3"
@@ -175,18 +173,19 @@
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            stroke-width="1"
+            stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            class="lucide lucide-scan-face-icon lucide-scan-face"
+            class="lucide lucide-chart-no-axes-combined-icon lucide-chart-no-axes-combined"
           >
-            <path d="M3 7V5a2 2 0 0 1 2-2h2" />
-            <path d="M17 3h2a2 2 0 0 1 2 2v2" />
-            <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
-            <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
-            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-            <path d="M9 9h.01" />
-            <path d="M15 9h.01" />
+            <path d="M12 16v5" />
+            <path d="M16 14v7" />
+            <path d="M20 10v11" />
+            <path
+              d="m22 3-8.646 8.646a.5.5 0 0 1-.708 0L9.354 8.354a.5.5 0 0 0-.707 0L2 15"
+            />
+            <path d="M4 18v3" />
+            <path d="M8 14v7" />
           </svg>
 
           <!-- Palette (Colors / Branding) -->
@@ -201,13 +200,12 @@
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            class="lucide lucide-list-checks-icon lucide-list-checks"
+            class="lucide lucide-file-input-icon lucide-file-input"
           >
-            <path d="M13 5h8" />
-            <path d="M13 12h8" />
-            <path d="M13 19h8" />
-            <path d="m3 17 2 2 4-4" />
-            <path d="m3 7 2 2 4-4" />
+            <path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4" />
+            <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+            <path d="M2 15h10" />
+            <path d="m9 18 3-3-3-3" />
           </svg>
 
           <!-- Spark / Star (Brand Spark) -->
@@ -222,14 +220,14 @@
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            class="lucide lucide-search-code-icon lucide-search-code"
+            class="lucide lucide-lightbulb-icon lucide-lightbulb"
           >
-            <path d="m13 13.5 2-2.5-2-2.5" />
-            <path d="m21 21-4.3-4.3" />
-            <path d="M9 8.5 7 11l2 2.5" />
-            <circle cx="11" cy="11" r="8" />
+            <path
+              d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"
+            />
+            <path d="M9 18h6" />
+            <path d="M10 22h4" />
           </svg>
-
           <!-- Megaphone (Brand Voice / Marketing) -->
           <svg
             class="sub-icon sub-icon--6"
@@ -242,51 +240,50 @@
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            class="lucide lucide-rocket-icon lucide-rocket"
+            class="lucide lucide-handshake-icon lucide-handshake"
           >
+            <path d="m11 17 2 2a1 1 0 1 0 3-3" />
             <path
-              d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"
+              d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"
             />
-            <path
-              d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"
-            />
-            <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
-            <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+            <path d="m21 3 1 11h-2" />
+            <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3" />
+            <path d="M3 4h8" />
           </svg>
 
           <div class="sub-title-wrap">
-            <h1 class="sub-bn">Digital Marketing</h1>
+            <h1 class="sub-bn">Business &amp; Consulting</h1>
           </div>
         </section>
-        <section class="sub-intro-section" ;>
+
+        <!-- ===== INTRO ===== -->
+        <section class="sub-intro-section">
           <div class="sub-intro-container">
-            <!-- Text column -->
             <div class="sub-intro-text">
               <p class="sub-section-text">
-                <span>The Internet is loud</span>
-                but the right message cuts through. We create and manage digital
-                campaigns that don’t just chase likes but drive results. From
-                social media that builds communities, to paid ads that reach the
-                right eyes, to strategies that keep your brand visible in
-                search, our marketing is designed to connect you with the people
-                who matter.
-                <span class="emphasis">
-                  We don’t just promote; we engage, convert, and retain.</span
+                <span
+                  >Every great business starts with a clear plan and the right
+                  execution.</span
                 >
+                That’s where we come in. At Revit, we work with startups and
+                growing enterprises to refine ideas, map strategies, and set up
+                the systems that make growth sustainable. Whether it’s writing
+                investor-ready proposals, structuring your business model, or
+                guiding your market entry, we don’t just advise, we partner with
+                you to move from vision to traction.
               </p>
             </div>
 
-            <!-- Image column -->
             <div class="sub-intro-image">
               <img
-                src="https://res.cloudinary.com/dmvltush8/image/upload/v1761066833/Digital_marketing2_lluawp.png"
-                alt="digital marketing image"
+                src="https://res.cloudinary.com/dmvltush8/image/upload/v1761066814/business_consulting_2_zipu0q.png"
+                alt="business consulting"
               />
             </div>
           </div>
         </section>
 
-        <!-- Services -->
+        <!-- ===== SERVICES ===== -->
         <section class="sub-service-section">
           <h2>Our Services</h2>
           <div class="sub-service-grid">
@@ -294,17 +291,18 @@
               <div class="the-icons">
                 <div class="the-icons-image-holder">
                   <img
-                    src="./SVG/social-media-campaign-svgrepo-com.svg"
+                    src="../assets/SVG/development-marketing-outline-svgrepo-com.svg"
                     alt=""
                     class="sub-icons"
                   />
                 </div>
               </div>
               <div class="hold">
-                <h3>Social Media Management</h3>
+                <h3>Business Plan &amp; Proposal Writing</h3>
                 <hr />
                 <p>
-                  Content, scheduling, and engagement that grow communities.
+                  Clear, professional documents that persuade investors and
+                  partners.
                 </p>
               </div>
             </div>
@@ -313,16 +311,16 @@
               <div class="the-icons">
                 <div class="the-icons-image-holder">
                   <img
-                    src="./SVG/ads-svgrepo-com.svg"
+                    src="../assets/SVG/strategy-chess-plan-plans-schedule-svgrepo-com.svg"
                     alt=""
                     class="sub-icons"
                   />
                 </div>
               </div>
               <div class="hold">
-                <h3>Paid Advertising</h3>
+                <h3>Startup Strategy &amp; Advisory</h3>
                 <hr class="rule" />
-                <p>Targeted Meta and Google ads that maximize reach and ROI.</p>
+                <p>MVP scoping, market entry, and go-to-market planning.</p>
               </div>
             </div>
 
@@ -330,17 +328,17 @@
               <div class="the-icons">
                 <div class="the-icons-image-holder">
                   <img
-                    src="./SVG/slicknewsletters-svgrepo-com.svg"
+                    src="../assets/SVG/handshake-svgrepo-com.svg"
                     alt=""
                     class="sub-icons"
                   />
                 </div>
               </div>
               <div class="hold">
-                <h3>Email Marketing & Automation</h3>
+                <h3>Pitch Deck Review &amp; Investor Readiness</h3>
                 <hr class="rule" />
                 <p>
-                  Keep your audience engaged with timely, personalized messages.
+                  Refine your pitch and prepare for the right conversations.
                 </p>
               </div>
             </div>
@@ -349,35 +347,35 @@
               <div class="the-icons">
                 <div class="the-icons-image-holder">
                   <img
-                    src="./SVG/seo-1-svgrepo-com.svg"
+                    src="../assets/SVG/process-gear-business-svgrepo-com.svg"
                     alt=""
                     class="sub-icons"
                   />
                 </div>
               </div>
               <div class="hold">
-                <h3>SEO (Search Engine Optimization)</h3>
-                <hr class="rule" />
-                <p>Foundational optimization to get your brand found online.</p>
-              </div>
-            </div>
-
-            <div class="sub-service-card">
-              <div class="the-icons">
-                <div class="the-icons-image-holder">
-                  <img
-                    src="./SVG/campaign-conversion-generation-svgrepo-com.svg"
-                    alt=""
-                    class="sub-icons"
-                  />
-                </div>
-              </div>
-              <div class="hold">
-                <h3>Campaign Strategy & Execution</h3>
+                <h3>Process Optimization &amp; Digital Transformation</h3>
                 <hr class="rule" />
                 <p>
-                  Launches, events, and seasonal campaigns that make an impact.
+                  Set up systems that simplify and improve daily operations.
                 </p>
+              </div>
+            </div>
+
+            <div class="sub-service-card">
+              <div class="the-icons">
+                <div class="the-icons-image-holder">
+                  <img
+                    src="../assets/SVG/registration-counter-register-notes-registration-svgrepo-com.svg"
+                    alt=""
+                    class="sub-icons"
+                  />
+                </div>
+              </div>
+              <div class="hold">
+                <h3>Business Registration &amp; Branding Setup Guidance</h3>
+                <hr class="rule" />
+                <p>Get the foundations right from day one.</p>
               </div>
             </div>
           </div>
@@ -408,7 +406,7 @@
                   rel="noopener"
                 >
                   <!-- Facebook icon SVG -->
-                  <img src="./SVG/facebook-176-svgrepo-com.svg" alt="" />
+                  <img src="../assets/SVG/facebook-176-svgrepo-com.svg" alt="" />
                 </a>
                 <a
                   href="https://x.com/revitsystems"
@@ -418,7 +416,7 @@
                   rel="noopener"
                 >
                   <!-- Twitter icon SVG -->
-                  <img src="./SVG/twitter-3-svgrepo-com.svg" alt="" />
+                  <img src="../assets/SVG/twitter-3-svgrepo-com.svg" alt="" />
                 </a>
                 <a
                   href="https://www.instagram.com/revitsystems/"
@@ -428,7 +426,7 @@
                   rel="noopener"
                 >
                   <!-- Instagram icon SVG -->
-                  <img src="./SVG/instagram-167-svgrepo-com.svg" alt="" />
+                  <img src="../assets/SVG/instagram-167-svgrepo-com.svg" alt="" />
                 </a>
                 <a
                   href="https://www.linkedin.com/company/revit-systems-limited/?viewAsMember=true"
@@ -438,7 +436,7 @@
                   rel="noopener"
                 >
                   <!-- LinkedIn icon SVG -->
-                  <img src="./SVG/linkedin-161-svgrepo-com.svg" alt="" />
+                  <img src="../assets/SVG/linkedin-161-svgrepo-com.svg" alt="" />
                 </a>
               </div>
             </div>
@@ -447,8 +445,8 @@
             <div class="rv-link-columns">
               <div class="rv-col">
                 <div class="rv-col-head">Revit Hub</div>
-                <a href="index.html">Home</a>
-                <a href="services.html">Services</a>
+                <a href="../index.html">Home</a>
+                <a href="./services.html">Services</a>
                 <a href="#">About</a>
               </div>
               <div class="rv-col">
@@ -465,8 +463,6 @@
           </div>
         </footer>
       </div>
-      <!-- End of main container -->
     </div>
-    <!-- End of revit-container -->
   </body>
 </html>
