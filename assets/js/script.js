@@ -89,3 +89,14 @@ const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 //     feedback.style.color = "red";
 //   }
 // });
+
+const form = document.getElementById("newsForm");
+const button = document.getElementById("subscribeBtn");
+
+form.addEventListener("submit", () => {
+  button.disabled = true;
+  button.innerHTML = `
+  <span class="spinner"></span>
+  Subscribing...
+`;
+});
