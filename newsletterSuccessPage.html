@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>You're Subscribed!</title>
+    <link rel="stylesheet" href="./assets/css/newsLetter.css" />
+  </head>
+  <body>
+    <div class="success-card">
+      <div class="icon-circle">
+        <svg class="mail-icon" viewBox="0 0 24 24">
+          <rect
+            class="envelope-body"
+            x="2"
+            y="5"
+            width="20"
+            height="14"
+            rx="2"
+          />
+          <polyline class="envelope-flap" points="2 5 12 13 22 5" />
+          <polyline class="check-small" points="20 6 20 6" />
+        </svg>
+      </div>
+
+      <h1>You're Subscribed!</h1>
+      <p class="subtitle">
+        Welcome to the newsletter. You'll be the first to know about updates,
+        tips, and exclusive content.
+      </p>
+
+      <!-- <div class="email-box">
+        <div class="email-label">Subscribed email</div>
+        <div class="email-value" id="userEmail">user@example.com</div>
+      </div> -->
+
+      <div class="what-next">
+        <h3>
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+          What happens next?
+        </h3>
+        <!-- <div class="next-step">
+          <span class="step-number">1</span>
+          <p class="step-text">
+            <strong>Check your inbox</strong> for a welcome email with your
+            subscription details.
+          </p>
+        </div>
+        <div class="next-step">
+          <span class="step-number">2</span>
+          <p class="step-text">
+            <strong>Confirm your email</strong> by clicking the verification
+            link we just sent.
+          </p>
+        </div> -->
+        <div class="next-step">
+          <span class="step-number">1</span>
+          <p class="step-text">
+            <strong>Stay tuned</strong> — your first newsletter arrives next
+            week.
+          </p>
+        </div>
+      </div>
+
+      <a href="/" class="btn">
+        <svg viewBox="0 0 24 24">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+        Back to Home
+      </a>
+
+      <p class="footer-note">
+        Changed your mind? <a href="#">Unsubscribe</a> at any time.
+      </p>
+    </div>
+
+    <script>
+      // You can dynamically set the email from your subscription form
+      // document.getElementById('userEmail').textContent = subscribedEmail;
+    </script>
+  </body>
+</html>

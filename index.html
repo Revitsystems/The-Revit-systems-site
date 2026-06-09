@@ -33,6 +33,7 @@
     />
     <!-- Defer custom JavaScript file to load after HTML parsing -->
     <script defer src="./assets/js/script.js"></script>
+    <script defer src="./assets/js/homePageCustomScript.js"></script>
   </head>
 
   <body>
@@ -348,9 +349,7 @@
                 <div class="top-line">
                   <h3>Digital Marketing</h3>
                   <div aria-label="external link">
-                    <a
-                      href="https://res.cloudinary.com/dmvltush8/image/upload/v1760972752/Gemini_Generated_Image_ojpc88ojpc88ojpc_fagyby.png"
-                      class="arrow-icon"
+                    <a href="./pages/digital-marketing.html" class="arrow-icon"
                       ><svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="24"
@@ -372,7 +371,7 @@
                 <p>Smart campaigns and strategies...</p>
                 <div class="img-wrapper" aria-hidden="true">
                   <img
-                    src="./assets/Image/services-image/Gemini_Generated_Image_ojpc88ojpc88ojpc.png"
+                    src="https://res.cloudinary.com/dmvltush8/image/upload/v1760972752/Gemini_Generated_Image_ojpc88ojpc88ojpc_fagyby.png"
                     alt="Marketing visual"
                     loading="lazy"
                   />
@@ -612,7 +611,9 @@
                       <a href="./pages/blog.html">Business Education</a>
                     </li>
                     <li class="divider">|</li>
-                    <li class="topic"><a href="./pages/blog.html">Branding</a></li>
+                    <li class="topic">
+                      <a href="./pages/blog.html">Branding</a>
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -712,7 +713,9 @@
 
             <!-- Call-to-action button for exploring more articles -->
             <div class="cta-row">
-              <a href="./pages/blog.html" class="cta-btn">Explore All Articles</a>
+              <a href="./pages/blog.html" class="cta-btn"
+                >Explore All Articles</a
+              >
             </div>
           </div>
         </main>
@@ -861,15 +864,18 @@
                 class="rv-news-form"
                 id="newsForm"
                 aria-label="newsletter signup"
+                method="POST"
+                action="https://d21db3ce.sibforms.com/serve/MUIFAO8Rz2NdZdSofDazJCzvS5nKQrXV7B20njkdjXXM8NFr-Cikcc2KD9axfzB9Hu-eTOf58ZgbAQH96xaB1peiXcbu6d15J1jb4OHDBeToxGMrny8Zc-oXYwYdpOASwwZWup6326hnzPv4kxUZ5uyMVHa9qVNwZML3hn4hjrlYtDnckbmpmVbZF5vbkSoKwQbhcZE8yFmlID8cRQ=="
               >
                 <label for="user-email">Email:</label>
-                <input
-                  type="email"
-                  id="user-email"
-                  name="user-email"
-                  required
+                <input type="email" id="EMAIL" name="EMAIL" required /><input
+                  type="text"
+                  name="email_address_check"
+                  value=""
+                  style="display: none"
                 />
-                <button type="submit">Sign me up</button>
+                <input type="hidden" name="locale" value="en" />
+                <button type="submit">Subscribe</button>
                 <p id="newsletterFeedback" class="feedback-msg"></p>
               </form>
             </div>
@@ -921,7 +927,10 @@
                   rel="noopener"
                 >
                   <!-- Instagram icon SVG -->
-                  <img src="./assets/SVG/instagram-167-svgrepo-com.svg" alt="" />
+                  <img
+                    src="./assets/SVG/instagram-167-svgrepo-com.svg"
+                    alt=""
+                  />
                 </a>
                 <a
                   href="https://www.linkedin.com/company/revit-systems-limited/?viewAsMember=true"
@@ -965,152 +974,6 @@
     <!-- ================= SCRIPT ================= -->
     <script src="./assets/js/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script>
-      // Get all hero CTA button groups
-      const heroGroups = document.querySelectorAll(".hero-cta-btn");
-
-      heroGroups.forEach((group) => {
-        const btnServices = group.querySelector(".hero-btn1");
-        const btnQuote = group.querySelector(".hero-btn2");
-        const slider = group.querySelector(".slider");
-
-        // Navigate to contact page when first button is clicked
-        btnServices.addEventListener("click", () => {
-          slider.style.transform = "translateX(0%)";
-          setTimeout(() => {
-            window.open("contact.html", "_self");
-          }, 500);
-        });
-
-        // Navigate to services page when second button is clicked
-        btnQuote.addEventListener("click", () => {
-          slider.style.transform = "translateX(100%)";
-          setTimeout(() => {
-            window.open("services.html", "_self");
-          }, 500);
-        });
-      });
-
-      document.querySelector(".consult-btn").addEventListener("click", (e) => {
-        e.preventDefault();
-
-        const email = "revitsystems@gmail.com";
-        const subject = "Consultation Request";
-        const body =
-          "Hello Revit Systems,\n\nI would like to book a consultation.";
-
-        const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(
-          subject
-        )}&body=${encodeURIComponent(body)}`;
-        const gmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(
-          subject
-        )}&body=${encodeURIComponent(body)}`;
-
-        try {
-          window.location.href = mailtoLink;
-
-          // As a fallback, after a short delay, open Gmail in a new tab
-          setTimeout(() => {
-            window.open(gmailLink, "_blank");
-          }, 1000);
-        } catch (err) {
-          // If mailto fails outright, go straight to Gmail
-          window.open(gmailLink, "_blank");
-        }
-      });
-
-      const scrollBlogRow = document.getElementById("scrollBlogRow");
-
-      // Helper: truncate summary to N words
-      const truncateText = (text, maxWords = 25) => {
-        if (!text) return "";
-        const words = text.trim().split(/\s+/);
-        return words.length > maxWords
-          ? words.slice(0, maxWords).join(" ") + "..."
-          : text;
-      };
-
-      // Fetch limited posts (e.g., latest 6)
-      const loadRecentPosts = async (limit = 6, category = "All") => {
-        try {
-          const res = await axios.get(`${window.baseURL}/blog`, {
-            params: { categories: category, limit, offset: 0 },
-          });
-
-          const posts = res.data;
-
-          if (posts.length === 0) {
-            scrollBlogRow.innerHTML = "<p>No posts available right now.</p>";
-            return;
-          }
-
-          // Clear existing cards
-          scrollBlogRow.innerHTML = "";
-
-          // Create blog cards dynamically
-          posts.forEach((post) => {
-            const shortExcerpt = truncateText(post.excerpt, 25); // 👈 limit to 25 words
-
-            const article = document.createElement("article");
-            article.classList.add("blog-card");
-
-            article.innerHTML = `
-        <div class="image-frame">
-          <img 
-            src="${post.cover_image_url}" 
-            alt="${post.title}" 
-            loading="lazy" 
-          />
-        </div>
-        <div class="card-content">
-          <div class="tag">${post.categories}</div>
-          <h2 class="card-heading">${post.title}</h2>
-          <p class="summary">${shortExcerpt}</p>
-          <a href="#" class="read-more">Read Blog</a>
-        </div>
-      `;
-
-            article.onclick = () => {
-              localStorage.setItem("selectedPost", JSON.stringify(post));
-              window.location.href = "blog-post.html";
-            };
-
-            scrollBlogRow.appendChild(article);
-          });
-        } catch (err) {
-          console.error("Error loading recent posts:", err);
-          scrollBlogRow.innerHTML = "<p>Failed to load posts.</p>";
-        }
-      };
-
-      // Call it on load
-      loadRecentPosts();
-
-      const demoInput = document.getElementById("demoInput");
-      const demoBtn = document.getElementById("demoBtn");
-
-      // Replace with your WhatsApp business number (with country code, no "+" or spaces)
-      const whatsappNumber = "2348061704042"; // Example: Nigeria number
-
-      demoBtn.addEventListener("click", () => {
-        const userMessage = demoInput.value.trim();
-
-        if (!userMessage) {
-          alert("Please describe what you want before requesting a demo.");
-          return;
-        }
-
-        // Encode message safely for URL
-        const encodedMessage = encodeURIComponent(
-          `Hello Revit Systems 👋,\n\nI'd like to request a demo.\n\nHere's what I'm looking for:\n"${userMessage}"`
-        );
-
-        // WhatsApp API link (works on both mobile & desktop)
-        const whatsappLink = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-
-        // Redirect user to WhatsApp
-        window.open(whatsappLink, "_blank");
-      });
-    </script>
+    <!-- <script src="./assets/js/brevo.js"></script> -->
   </body>
 </html>

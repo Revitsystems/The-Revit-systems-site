@@ -65,27 +65,27 @@ const feedback = document.getElementById("newsletterFeedback");
 
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-newsForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
+// newsForm.addEventListener("submit", async (e) => {
+//   e.preventDefault();
 
-  const email = emailInput.value.trim();
-  feedback.textContent = "";
+//   const email = emailInput.value.trim();
+//   feedback.textContent = "";
 
-  if (!isValidEmail(email)) {
-    feedback.textContent = "⚠️ Please enter a valid email address.";
-    feedback.style.color = "red";
-    return;
-  }
+//   if (!isValidEmail(email)) {
+//     feedback.textContent = "⚠️ Please enter a valid email address.";
+//     feedback.style.color = "red";
+//     return;
+//   }
 
-  try {
-    const res = await axios.post(`${baseURL}/newsletter`, { email });
+//   try {
+//     const res = await axios.post(`${baseURL}/newsletter`, { email });
 
-    feedback.textContent = res.data.message || "Subscribed successfully!";
-    feedback.style.color = "green";
-    emailInput.value = "";
-  } catch (err) {
-    console.error("Newsletter signup error:", err);
-    feedback.textContent = "❌ Failed to subscribe. Please try again later.";
-    feedback.style.color = "red";
-  }
-});
+//     feedback.textContent = res.data.message || "Subscribed successfully!";
+//     feedback.style.color = "green";
+//     emailInput.value = "";
+//   } catch (err) {
+//     console.error("Newsletter signup error:", err);
+//     feedback.textContent = "❌ Failed to subscribe. Please try again later.";
+//     feedback.style.color = "red";
+//   }
+// });
