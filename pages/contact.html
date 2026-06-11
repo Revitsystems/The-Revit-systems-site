@@ -45,7 +45,10 @@
             <div class="logo-and-navlinks">
               <div class="logo">
                 <!-- Display the company logo image -->
-                <img src="../assets/Image/Logo/without bg black font.png" alt="" />
+                <img
+                  src="../assets/Image/Logo/without bg black font.png"
+                  alt=""
+                />
               </div>
               <!-- Unordered list for navigation menu items -->
               <ul class="nav-links">
@@ -58,7 +61,7 @@
               </ul>
             </div>
             <!-- Call-to-action button in the navigation -->
-            <button class="nav-cta-btn">Get Started</button>
+            <button id="getStartedBtn" class="nav-cta-btn">Get Started</button>
             <button
               class="menu-toggle"
               id="menuToggleBtn"
@@ -171,25 +174,22 @@
           <div class="cont-form">
             <h3>Get in touch</h3>
             <form id="contact-form">
-              <input
-                type="text"
-                placeholder="Full Name"
-                id="nameInput"
-                required
-              />
-              <input
-                type="email"
-                placeholder="Email"
-                id="emailInput"
-                required
-              />
+              <input type="text" placeholder="Full Name" id="nameInput" />
+              <small class="error-message" id="nameError"></small>
+
+              <input type="email" placeholder="Email" id="emailInput" />
+              <small class="error-message" id="emailError"></small>
+
               <textarea
                 placeholder="Message"
                 rows="5"
                 id="textInput"
-                required
               ></textarea>
-              <button type="button" onclick="sendEmail()">Send Message</button>
+              <small class="error-message" id="messageError"></small>
+
+              <button type="button" id="submitBtn" onclick="sendEmail()">
+                Send Message
+              </button>
             </form>
           </div>
         </section>
@@ -199,7 +199,10 @@
             <div class="rv-brand-block">
               <div class="rv-logo">
                 <div class="rv-logo-mark">
-                  <img src="../assets/Image/Logo/without bg white font.png" alt="" />
+                  <img
+                    src="../assets/Image/Logo/without bg white font.png"
+                    alt=""
+                  />
                 </div>
                 <div class="rv-tagline">
                   Connecting people with impactful opportunities in the Revit
@@ -216,7 +219,10 @@
                   rel="noopener"
                 >
                   <!-- Facebook icon SVG -->
-                  <img src="../assets/SVG/facebook-176-svgrepo-com.svg" alt="" />
+                  <img
+                    src="../assets/SVG/facebook-176-svgrepo-com.svg"
+                    alt=""
+                  />
                 </a>
                 <a
                   href="https://x.com/revitsystems"
@@ -236,7 +242,10 @@
                   rel="noopener"
                 >
                   <!-- Instagram icon SVG -->
-                  <img src="../assets/SVG/instagram-167-svgrepo-com.svg" alt="" />
+                  <img
+                    src="../assets/SVG/instagram-167-svgrepo-com.svg"
+                    alt=""
+                  />
                 </a>
                 <a
                   href="https://www.linkedin.com/company/revit-systems-limited/?viewAsMember=true"
@@ -246,7 +255,10 @@
                   rel="noopener"
                 >
                   <!-- LinkedIn icon SVG -->
-                  <img src="../assets/SVG/linkedin-161-svgrepo-com.svg" alt="" />
+                  <img
+                    src="../assets/SVG/linkedin-161-svgrepo-com.svg"
+                    alt=""
+                  />
                 </a>
               </div>
             </div>
@@ -279,53 +291,104 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="../assets/js/config.js"></script>
     <script>
+      const ACCESS_KEY = "4d0b130d-99c3-46cc-b93a-736f308675b8";
       const loader = document.getElementById("loader");
       const statusEl = document.getElementById("status-element");
       const form = document.getElementById("contact-form");
+      const submitBtn = document.getElementById("submitBtn");
+
+      const clearErrors = () => {
+        document.getElementById("nameError").textContent = "";
+        document.getElementById("emailError").textContent = "";
+        document.getElementById("messageError").textContent = "";
+      };
+
+      const showNotification = (message, success = true) => {
+        statusEl.textContent = message;
+
+        statusEl.classList.remove("fail");
+        statusEl.classList.add("status-update");
+
+        if (!success) {
+          statusEl.classList.add("fail");
+        }
+
+        setTimeout(() => {
+          statusEl.classList.remove("status-update");
+          statusEl.classList.remove("fail");
+        }, 3000);
+      };
 
       const sendEmail = async () => {
+        clearErrors();
+
         const name = document.getElementById("nameInput").value.trim();
         const email = document.getElementById("emailInput").value.trim();
         const message = document.getElementById("textInput").value.trim();
 
-        if (!name || !email || !message) {
-          alert("You have to fill all the fields");
-          return;
+        let hasError = false;
+
+        if (!name) {
+          document.getElementById("nameError").textContent =
+            "Full name is required";
+          hasError = true;
         }
 
-        const payLoad = { name, email, message };
+        if (!email) {
+          document.getElementById("emailError").textContent =
+            "Email is required";
+          hasError = true;
+        }
+
+        if (!message) {
+          document.getElementById("messageError").textContent =
+            "Message is required";
+          hasError = true;
+        }
+
+        if (hasError) return;
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Loading...";
 
         try {
           loader.classList.add("show-face");
 
-          const response = await axios.post(
-            `${window.baseURL}/contact`,
-            payLoad,
-            {
-              headers: { "Content-Type": "application/json" },
-            }
-          );
+          const response = await fetch("https://api.web3forms.com/submit", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({
+              access_key: ACCESS_KEY,
+              name,
+              email,
+              message,
+            }),
+          });
 
-          const data = response.data;
-          statusEl.classList.add("status-update");
-          statusEl.textContent = data.message;
-          form.reset();
+          const result = await response.json();
 
-          setTimeout(() => {
-            statusEl.classList.remove("status-update");
-          }, 3000);
+          if (result.success) {
+            showNotification("Message sent successfully!", true);
+
+            form.reset();
+          } else {
+            showNotification(
+              result.message || "Failed to send message.",
+              false
+            );
+          }
         } catch (error) {
-          console.error("Error sending email:", error);
-          statusEl.textContent =
-            error.response?.data?.message || "Network error. Please try again.";
-          statusEl.classList.add("status-update");
-          statusEl.classList.add("fail");
-          setTimeout(() => {
-            statusEl.classList.remove("fail");
-            statusEl.classList.remove("status-update");
-          }, 3000);
+          console.error(error);
+
+          showNotification("Network error. Please try again.", false);
         } finally {
           loader.classList.remove("show-face");
+
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Send Message";
         }
       };
     </script>

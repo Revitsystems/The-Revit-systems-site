@@ -142,3 +142,33 @@ demoBtn.addEventListener("click", () => {
   // Redirect user to WhatsApp
   window.open(whatsappLink, "_blank");
 });
+
+const button = document.getElementById("subscribeBtn");
+
+form.addEventListener("submit", () => {
+  button.disabled = true;
+  button.innerHTML = `
+  <span class="spinner"></span>
+  Subscribing...
+`;
+
+  setTimeout(() => {
+    button.disabled = false;
+    button.innerHTML = "Subscribe";
+  }, 10000); // 10 seconds
+});
+
+const consultBtn = document.getElementById("consultBtn");
+
+consultBtn.addEventListener("click", () => {
+  consultBtn.disabled = true;
+  consultBtn.innerHTML = `
+  <span class="spinner"></span>
+  Loading...
+`;
+
+  setTimeout(() => {
+    consultBtn.disabled = false;
+    consultBtn.innerHTML = "consult";
+  }, 10000); // 10 seconds
+});

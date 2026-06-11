@@ -84,19 +84,25 @@ const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 //     feedback.style.color = "green";
 //     emailInput.value = "";
 //   } catch (err) {
-//     console.error("Newsletter signup error:", err);
+//     consult.error("Newsletter signup error:", err);
 //     feedback.textContent = "❌ Failed to subscribe. Please try again later.";
 //     feedback.style.color = "red";
 //   }
 // });
 
 const form = document.getElementById("newsForm");
-const button = document.getElementById("subscribeBtn");
 
-form.addEventListener("submit", () => {
-  button.disabled = true;
-  button.innerHTML = `
+const btn = document.getElementById("getStartedBtn");
+
+btn.addEventListener("click", () => {
+  btn.disabled = true;
+  btn.innerHTML = `
   <span class="spinner"></span>
-  Subscribing...
+  Loading...
 `;
+
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.innerHTML = "Get Started";
+  }, 10000); // 10 seconds
 });

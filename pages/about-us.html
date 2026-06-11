@@ -30,22 +30,7 @@
     />
     <link rel="stylesheet" href="../assets/css/style.css" />
     <script defer src="../assets/js/script.js"></script>
-    <style>
-      .abt-testimonial-card {
-        opacity: 0;
-        position: absolute;
-        top: 0;
-        left: 0;
-        transition: opacity 1s ease-in-out;
-        pointer-events: none;
-      }
-
-      .abt-testimonial-card.active {
-        opacity: 1;
-        pointer-events: auto;
-        position: relative;
-      }
-    </style>
+    <script defer src="../assets/js/aboutUsCustomScript.js"></script>
   </head>
 
   <body>
@@ -75,7 +60,7 @@
               </ul>
             </div>
             <!-- Call-to-action button in the navigation -->
-            <button class="nav-cta-btn">Get Started</button>
+            <button id="getStartedBtn" class="nav-cta-btn">Get Started</button>
             <button
               class="menu-toggle"
               id="menuToggleBtn"
@@ -471,7 +456,9 @@
               If you’re passionate about innovation and ready to grow with us,
               this is where you belong.
             </div>
-            <button class="abt-join-button">Build With Us</button>
+            <button id="abt-join-button" class="abt-join-button">
+              Build With Us
+            </button>
           </div>
           <div class="abt-join-right">
             <div class="abt-testimonial-wrapper">
@@ -674,70 +661,5 @@
       <!-- End of main container -->
     </div>
     <!-- End of revit-container -->
-    <script>
-      document
-        .getElementById("toggleBtn")
-        .addEventListener("click", function () {
-          const text = document.getElementById("myText");
-
-          if (text.classList.contains("show")) {
-            // If hidden, show it
-            text.classList.remove("show");
-            text.classList.add("rv-active");
-            this.textContent = "Read Less..."; // change button text
-          } else {
-            // If shown, hide it
-            text.classList.remove("rv-active");
-            text.classList.add("show");
-            this.textContent = "Read More...";
-          }
-        });
-      document.addEventListener("DOMContentLoaded", () => {
-        const testimonials = document.querySelectorAll(".abt-testimonial-card");
-        let current = 0;
-
-        function showNextTestimonial() {
-          // Hide current
-          testimonials[current].classList.remove("active");
-
-          // Move to next index
-          current = (current + 1) % testimonials.length;
-
-          // Show next
-          testimonials[current].classList.add("active");
-        }
-
-        // Change every 5 seconds
-        setInterval(showNextTestimonial, 5000);
-      });
-      document
-        .querySelector(".abt-join-button")
-        .addEventListener("click", (e) => {
-          e.preventDefault();
-
-          const email = "revitsystems@gmail.com";
-          const subject = "Recruitment Request";
-          const body = "Hello Revit Systems,\n\nI would like to Join your team";
-
-          const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(
-            subject
-          )}&body=${encodeURIComponent(body)}`;
-          const gmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(
-            subject
-          )}&body=${encodeURIComponent(body)}`;
-
-          try {
-            window.location.href = mailtoLink;
-
-            // As a fallback, after a short delay, open Gmail in a new tab
-            setTimeout(() => {
-              window.open(gmailLink, "_blank");
-            }, 1000);
-          } catch (err) {
-            // If mailto fails outright, go straight to Gmail
-            window.open(gmailLink, "_blank");
-          }
-        });
-    </script>
   </body>
 </html>
