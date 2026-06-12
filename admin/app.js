@@ -386,10 +386,15 @@ function initializeEventListeners() {
 // BOOT
 // ==================
 async function init() {
-  // 1. Restore session — redirects to login if token is gone
-  const ok = await API.refreshToken();
-  if (!ok) return;
+  // 1. Hide app immediately — show nothing until token verified
+  document.getElementById("dashboard-app").style.display = "none";
 
+  const ok = await API.refreshToken();
+  if (!ok) return; // refreshToken already redirects to login
+
+  // 2. Auth confirmed — now show the app
+  document.getElementById("dashboard-app").style.display = "block";
+  document.getElementById("skeleton-body").style.display = "none";
   // 2. Seed mock data for media and users (no backend endpoints yet)
   generateMockData();
 

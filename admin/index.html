@@ -13,9 +13,235 @@
       href="https://cdn.quilljs.com/1.3.6/quill.snow.css"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="skeleton.css" />
+    <script defer src=""></script>
     <base target="_blank" />
   </head>
   <body>
+    <!--Skeleton Elements-->
+    <div id="skeleton-body" class="skeleton-body">
+      <!-- Header -->
+      <header class="skeleton-header">
+        <div class="skeleton-logo-section">
+          <div class="skeleton-base skeleton-logo-icon"></div>
+          <div class="skeleton-base skeleton-logo-text"></div>
+        </div>
+        <div class="skeleton-header-right">
+          <div class="skeleton-base skeleton-header-date"></div>
+          <div class="skeleton-base skeleton-header-icon"></div>
+          <div class="skeleton-base skeleton-header-icon"></div>
+          <div class="skeleton-base skeleton-header-icon"></div>
+        </div>
+      </header>
+
+      <!-- Layout -->
+      <div class="skeleton-layout">
+        <!-- Sidebar -->
+        <aside class="skeleton-sidebar">
+          <div class="skeleton-nav-item skeleton-nav-item-active">
+            <div class="skeleton-nav-icon skeleton-nav-icon-active"></div>
+            <div
+              class="skeleton-base skeleton-nav-text skeleton-nav-text-short"
+            ></div>
+          </div>
+          <div class="skeleton-nav-item">
+            <div class="skeleton-base skeleton-nav-icon"></div>
+            <div
+              class="skeleton-base skeleton-nav-text skeleton-nav-text-short"
+            ></div>
+          </div>
+          <div class="skeleton-nav-item">
+            <div class="skeleton-base skeleton-nav-icon"></div>
+            <div
+              class="skeleton-base skeleton-nav-text skeleton-nav-text-short"
+            ></div>
+          </div>
+          <div class="skeleton-nav-item">
+            <div class="skeleton-base skeleton-nav-icon"></div>
+            <div
+              class="skeleton-base skeleton-nav-text skeleton-nav-text-medium"
+            ></div>
+          </div>
+          <div class="skeleton-nav-item">
+            <div class="skeleton-base skeleton-nav-icon"></div>
+            <div
+              class="skeleton-base skeleton-nav-text skeleton-nav-text-short"
+            ></div>
+            <div class="skeleton-base skeleton-badge"></div>
+          </div>
+          <div class="skeleton-nav-item">
+            <div class="skeleton-base skeleton-nav-icon"></div>
+            <div
+              class="skeleton-base skeleton-nav-text skeleton-nav-text-long"
+            ></div>
+          </div>
+          <div class="skeleton-nav-item">
+            <div class="skeleton-base skeleton-nav-icon"></div>
+            <div
+              class="skeleton-base skeleton-nav-text skeleton-nav-text-long"
+            ></div>
+          </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="skeleton-main">
+          <!-- Page Title -->
+          <div class="skeleton-base skeleton-page-title"></div>
+
+          <!-- Stats Cards -->
+          <div class="skeleton-stats-grid">
+            <div class="skeleton-stat-card">
+              <div class="skeleton-base skeleton-stat-icon"></div>
+              <div class="skeleton-stat-info">
+                <div class="skeleton-base skeleton-stat-number"></div>
+                <div class="skeleton-base skeleton-stat-label"></div>
+              </div>
+              <div class="skeleton-base skeleton-stat-btn"></div>
+            </div>
+            <div class="skeleton-stat-card">
+              <div class="skeleton-base skeleton-stat-icon"></div>
+              <div class="skeleton-stat-info">
+                <div class="skeleton-base skeleton-stat-number"></div>
+                <div class="skeleton-base skeleton-stat-label"></div>
+              </div>
+              <div class="skeleton-base skeleton-stat-btn"></div>
+            </div>
+            <div class="skeleton-stat-card">
+              <div class="skeleton-base skeleton-stat-icon"></div>
+              <div class="skeleton-stat-info">
+                <div class="skeleton-base skeleton-stat-number"></div>
+                <div class="skeleton-base skeleton-stat-label"></div>
+              </div>
+              <div class="skeleton-base skeleton-stat-btn"></div>
+            </div>
+            <div class="skeleton-stat-card">
+              <div class="skeleton-base skeleton-stat-icon"></div>
+              <div class="skeleton-stat-info">
+                <div class="skeleton-base skeleton-stat-number"></div>
+                <div class="skeleton-base skeleton-stat-label"></div>
+              </div>
+              <div class="skeleton-base skeleton-stat-btn"></div>
+            </div>
+          </div>
+
+          <!-- Traffic Overview -->
+          <div class="skeleton-traffic-section">
+            <div class="skeleton-traffic-header">
+              <div class="skeleton-traffic-title">
+                <div class="skeleton-base skeleton-traffic-icon"></div>
+                <div class="skeleton-base skeleton-traffic-text"></div>
+              </div>
+              <div class="skeleton-base skeleton-traffic-dropdown"></div>
+            </div>
+
+            <!-- Chart -->
+            <div class="skeleton-chart-container">
+              <div class="skeleton-chart-grid">
+                <div class="skeleton-grid-line"></div>
+                <div class="skeleton-grid-line"></div>
+                <div class="skeleton-grid-line"></div>
+                <div class="skeleton-grid-line"></div>
+                <div class="skeleton-grid-line"></div>
+                <div class="skeleton-grid-line"></div>
+                <div class="skeleton-grid-line"></div>
+                <div class="skeleton-grid-line"></div>
+              </div>
+              <div class="skeleton-chart-area">
+                <svg
+                  viewBox="0 0 800 260"
+                  preserveAspectRatio="none"
+                  class="skeleton-chart-curve"
+                >
+                  <defs>
+                    <linearGradient
+                      id="skeleton-area-grad"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="0%"
+                        stop-color="#f59e0b"
+                        stop-opacity="0.3"
+                      />
+                      <stop
+                        offset="100%"
+                        stop-color="#f59e0b"
+                        stop-opacity="0.05"
+                      />
+                    </linearGradient>
+                  </defs>
+                  <path
+                    d="M0,180 Q50,200 100,190 T200,170 T300,140 T400,100 T500,120 T600,60 T700,80 T800,130 L800,260 L0,260 Z"
+                    fill="url(#skeleton-area-grad)"
+                    class="skeleton-base"
+                  />
+                  <path
+                    d="M0,180 Q50,200 100,190 T200,170 T300,140 T400,100 T500,120 T600,60 T700,80 T800,130"
+                    fill="none"
+                    stroke="url(#skeleton-line-grad)"
+                    stroke-width="3"
+                    stroke-linecap="round"
+                  />
+                  <linearGradient
+                    id="skeleton-line-grad"
+                    x1="0"
+                    y1="0"
+                    x2="1"
+                    y2="0"
+                  >
+                    <stop offset="0%" stop-color="#e8e8e8" />
+                    <stop offset="50%" stop-color="#f5f5f5" />
+                    <stop offset="100%" stop-color="#e8e8e8" />
+                  </linearGradient>
+                </svg>
+              </div>
+            </div>
+
+            <div class="skeleton-chart-labels">
+              <div class="skeleton-base skeleton-chart-label"></div>
+              <div class="skeleton-base skeleton-chart-label"></div>
+              <div class="skeleton-base skeleton-chart-label"></div>
+              <div class="skeleton-base skeleton-chart-label"></div>
+              <div class="skeleton-base skeleton-chart-label"></div>
+              <div class="skeleton-base skeleton-chart-label"></div>
+              <div class="skeleton-base skeleton-chart-label"></div>
+            </div>
+
+            <!-- Metrics -->
+            <div class="skeleton-metrics-row">
+              <div class="skeleton-metric-item">
+                <div class="skeleton-base skeleton-metric-label"></div>
+                <div class="skeleton-base skeleton-metric-value"></div>
+                <div class="skeleton-base skeleton-metric-change"></div>
+              </div>
+              <div class="skeleton-metric-item">
+                <div class="skeleton-base skeleton-metric-label"></div>
+                <div class="skeleton-base skeleton-metric-value"></div>
+                <div class="skeleton-base skeleton-metric-change"></div>
+              </div>
+              <div class="skeleton-metric-item">
+                <div class="skeleton-base skeleton-metric-label"></div>
+                <div class="skeleton-base skeleton-metric-value"></div>
+                <div class="skeleton-base skeleton-metric-change"></div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+
+      <script>
+        // Optional: Simulate content loading after 3 seconds
+        // setTimeout(() => {
+        // In a real app, this would replace skeletons with actual content
+        // console.log('Skeleton loader ready - replace with actual data');
+        // }, 3000);
+        //
+      </script>
+    </div>
+    <!-- Skeleton loader end -->
+
     <!-- Loader -->
     <div id="loader" class="loader-overlay hidden">
       <div class="loader">
@@ -1368,12 +1594,12 @@ Blog administrator and content creator.</textarea
     <!-- Scripts -->
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="/assets/js/adminFiles/uploadToCloudinary.js"></script>
-    <script src="/assets/js//adminFiles/utils.js" defer></script>
-    <script src="/assets/js/adminFiles/state.js" defer></script>
-    <script src="/assets/js/adminFiles/api.js" defer></script>
-    <script src="/assets/js/adminFiles/renderers.js" defer></script>
-    <script src="/assets/js/adminFiles/actions.js" defer></script>
-    <script src="/assets/js/adminFiles/app.js" defer></script>
+    <script src="uploadToCloudinary.js"></script>
+    <script src="utils.js" defer></script>
+    <script src="state.js" defer></script>
+    <script src="api.js" defer></script>
+    <script src="renderers.js" defer></script>
+    <script src="actions.js" defer></script>
+    <script src="app.js" defer></script>
   </body>
 </html>

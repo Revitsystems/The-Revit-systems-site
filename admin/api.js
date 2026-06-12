@@ -5,6 +5,7 @@
    ============================================ */
 
 const BASE_URL = "http://localhost:5000";
+const LOGIN_URL = "../pages/login.html"; // set once, use everywhere
 
 // Access token lives in memory only — never in localStorage
 let accessToken = null;
@@ -57,7 +58,7 @@ const API = {
       });
 
       if (!response.ok) {
-        window.location.href = "/pages/auth/login.html";
+        window.location.href = LOGIN_URL;
         return false;
       }
 
@@ -65,7 +66,7 @@ const API = {
       accessToken = data.accessToken;
       return true;
     } catch {
-      window.location.href = "/pages/auth/login.html";
+      window.location.href = LOGIN_URL;
       return false;
     }
   },
@@ -93,7 +94,7 @@ const API = {
       await authFetch(`${BASE_URL}/auth/logout`, { method: "POST" });
     } finally {
       accessToken = null;
-      window.location.href = "/pages/auth/login.html";
+      window.location.href = LOGIN_URL;
     }
   },
 
