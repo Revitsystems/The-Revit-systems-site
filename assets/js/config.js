@@ -1,2 +1,2 @@
-window.host = "the-revit-systems-site-1.onrender.com";
+window.host = "localhost:5000";
 window.baseURL = `https://${window.host}`;
