@@ -12,8 +12,8 @@ export const createPost = async ({
   content,
   excerpt,
   featuredImage,
-  status = "draft", // Add this parameter
-  scheduledDate, // Add this
+  status = "draft",
+  scheduledDate,
 }: {
   authorId: string;
   categoryId: string | null;
@@ -22,8 +22,8 @@ export const createPost = async ({
   content: string;
   excerpt?: string;
   featuredImage?: string;
-  status?: "draft" | "published" | "scheduled"; // Add this
-  scheduledDate?: Date; // Add this
+  status?: "draft" | "published" | "scheduled";
+  scheduledDate?: Date;
 }) => {
   const result = await pool.query(
     `
@@ -62,33 +62,66 @@ export const createPost = async ({
 // =============================================
 
 export const getPosts = async (
-  status: string,
+  status: string | null,
   limit: number,
   offset: number
 ) => {
-  const result = await pool.query(
-    `
-   SELECT
-  posts.id,
-  posts.title,
-  posts.content,
-  posts.excerpt,
-  posts.created_at,
-  posts.status,
-  posts.scheduled_date,
-  categories.id AS category_id,
-  categories.name AS category
-FROM posts
-JOIN categories
-  ON posts.category_id = categories.id
-WHERE posts.status = $1
-ORDER BY posts.created_at DESC
-LIMIT $2 OFFSET $3;`,
-    [status, limit, offset]
-  );
+  // When status is null we return all posts regardless of status
+  const result =
+    status === null
+      ? await pool.query(
+          `
+          SELECT
+            posts.id,
+            posts.title,
+            posts.slug,
+            posts.content,
+            posts.excerpt,
+            posts.featured_image,
+            posts.author_id,
+            posts.created_at,
+            posts.updated_at,
+            posts.published_at,
+            posts.status,
+            posts.scheduled_date,
+            categories.id   AS category_id,
+            categories.name AS category
+          FROM posts
+          LEFT JOIN categories ON posts.category_id = categories.id
+          ORDER BY posts.created_at DESC
+          LIMIT $1 OFFSET $2
+          `,
+          [limit, offset]
+        )
+      : await pool.query(
+          `
+          SELECT
+            posts.id,
+            posts.title,
+            posts.slug,
+            posts.content,
+            posts.excerpt,
+            posts.featured_image,
+            posts.author_id,
+            posts.created_at,
+            posts.updated_at,
+            posts.published_at,
+            posts.status,
+            posts.scheduled_date,
+            categories.id   AS category_id,
+            categories.name AS category
+          FROM posts
+          LEFT JOIN categories ON posts.category_id = categories.id
+          WHERE posts.status = $1
+          ORDER BY posts.created_at DESC
+          LIMIT $2 OFFSET $3
+          `,
+          [status, limit, offset]
+        );
 
   return result.rows;
 };
+
 // =============================================
 // Handles getting of blog posts stats
 // =============================================
@@ -98,7 +131,7 @@ export const getPostStats = async () => {
     SELECT
       COUNT(*) AS total,
       COUNT(*) FILTER (WHERE status = 'published') AS published,
-      COUNT(*) FILTER (WHERE status = 'draft') AS draft,
+      COUNT(*) FILTER (WHERE status = 'draft')     AS draft,
       COUNT(*) FILTER (WHERE status = 'scheduled') AS scheduled
     FROM posts;
   `);
@@ -113,14 +146,17 @@ export const getPostStats = async () => {
 export const getPostById = async (id: string) => {
   const result = await pool.query(
     `
-    SELECT *
+    SELECT
+      posts.*,
+      categories.name AS category_name
     FROM posts
-    WHERE id = $1
+    LEFT JOIN categories ON posts.category_id = categories.id
+    WHERE posts.id = $1
     `,
     [id]
   );
 
-  return result.rows[0]; // returns undefined if not found
+  return result.rows[0];
 };
 
 // =============================================
@@ -160,7 +196,7 @@ export const updatePost = async (
   }
 ) => {
   const fields: string[] = [];
-  const values: any[] = [];
+  const values: unknown[] = [];
   let index = 1;
 
   if (updates.categoryId !== undefined) {
@@ -197,7 +233,6 @@ export const updatePost = async (
     throw new Error("No fields provided for update");
   }
 
-  // Always update timestamp
   fields.push(`updated_at = CURRENT_TIMESTAMP`);
 
   const query = `

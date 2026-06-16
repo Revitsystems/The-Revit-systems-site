@@ -7,6 +7,7 @@ import {
   revokeSessionByTokenId,
   createSession,
 } from "@/models/sessionModel.js";
+import { pool } from "@/config/db.js";
 
 export const refresh = async (req: Request, res: Response) => {
   const refreshToken = req.cookies.refreshToken;
@@ -22,59 +23,100 @@ export const refresh = async (req: Request, res: Response) => {
 
   const [tokenId, rawToken] = parts;
 
-  const session = await findSessionByTokenId(tokenId);
+  try {
+    const session = await findSessionByTokenId(tokenId);
 
-  if (!session || session.is_revoked) {
-    return res.status(401).json({ message: "Invalid session" });
-  }
+    if (!session || session.is_revoked) {
+      return res.status(401).json({ message: "Invalid session" });
+    }
 
-  if (new Date(session.expires_at) < new Date()) {
+    if (new Date(session.expires_at) < new Date()) {
+      await revokeSessionByTokenId(tokenId);
+      return res.status(401).json({ message: "Session expired" });
+    }
+
+    const isValid = await bcrypt.compare(rawToken, session.refresh_token_hash);
+
+    if (!isValid) {
+      // Token hash mismatch — possible token theft attempt.
+      // Revoke the session immediately to protect the user.
+      await revokeSessionByTokenId(tokenId);
+      return res.status(401).json({ message: "Invalid session" });
+    }
+
+    // Fetch the user's current role and status directly from the users table.
+    // The original used session.role which was whatever role was stored when
+    // the session was first created — meaning a user demoted from "admin" to
+    // "user" via changeUserStatus in authController.ts would continue receiving
+    // admin-scoped access tokens for the full 7-day session lifetime.
+    // Querying the users table here ensures role changes take effect on the
+    // very next token refresh (within 15 minutes at most).
+    const userResult = await pool.query(
+      "SELECT role, status FROM users WHERE id = $1",
+      [session.user_id]
+    );
+    const user = userResult.rows[0];
+
+    // Guard against the user being deleted between sessions
+    if (!user) {
+      await revokeSessionByTokenId(tokenId);
+      return res.status(401).json({ message: "User no longer exists" });
+    }
+
+    // Block suspended or pending users from silently refreshing tokens.
+    // authMiddleware.ts checks this on every authenticated request, but
+    // catching it here too prevents a new access token being issued at all.
+    if (user.status === "suspended") {
+      await revokeSessionByTokenId(tokenId);
+      return res.status(403).json({ message: "Account suspended" });
+    }
+
+    if (user.status === "pending") {
+      await revokeSessionByTokenId(tokenId);
+      return res.status(403).json({ message: "Account pending approval" });
+    }
+
+    // Rotate the session — revoke the old tokenId and create a new one.
+    // This means each refresh token can only be used once, limiting the
+    // window in which a stolen refresh token can be exploited.
     await revokeSessionByTokenId(tokenId);
-    return res.status(401).json({ message: "Session expired" });
+
+    const newTokenId = crypto.randomUUID();
+    const newRawToken = crypto.randomBytes(64).toString("hex");
+    const newHash = await bcrypt.hash(newRawToken, 10);
+
+    await createSession({
+      userId: session.user_id,
+      tokenId: newTokenId,
+      refreshTokenHash: newHash,
+      userAgent: session.user_agent,
+      ipAddress: session.ip_address,
+      expiresAt: session.expires_at,
+    });
+
+    // Mint the new access token using the live role from the users table,
+    // not session.role which could be stale
+    const newAccessToken = jwt.sign(
+      {
+        id: session.user_id,
+        role: user.role,
+        sid: newTokenId,
+      },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "15m" }
+    );
+
+    res.cookie("refreshToken", `${newTokenId}.${newRawToken}`, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/auth/refresh",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.json({ accessToken: newAccessToken });
+  } catch (error) {
+    console.error("refresh error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
-
-  const isValid = await bcrypt.compare(rawToken, session.refresh_token_hash);
-
-  if (!isValid) {
-    await revokeSessionByTokenId(tokenId);
-    return res.status(401).json({ message: "Invalid session" });
-  }
-
-  // 🔥 ROTATE SESSION
-  await revokeSessionByTokenId(tokenId);
-
-  const newTokenId = crypto.randomUUID();
-  const newRawToken = crypto.randomBytes(64).toString("hex");
-  const newHash = await bcrypt.hash(newRawToken, 10);
-
-  await createSession({
-    userId: session.user_id,
-    tokenId: newTokenId,
-    refreshTokenHash: newHash,
-    userAgent: session.user_agent,
-    ipAddress: session.ip_address,
-    expiresAt: session.expires_at,
-  });
-
-  // 🔥 NEW ACCESS TOKEN WITH SID BINDING
-  const newAccessToken = jwt.sign(
-    {
-      id: session.user_id,
-      role: session.role,
-      sid: newTokenId,
-    },
-    process.env.JWT_SECRET as string,
-    { expiresIn: "15m" }
-  );
-
-  // 🔥 SET NEW COOKIE
-  res.cookie("refreshToken", `${newTokenId}.${newRawToken}`, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/auth/refresh",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
-
-  return res.json({ accessToken: newAccessToken });
 };

@@ -14,8 +14,6 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="skeleton.css" />
-    <script defer src=""></script>
-    <base target="_blank" />
   </head>
   <body>
     <!--Skeleton Elements-->
@@ -274,7 +272,9 @@
             >
               <div class="notification-header">
                 <h4>Notifications</h4>
-                <button class="mark-all-read">Mark all read</button>
+                <button class="mark-all-read" id="mark-all-read-btn">
+                  Mark all read
+                </button>
               </div>
               <div class="notification-list" id="notification-list">
                 <!-- Populated by JS -->
@@ -299,7 +299,7 @@
                 <a
                   href="#"
                   class="menu-item"
-                  onclick="showSection('profile'); return false;"
+                  onclick="Actions.showSection('profile'); return false;"
                 >
                   <i class="fas fa-id-card"></i>
                   <span>Profile</span>
@@ -307,7 +307,7 @@
                 <a
                   href="#"
                   class="menu-item"
-                  onclick="showSection('settings'); return false;"
+                  onclick="Actions.showSection('settings'); return false;"
                 >
                   <i class="fas fa-cog"></i>
                   <span>Settings</span>
@@ -315,7 +315,7 @@
                 <a
                   href="#"
                   class="menu-item"
-                  onclick="logoutUser(); return false;"
+                  onclick="Actions.logoutUser(); return false;"
                 >
                   <i class="fas fa-sign-out-alt"></i>
                   <span>Logout</span>
@@ -379,7 +379,11 @@
 
             <!-- Stats Cards -->
             <div class="stats-grid">
-              <div class="stat-card published" id="published-card">
+              <div
+                class="stat-card published"
+                id="published-card"
+                onclick="Actions.showSection('posts'); document.querySelector('[data-filter=published]').click();"
+              >
                 <div class="stat-icon">
                   <i class="fas fa-check-circle"></i>
                 </div>
@@ -389,7 +393,11 @@
                 </div>
                 <button class="view-btn">View All</button>
               </div>
-              <div class="stat-card drafts" id="drafts-card">
+              <div
+                class="stat-card drafts"
+                id="drafts-card"
+                onclick="Actions.showSection('posts'); document.querySelector('[data-filter=draft]').click();"
+              >
                 <div class="stat-icon">
                   <i class="fas fa-file-alt"></i>
                 </div>
@@ -399,7 +407,11 @@
                 </div>
                 <button class="view-btn">View All</button>
               </div>
-              <div class="stat-card scheduled" id="scheduled-card">
+              <div
+                class="stat-card scheduled"
+                id="scheduled-card"
+                onclick="Actions.showSection('posts'); document.querySelector('[data-filter=scheduled]').click();"
+              >
                 <div class="stat-icon">
                   <i class="fas fa-calendar-alt"></i>
                 </div>
@@ -642,7 +654,7 @@
                     />
                     <div class="upload-preview" id="image-preview">
                       <i class="fas fa-cloud-upload-alt"></i>
-                      <p>Click to upload image</p>
+                      <p>Click select image to upload image</p>
                     </div>
                     <button
                       type="button"

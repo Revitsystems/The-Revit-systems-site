@@ -2,9 +2,9 @@ import { Request, Response } from "express";
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { pool } from "@/config/db.js"; // Added this back for the queries
+import { pool } from "@/config/db.js";
 import { sanitize } from "@/utils/sanitize.js";
-import { createSession, revokeAllSessions } from "@/models/sessionModel.js";
+import { createSession } from "@/models/sessionModel.js";
 import {
   createUser,
   findUserByEmail,
@@ -26,7 +26,8 @@ export const register = async (req: Request, res: Response) => {
 
   const cleanFirstName = sanitize(first_name);
   const cleanLastName = sanitize(last_name);
-  const cleanEmail = email.trim().toLowerCase();
+  // sanitize applied to email as well as name fields
+  const cleanEmail = sanitize(email).trim().toLowerCase();
 
   const existingUser = await findUserByEmail(cleanEmail);
   if (existingUser) {
@@ -96,7 +97,6 @@ export const login = async (req: Request, res: Response) => {
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   });
 
-  // 🔥 ACCESS TOKEN NOW BINDS TO SESSION
   const accessToken = jwt.sign(
     {
       id: user.id,
@@ -107,7 +107,6 @@ export const login = async (req: Request, res: Response) => {
     { expiresIn: "15m" }
   );
 
-  // 🔥 REFRESH TOKEN IN HTTP-ONLY COOKIE
   res.cookie("refreshToken", `${tokenId}.${rawRefreshToken}`, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -126,7 +125,7 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
   const { email } = req.body;
   const user = await findUserByEmail(email?.toLowerCase().trim());
 
-  // Security: Always return success message to prevent user enumeration
+  // Always return the same message to prevent user enumeration
   if (!user) {
     return res.json({
       message: "If an account exists, a reset link has been sent.",
@@ -147,7 +146,6 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
 
   const resetLink = `http://localhost:5000/reset-password.html?token=${rawToken}&id=${user.id}`;
 
-  // 2. CONNECT TO SMTP UTILITY
   try {
     await sendEmail({
       email: user.email,
@@ -163,7 +161,6 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
       `,
     });
 
-    // Keep this for your Fedora terminal debugging
     console.log("DEBUG - Reset Link:", resetLink);
 
     res.json({
@@ -172,7 +169,6 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Failed to send reset email:", error);
-    // Even if email fails, we don't want to crash the request
     res
       .status(500)
       .json({ message: "Error sending email. Please try again later." });
@@ -189,55 +185,68 @@ export const resetPassword = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
-  try {
-    const result = await pool.query(
-      "SELECT * FROM password_reset_tokens WHERE user_id = $1",
-      [userId]
-    );
-    const tokenRecord = result.rows[0];
+  // Check and validate the reset token BEFORE opening a transaction —
+  // no point holding a DB client while doing bcrypt work
+  const tokenResult = await pool.query(
+    "SELECT * FROM password_reset_tokens WHERE user_id = $1",
+    [userId]
+  );
+  const tokenRecord = tokenResult.rows[0];
 
-    if (!tokenRecord) {
-      return res
-        .status(400)
-        .json({ message: "Invalid or expired reset link." });
-    }
+  if (!tokenRecord) {
+    return res.status(400).json({ message: "Invalid or expired reset link." });
+  }
 
-    if (new Date(tokenRecord.expires_at) < new Date()) {
-      await pool.query("DELETE FROM password_reset_tokens WHERE user_id = $1", [
-        userId,
-      ]);
-      return res.status(400).json({ message: "Reset link has expired." });
-    }
-
-    const incomingHash = crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
-    if (incomingHash !== tokenRecord.token_hash) {
-      return res.status(400).json({ message: "Invalid reset token." });
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    await pool.query("BEGIN");
-    await pool.query("UPDATE users SET password_hash = $1 WHERE id = $2", [
-      hashedPassword,
-      userId,
-    ]);
-
-    // 🔥 CRITICAL SECURITY STEP
-    await revokeAllSessions(userId);
-
+  if (new Date(tokenRecord.expires_at) < new Date()) {
     await pool.query("DELETE FROM password_reset_tokens WHERE user_id = $1", [
       userId,
     ]);
-    await pool.query("COMMIT");
+    return res.status(400).json({ message: "Reset link has expired." });
+  }
+
+  const incomingHash = crypto.createHash("sha256").update(token).digest("hex");
+  if (incomingHash !== tokenRecord.token_hash) {
+    return res.status(400).json({ message: "Invalid reset token." });
+  }
+
+  // Hash the new password before checking out the client so the
+  // client is held for as short a time as possible
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  // Check out a single dedicated client from the pool so that
+  // BEGIN / all queries / COMMIT all run on the same connection.
+  // Using pool.query("BEGIN") routes each call to a potentially
+  // different connection, breaking atomicity entirely.
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      "UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2",
+      [hashedPassword, userId]
+    );
+
+    // Revoke all active sessions for this user on the same client/transaction
+    await client.query(
+      "UPDATE sessions SET is_revoked = true, updated_at = NOW() WHERE user_id = $1",
+      [userId]
+    );
+
+    await client.query("DELETE FROM password_reset_tokens WHERE user_id = $1", [
+      userId,
+    ]);
+
+    await client.query("COMMIT");
 
     res.json({ message: "Password updated successfully! You can now log in." });
   } catch (error) {
-    await pool.query("ROLLBACK");
+    await client.query("ROLLBACK");
     console.error("Reset Password Error:", error);
     res.status(500).json({ message: "Internal server error" });
+  } finally {
+    // Always release the client back to the pool whether we succeed or fail
+    client.release();
   }
 };
 
@@ -247,14 +256,12 @@ export const resetPassword = async (req: Request, res: Response) => {
 export const changeUserStatus = async (req: Request, res: Response) => {
   const { userId, status } = req.body;
 
-  // 1. Validation: Only allow specific status strings
   const validStatuses = ["active", "suspended", "pending"];
   if (!validStatuses.includes(status)) {
     return res.status(400).json({ message: "Invalid status type" });
   }
 
   try {
-    // 2. Call the model to update the DB
     const updatedUser = await updateUserStatus(userId, status);
 
     if (!updatedUser) {

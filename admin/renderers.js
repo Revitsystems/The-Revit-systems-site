@@ -8,7 +8,7 @@ const Renderers = {
   // DASHBOARD
   // ==================
 
-  // Pulls real post stats from the backend
+  // Pulls real post stats from the backend via API.getPostStats in api.js
   updateDashboardStats: async () => {
     try {
       const stats = await API.getPostStats();
@@ -315,6 +315,20 @@ const Renderers = {
         .join("");
 
       AppState.pagination.comments = response.pagination;
+
+      // Wire up comment pagination — was missing in the original,
+      // meaning pages beyond the first 10 were unreachable
+      Renderers.renderPagination(
+        "comments-pagination",
+        response.pagination,
+        (page) => {
+          AppState.pagination.comments = {
+            ...AppState.pagination.comments,
+            page,
+          };
+          Renderers.renderComments();
+        }
+      );
     } catch (error) {
       Utils.showToast("Failed to load comments", "error");
     } finally {
@@ -326,7 +340,9 @@ const Renderers = {
   // USERS
   // ==================
   renderUsers: async () => {
-    const container = document.getElementById("users-list");
+    // Fixed: original targeted "users-list" but index.html has id="users-table-body"
+    // causing the renderer to silently populate nothing
+    const container = document.getElementById("users-table-body");
     Utils.showLoader();
 
     try {
@@ -336,6 +352,7 @@ const Renderers = {
         .map(
           (user) => `
         <tr>
+          <td></td>
           <td>
             <div class="user-info">
               <div class="user-avatar"><i class="fas fa-user"></i></div>
@@ -343,7 +360,9 @@ const Renderers = {
                 <div class="user-name">${
                   user.name ||
                   user.display_name ||
-                  user.first_name + " " + user.last_name
+                  (user.first_name && user.last_name
+                    ? user.first_name + " " + user.last_name
+                    : user.email)
                 }</div>
                 <div class="user-email">${user.email}</div>
               </div>
@@ -398,6 +417,128 @@ const Renderers = {
   // ==================
   // CATEGORIES
   // ==================
+
+  // Renders the category management list in the Categories & Tags section.
+  // Called by Actions.loadSectionData in actions.js when section = "categories".
+  // Was completely missing from the original — caused a fatal
+  // TypeError: Renderers.renderCategories is not a function crash
+  // that halted all further JS execution when the section was opened.
+  renderCategories: async () => {
+    const container = document.getElementById("categories-list");
+    if (!container) return;
+
+    Utils.showLoader();
+
+    try {
+      const categories = await API.getCategories();
+
+      if (categories.length === 0) {
+        container.innerHTML = `
+          <div class="taxonomy-item">
+            <div class="taxonomy-info">
+              <span class="taxonomy-name">No categories yet</span>
+              <span class="taxonomy-count">Click "Add Category" to create one</span>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // Build a parent name lookup so child categories can show their parent
+      const parentMap = {};
+      categories.forEach((c) => {
+        parentMap[c.id] = c.name;
+      });
+
+      container.innerHTML = categories
+        .map(
+          (cat) => `
+        <div class="taxonomy-item">
+          <div class="taxonomy-info">
+            <span class="taxonomy-name">
+              ${
+                cat.parent_id
+                  ? '<i class="fas fa-level-up-alt fa-rotate-90" style="font-size:0.75rem;color:var(--gray-400);margin-right:6px;"></i>'
+                  : ""
+              }
+              ${cat.name}
+              ${
+                cat.slug
+                  ? `<span style="font-size:0.75rem;color:var(--gray-500);font-weight:400;margin-left:6px;">/${cat.slug}</span>`
+                  : ""
+              }
+            </span>
+            <span class="taxonomy-count">
+              ${
+                cat.parent_id && parentMap[cat.parent_id]
+                  ? `Parent: ${parentMap[cat.parent_id]}`
+                  : "Top level"
+              }
+              ${cat.description ? ` • ${cat.description}` : ""}
+            </span>
+          </div>
+          <div class="taxonomy-actions">
+            <button onclick="Actions.editCategory('${
+              cat.id
+            }')" title="Edit category">
+              <i class="fas fa-edit"></i>
+            </button>
+          </div>
+        </div>
+      `
+        )
+        .join("");
+    } catch (error) {
+      Utils.showToast("Failed to load categories", "error");
+      container.innerHTML = `
+        <div class="taxonomy-item">
+          <div class="taxonomy-info">
+            <span class="taxonomy-name">Failed to load categories</span>
+          </div>
+        </div>
+      `;
+    } finally {
+      Utils.hideLoader();
+    }
+  },
+
+  // Renders the tags cloud in the Categories & Tags section.
+  // Was completely missing from the original — called by
+  // Actions.loadSectionData in actions.js but never defined.
+  // Tags have no backend yet so renders a placeholder state.
+  renderTags: () => {
+    const container = document.getElementById("tags-cloud");
+    if (!container) return;
+
+    // Tags have no backend endpoint yet — AppState.tags is seeded
+    // as an empty array in state.js. Show a placeholder until
+    // a tags table and API endpoint are added.
+    if (!AppState.tags || AppState.tags.length === 0) {
+      container.innerHTML = `
+        <div style="color:var(--gray-500);font-size:0.9rem;padding:1rem 0;">
+          No tags yet. Use the input below to add your first tag.
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = AppState.tags
+      .map(
+        (tag) => `
+      <div class="tag-item">
+        <span>${tag.name}</span>
+        <button class="remove-tag" onclick="AppState.tags = AppState.tags.filter(t => t.id !== '${tag.id}'); Renderers.renderTags();">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    `
+      )
+      .join("");
+  },
+
+  // Populates the category select dropdowns in the write form,
+  // edit modal, and category parent selector in the category modal.
+  // Referenced by multiple Actions methods in actions.js.
   renderCategoryOptions: async () => {
     const selects = ["blog-category", "edit-category", "category-parent"];
 

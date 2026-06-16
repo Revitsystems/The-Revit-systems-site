@@ -1,8 +1,5 @@
 import { Request, Response } from "express";
-import {
-  PaginationQuery,
-  PaginationRequest,
-} from "@/types/pagination.types.js";
+import { PaginationRequest } from "@/types/pagination.types.js";
 import {
   createPost,
   getPosts,
@@ -11,11 +8,13 @@ import {
   updatePost,
   publishPost,
   deletePost,
-  schedulePost, // Add this
+  schedulePost,
 } from "@/models/postModel.js";
 
+// =============================================
+// Create a new post (draft, published, or scheduled)
+// =============================================
 export const createNewPost = async (req: Request, res: Response) => {
-  // 1. Explicitly type the destructured body
   const {
     categoryId,
     title,
@@ -32,13 +31,13 @@ export const createNewPost = async (req: Request, res: Response) => {
     content: string;
     excerpt?: string;
     featuredImage?: string;
-    status?: "draft" | "published" | "scheduled"; // Match your model's expected strings
+    status?: "draft" | "published" | "scheduled";
     scheduledDate?: string;
   } = req.body;
 
-  if (!categoryId || !title || !slug || !content) {
+  if (!title || !slug || !content) {
     return res.status(400).json({
-      message: "CategoryId, title, slug, and content are required",
+      message: "Title, slug, and content are required",
     });
   }
 
@@ -58,9 +57,9 @@ export const createNewPost = async (req: Request, res: Response) => {
   }
 
   try {
-    // 2. Use Type Assertion for the status to satisfy the model
     const post = await createPost({
       authorId: req.user!.id,
+      // categoryId is optional — a post can exist without a category
       categoryId: categoryId || null,
       title,
       slug,
@@ -68,64 +67,78 @@ export const createNewPost = async (req: Request, res: Response) => {
       excerpt: excerpt || "",
       featuredImage: featuredImage || "",
       status: (status || "draft") as "draft" | "published" | "scheduled",
-      // 3. Only include scheduledDate if scheduleTime is actually defined
       ...(scheduleTime && { scheduledDate: scheduleTime }),
     });
 
     res.status(201).json(post);
   } catch (error: any) {
-    // ... rest of your catch block
+    if (error.code === "23505") {
+      return res.status(409).json({ message: "Slug already exists" });
+    }
+    console.error("createNewPost error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
+// =============================================
+// Fetch posts — supports status filter and pagination
+// =============================================
 export const fetchPosts = async (req: PaginationRequest, res: Response) => {
   try {
     const limit = Number(req.query.limit) || 10;
     const offset = Number(req.query.offset) || 0;
-    const status = String(req.query.status || "published"); // hardcoded, or req.query.status
+
+    // When the frontend sends "all" (or omits status entirely) we pass null
+    // to getPosts so it runs without a WHERE status clause and returns everything.
+    // Any other value — "published", "draft", "scheduled" — is passed through
+    // directly as the status filter.
+    const rawStatus = req.query.status;
+    const status = !rawStatus || rawStatus === "all" ? null : String(rawStatus);
 
     const posts = await getPosts(status, limit, offset);
-
     const hasMore = posts.length === limit;
 
     res.json({ posts, limit, offset, hasMore });
   } catch (err) {
-    console.error(err);
+    console.error("fetchPosts error:", err);
     res.status(500).json({ error: "Failed to fetch posts" });
   }
 };
 
+// =============================================
+// Fetch aggregate post counts by status
+// =============================================
 export const fetchPostStats = async (req: Request, res: Response) => {
   try {
     const stats = await getPostStats();
     res.json(stats);
   } catch (err) {
+    console.error("fetchPostStats error:", err);
     res.status(500).json({ error: "Failed to fetch stats" });
   }
 };
 
+// =============================================
+// Update an existing post's content fields
+// =============================================
 export const updateExistingPost = async (req: Request, res: Response) => {
   const { categoryId, title, slug, content, excerpt, featuredImage } = req.body;
-
   const id = req.params.id;
 
   if (!id || Array.isArray(id)) {
     return res.status(400).json({ message: "Invalid post ID" });
   }
 
-  // Fetch the post first
   const post = await getPostById(id);
 
   if (!post) {
     return res.status(404).json({ message: "Post not found" });
   }
 
-  // Ownership check
   if (post.author_id !== req.user!.id) {
     return res.status(403).json({ message: "Not allowed" });
   }
 
-  // Build updates dynamically
   const updates: {
     categoryId?: string | null;
     title?: string;
@@ -142,12 +155,24 @@ export const updateExistingPost = async (req: Request, res: Response) => {
   if (excerpt !== undefined) updates.excerpt = excerpt;
   if (featuredImage !== undefined) updates.featuredImage = featuredImage;
 
-  const updated = await updatePost(id, updates);
-
-  res.json(updated);
+  try {
+    const updated = await updatePost(id, updates);
+    res.json(updated);
+  } catch (error: any) {
+    if (error.message === "No fields provided for update") {
+      return res.status(400).json({ message: error.message });
+    }
+    if (error.code === "23505") {
+      return res.status(409).json({ message: "Slug already exists" });
+    }
+    console.error("updateExistingPost error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 };
 
-// Update publishExistingPost to handle scheduled posts
+// =============================================
+// Publish a draft or scheduled post
+// =============================================
 export const publishExistingPost = async (req: Request, res: Response) => {
   const id = req.params.id;
 
@@ -162,21 +187,28 @@ export const publishExistingPost = async (req: Request, res: Response) => {
   }
 
   if (post.status === "published") {
-    return res.status(400).json({
-      message: "Already published",
-    });
+    return res.status(400).json({ message: "Already published" });
   }
 
-  const updated = await publishPost(id);
-  res.json(updated);
+  try {
+    const updated = await publishPost(id);
+    res.json(updated);
+  } catch (err) {
+    console.error("publishExistingPost error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 };
 
+// =============================================
+// Delete a post — author only
+// =============================================
 export const removePost = async (req: Request, res: Response) => {
   const id = req.params.id;
 
   if (!id || Array.isArray(id)) {
     return res.status(400).json({ message: "Invalid post ID" });
   }
+
   const post = await getPostById(id);
 
   if (!post) {
@@ -187,65 +219,17 @@ export const removePost = async (req: Request, res: Response) => {
     return res.status(403).json({ message: "Not allowed" });
   }
 
-  await deletePost(id);
-
-  res.json({ message: "Post deleted" });
-};
-
-// =============================================
-// Create a scheduled post directly
-// =============================================
-export const createScheduledPost = async (req: Request, res: Response) => {
-  const {
-    categoryId,
-    title,
-    slug,
-    content,
-    excerpt,
-    featuredImage,
-    scheduledDate,
-  } = req.body;
-
-  if (!categoryId || !title || !slug || !content || !scheduledDate) {
-    return res.status(400).json({
-      message:
-        "CategoryId, title, slug, content, and scheduledDate are required",
-    });
-  }
-
-  const scheduleTime = new Date(scheduledDate);
-  if (isNaN(scheduleTime.getTime()) || scheduleTime <= new Date()) {
-    return res.status(400).json({
-      message: "Scheduled date must be a valid future date",
-    });
-  }
-
   try {
-    const post = await createPost({
-      authorId: req.user!.id,
-      categoryId: categoryId || null,
-      title,
-      slug,
-      content,
-      excerpt,
-      featuredImage,
-      status: "scheduled",
-      scheduledDate: scheduleTime,
-    });
-
-    res.status(201).json(post);
-  } catch (error: any) {
-    if (error.code === "23505") {
-      return res.status(400).json({
-        message: "Slug already exists",
-      });
-    }
+    await deletePost(id);
+    res.json({ message: "Post deleted" });
+  } catch (err) {
+    console.error("removePost error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
 // =============================================
-// Schedule an existing post
+// Schedule an existing draft post
 // =============================================
 export const scheduleExistingPost = async (req: Request, res: Response) => {
   const id = req.params.id;
@@ -272,18 +256,73 @@ export const scheduleExistingPost = async (req: Request, res: Response) => {
     return res.status(404).json({ message: "Post not found" });
   }
 
-  // Check ownership
   if (post.author_id !== req.user!.id) {
     return res.status(403).json({ message: "Not allowed" });
   }
 
-  // Cannot schedule already published posts
   if (post.status === "published") {
     return res.status(400).json({
       message: "Cannot schedule already published posts",
     });
   }
 
-  const updated = await schedulePost(id, scheduleTime);
-  res.json(updated);
+  try {
+    const updated = await schedulePost(id, scheduleTime);
+    res.json(updated);
+  } catch (err) {
+    console.error("scheduleExistingPost error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// =============================================
+// Create a scheduled post directly
+// Kept for backwards compatibility with postRoutes.ts POST /posts/schedule
+// createNewPost with status:"scheduled" is the preferred path going forward
+// =============================================
+export const createScheduledPost = async (req: Request, res: Response) => {
+  const {
+    categoryId,
+    title,
+    slug,
+    content,
+    excerpt,
+    featuredImage,
+    scheduledDate,
+  } = req.body;
+
+  if (!title || !slug || !content || !scheduledDate) {
+    return res.status(400).json({
+      message: "Title, slug, content, and scheduledDate are required",
+    });
+  }
+
+  const scheduleTime = new Date(scheduledDate);
+  if (isNaN(scheduleTime.getTime()) || scheduleTime <= new Date()) {
+    return res.status(400).json({
+      message: "Scheduled date must be a valid future date",
+    });
+  }
+
+  try {
+    const post = await createPost({
+      authorId: req.user!.id,
+      categoryId: categoryId || null,
+      title,
+      slug,
+      content,
+      excerpt,
+      featuredImage,
+      status: "scheduled",
+      scheduledDate: scheduleTime,
+    });
+
+    res.status(201).json(post);
+  } catch (error: any) {
+    if (error.code === "23505") {
+      return res.status(409).json({ message: "Slug already exists" });
+    }
+    console.error("createScheduledPost error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 };

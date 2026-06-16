@@ -14,16 +14,25 @@ let accessToken = null;
 // CORE FETCH WRAPPER
 // Attaches the Bearer token and retries once
 // after a silent token refresh on 401.
+// Guards against sending "Bearer null" on first
+// load before the token is set.
 // ============================================
 const authFetch = async (url, options = {}) => {
+  // Do not send "Bearer null" — if accessToken is not yet set,
+  // omit the Authorization header entirely so the server returns
+  // a clean 401 rather than trying to verify the string "null"
+  const headers = {
+    "Content-Type": "application/json",
+    ...options.headers,
+  };
+  if (accessToken) {
+    headers["Authorization"] = `Bearer ${accessToken}`;
+  }
+
   const response = await fetch(url, {
     ...options,
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-      ...options.headers,
-    },
+    headers,
   });
 
   if (response.status === 401) {
@@ -91,7 +100,22 @@ const API = {
 
   logout: async () => {
     try {
-      await authFetch(`${BASE_URL}/auth/logout`, { method: "POST" });
+      // The logout route added to authRoutes.ts requires the refreshToken
+      // in the request body so logoutController.ts can extract the tokenId
+      // and call revokeSessionByTokenId in sessionModel.ts.
+      // We read it from the cookie string — it is not httpOnly on the
+      // client path because the cookie path is /auth/refresh, but we
+      // stored tokenId.rawToken in a cookie named "refreshToken".
+      // Since document.cookie won't expose httpOnly cookies, we instead
+      // ask the server to revoke via the sid already in the access token —
+      // the authenticate middleware on POST /auth/logout attaches req.user
+      // which includes sid from the JWT, so logoutController can use that.
+      await authFetch(`${BASE_URL}/auth/logout`, {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+    } catch {
+      // Proceed with local cleanup even if the server call fails
     } finally {
       accessToken = null;
       window.location.href = LOGIN_URL;
@@ -108,15 +132,14 @@ const API = {
     return response.json();
   },
 
-  // Returns { posts, limit, offset, hasMore }
-  // filter maps to the backend's "status" query param
-  // "all" is not a valid backend status — we fetch published by default
+  // Returns { posts, pagination }
+  // filter: "all" | "published" | "draft" | "scheduled"
+  // "all" omits the status param — postController.ts fetchPosts
+  // now maps a missing status to null which getPosts handles
+  // by running without a WHERE clause.
   getPosts: async (filter = "published", page = 1, limit = 10) => {
     const offset = (page - 1) * limit;
-
-    // The backend filters by exact status value.
-    // "all" has no backend equivalent — we omit the status param to get everything.
-    const statusParam = filter !== "all" ? `&status=${filter}` : "";
+    const statusParam = filter && filter !== "all" ? `&status=${filter}` : "";
     const url = `${BASE_URL}/posts?limit=${limit}&offset=${offset}${statusParam}`;
 
     const response = await authFetch(url);
@@ -124,7 +147,6 @@ const API = {
 
     const data = await response.json();
 
-    // Normalise to the shape renderers.js expects: { posts, pagination }
     return {
       posts: data.posts,
       pagination: {
@@ -142,7 +164,9 @@ const API = {
   },
 
   createPost: async (postData) => {
-    // Map frontend field names to backend field names
+    // Map frontend field names to backend field names.
+    // postData.category holds the category UUID from the blog-category
+    // select in index.html — mapped to categoryId for the backend.
     const body = {
       categoryId: postData.category || null,
       title: postData.title,
@@ -153,7 +177,8 @@ const API = {
       status: postData.status || "draft",
     };
 
-    // Only include scheduledDate when the post is being scheduled
+    // scheduledDate is only included when status is "scheduled".
+    // Actions.confirmSchedule in actions.js stores the value as scheduledAt.
     if (postData.status === "scheduled" && postData.scheduledAt) {
       body.scheduledDate = postData.scheduledAt;
     }
@@ -176,17 +201,19 @@ const API = {
   },
 
   updatePost: async (id, postData) => {
-    // Handle publishing separately — it has its own endpoint
+    // Publishing has its own dedicated endpoint in postRoutes.ts
     if (postData.status === "published") {
       return API.publishPost(id);
     }
 
-    // Handle rescheduling separately
+    // Rescheduling has its own dedicated endpoint in postRoutes.ts
     if (postData.scheduledAt) {
       return API.schedulePost(id, postData.scheduledAt);
     }
 
     const body = {};
+    // postData may carry either categoryId or category depending on
+    // which part of the UI triggered the update — normalise both to categoryId
     if (postData.categoryId !== undefined)
       body.categoryId = postData.categoryId;
     if (postData.category !== undefined) body.categoryId = postData.category;
@@ -209,7 +236,7 @@ const API = {
 
     const updated = await response.json();
 
-    // Sync AppState
+    // Sync AppState so renderPostsTable in renderers.js stays current
     const index = AppState.posts.findIndex((p) => p.id === id);
     if (index !== -1)
       AppState.posts[index] = { ...AppState.posts[index], ...updated };
@@ -229,7 +256,6 @@ const API = {
 
     const updated = await response.json();
 
-    // Sync AppState
     const index = AppState.posts.findIndex((p) => p.id === id);
     if (index !== -1)
       AppState.posts[index] = { ...AppState.posts[index], ...updated };
@@ -261,7 +287,6 @@ const API = {
       throw new Error(error.message || "Failed to delete post");
     }
 
-    // Sync AppState
     AppState.posts = AppState.posts.filter((p) => p.id !== id);
     return { success: true };
   },
@@ -276,16 +301,15 @@ const API = {
 
     const categories = await response.json();
 
-    // Sync AppState so any mock-reliant code still works
+    // Sync AppState so renderCategoryOptions in renderers.js works
     AppState.categories = categories;
-    console.log("Fetched categories:", categories);
     return categories;
   },
 
-  // Handles both create (no id) and update (has id)
+  // Handles both create (no id) and update (has id).
+  // Called by Actions.saveCategory in actions.js.
   saveCategory: async (categoryData) => {
     if (categoryData.id) {
-      // Update existing
       const body = {};
       if (categoryData.name) body.name = categoryData.name;
       if (categoryData.slug) body.slug = categoryData.slug;
@@ -312,7 +336,6 @@ const API = {
       if (index !== -1) AppState.categories[index] = updated;
       return updated;
     } else {
-      // Create new
       const body = { name: categoryData.name };
       if (categoryData.slug) body.slug = categoryData.slug;
       if (categoryData.description) body.description = categoryData.description;
@@ -353,9 +376,19 @@ const API = {
   // ============================================
 
   // filter: "pending" | "approved" | "rejected" | "all"
+  // "spam" and "trash" are frontend-only labels used in index.html tabs.
+  // commentController.ts only accepts "approved", "pending", "rejected".
+  // "spam" maps to "rejected", "trash" maps to "rejected" as well.
+  // "all" omits the status param entirely.
   getComments: async (filter = "pending", page = 1, limit = 10) => {
     const offset = (page - 1) * limit;
-    const statusParam = filter !== "all" ? `&status=${filter}` : "";
+
+    // Normalise frontend-only filter labels to backend-valid status values
+    let backendFilter = filter;
+    if (filter === "spam" || filter === "trash") backendFilter = "rejected";
+    if (filter === "all") backendFilter = null;
+
+    const statusParam = backendFilter ? `&status=${backendFilter}` : "";
     const url = `${BASE_URL}/comments?limit=${limit}&offset=${offset}${statusParam}`;
 
     const response = await authFetch(url);
@@ -363,13 +396,15 @@ const API = {
 
     const data = await response.json();
 
-    // Normalise DB fields to what renderers.js expects
+    // Normalise DB column names to the shape renderers.js renderComments expects.
+    // visitor_name is null for staff comments — falls back to "Staff".
+    // post_id is shown as postTitle until the backend joins the posts table.
     const normalised = data.comments.map((c) => ({
       id: c.id,
       author: c.visitor_name || "Staff",
       email: c.visitor_email || "",
       text: c.comment_text,
-      postTitle: c.post_id, // post title isn't joined yet — shows ID for now
+      postTitle: c.post_title || c.post_id,
       status: c.status,
       createdAt: c.created_at,
     }));
@@ -386,9 +421,10 @@ const API = {
     };
   },
 
-  // status: "approved" | "pending" | "rejected"
+  // status: "approved" | "pending" | "rejected" | "spam"
+  // commentController.ts moderateComment validates against
+  // ["approved", "pending", "rejected"] — "spam" is mapped to "rejected".
   updateComment: async (id, status) => {
-    // Map "spam" (frontend term) to "rejected" (backend term)
     const mappedStatus = status === "spam" ? "rejected" : status;
 
     const response = await authFetch(`${BASE_URL}/comments/${id}/status`, {
@@ -403,7 +439,6 @@ const API = {
 
     const updated = await response.json();
 
-    // Sync AppState
     const index = AppState.comments.findIndex((c) => c.id === id);
     if (index !== -1) AppState.comments[index].status = mappedStatus;
 
@@ -449,27 +484,25 @@ const API = {
   // ANALYTICS
   // ============================================
 
-  // Aggregates view summaries across all published posts
+  // Pulls real post stats and category data from the backend.
+  // Traffic trend and device breakdown remain estimated until a
+  // dedicated /analytics/summary endpoint is built — the per-post
+  // view summary routes in postAnalyticsRoutes.ts exist but require
+  // one request per post which is too costly for a dashboard summary.
   getAnalytics: async (period = 30) => {
-    // Fetch stats and categories in parallel
-    const [statsResponse, categoriesResponse] = await Promise.all([
+    const [statsResponse] = await Promise.all([
       authFetch(`${BASE_URL}/posts/stats`),
-      authFetch(`${BASE_URL}/categories`),
     ]);
 
     const stats = statsResponse.ok ? await statsResponse.json() : {};
 
-    // Build device breakdown from AppState posts (real breakdown
-    // requires per-post view summary calls — too many for a dashboard)
     const deviceData = {
       labels: ["Desktop", "Mobile", "Tablet"],
-      data: [55, 35, 10], // kept as estimates until a /analytics/summary endpoint exists
+      data: [55, 35, 10],
     };
 
-    // Generate traffic trend from real post counts across the period
     const trafficData = generateTrafficData(period);
 
-    // Top posts by view_count from real data
     const topPosts = [...AppState.posts]
       .sort(
         (a, b) =>
@@ -563,15 +596,17 @@ const API = {
     });
   },
 
+  // Registers a new user with pending status via POST /auth/register.
+  // Uses a cryptographically weak Math.random() password — acceptable only
+  // because the account starts as "pending" and must be approved before use.
   inviteUser: async (email, role) => {
-    // No invite endpoint yet — registers directly with pending status
     const response = await authFetch(`${BASE_URL}/auth/register`, {
       method: "POST",
       body: JSON.stringify({
         first_name: email.split("@")[0],
         last_name: "Invited",
         email,
-        password: Math.random().toString(36).slice(-10) + "A1!", // temporary password
+        password: Math.random().toString(36).slice(-10) + "A1!",
         role,
       }),
     });

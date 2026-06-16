@@ -3,16 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="keywords"
-      content="Brand transformation framework, Brand review process, How to revamp your brand, Business branding strategy, Brand audit and positioning, Brand clarity and storytelling, Revit Systems branding solutions"
-    />
-    <meta
-      name="description"
-      content="Revit Systems helps businesses revamp their brands with proven strategies for brand transformation, audits, positioning, clarity, and storytelling."
-    />
-
-    <title>Revit-Systems</title>
+    <meta name="description" content="Revit Systems blog article." />
+    <title id="pageTitle">Article — Revit Systems</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -24,146 +16,797 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <link rel="stylesheet" href="../assets/css/style.css" />
-    <link rel="icon" type="image/png" href="../assets/Image/Logo/favicon.png" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://res.cloudinary.com/dmvltush8/image/upload/v1760973008/favicon_qdd9zl.png"
+    />
+    <script defer src="../assets/js/script.js"></script>
     <style>
+      /* =============================================
+         BLOG POST PAGE — REVIT SYSTEMS
+         ============================================= */
+      :root {
+        --rv-orange: #d17609;
+        --rv-orange-dark: #b86808;
+        --rv-orange-light: #fef3e2;
+        --rv-orange-mid: rgba(209, 118, 9, 0.12);
+        --rv-dark: #242527;
+        --rv-mid: #404051;
+        --rv-gray: #f7f6f3;
+        --rv-gray-2: #e8e6e1;
+        --rv-white: #ffffff;
+        --rv-radius: 14px;
+        --rv-radius-lg: 22px;
+        --rv-shadow: 0 4px 24px rgba(36, 37, 39, 0.08);
+        --rv-shadow-hover: 0 12px 40px rgba(36, 37, 39, 0.16);
+        --rv-transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        --reading-width: 720px;
+      }
+
       * {
-        outline: none;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
       }
-      .sub-b-log-page {
+
+      body {
+        font-family: "DM Sans", sans-serif;
+        background: var(--rv-white);
+        color: var(--rv-dark);
+      }
+
+      /* ---- READING PROGRESS BAR ---- */
+      /* Signature element: thin orange bar at the very top that fills
+         as the user scrolls — signals progress without being intrusive */
+      .rv-progress-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 3px;
+        width: 0%;
+        background: var(--rv-orange);
+        z-index: 9999;
+        transition: width 0.1s linear;
+        border-radius: 0 2px 2px 0;
+      }
+
+      /* ---- PAGE WRAPPER ---- */
+      .post-page {
+        min-height: 100vh;
+        padding-bottom: 120px;
+      }
+
+      /* ---- BACK NAV BAR ---- */
+      .post-topbar {
+        width: 100%;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--rv-gray-2);
+        position: sticky;
+        top: 0;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        z-index: 100;
+        margin-top: 60px; /* clears the site nav */
+      }
+
+      .post-topbar-inner {
         width: 90%;
-        margin: 30px auto;
-        padding: 10px;
-        background: #fff;
-        border-radius: 16px;
-      }
-
-      .sub-b-log-top-nav {
+        max-width: 1100px;
+        margin: 0 auto;
         display: flex;
-        justify-content: space-between;
         align-items: center;
-      }
-
-      .sub-b-log-return {
-        color: #d17609;
-        height: 30px;
-        width: 30px;
-        cursor: pointer;
-      }
-
-      .sub-b-log-tag {
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        color: #d17609;
-        font-weight: 700;
-      }
-      .sub-b-log-title {
-        font-size: 1.8rem;
-        font-weight: 700;
-        margin: 10px 0 20px;
-        color: #242527;
-      }
-
-      .sub-b-log-image1 {
-        width: 100%;
-        max-height: 500px;
-        overflow: hidden;
-        margin-bottom: 20px;
-        border-radius: 20px;
-      }
-
-      .sub-b-log-image,
-      .sub-b-log-image1 {
-        width: 100%;
-        max-height: 300px;
-        overflow: hidden;
-        border-radius: 20px;
-        margin-bottom: 20px;
-      }
-
-      .sub-b-log-image1 {
-        max-height: 500px;
-        overflow: hidden;
-      }
-      .sub-b-log-page img {
-        width: 100%;
-        border-radius: 12px;
-        margin: 20px 0;
-      }
-      .sub-b-log-body .header {
-        margin-top: 20px;
-      }
-      .sub-b-log-body p {
-        font-size: 1rem;
-        line-height: 1.6;
-        color: #404051;
-        margin-bottom: 16px;
-      }
-
-      .sub-b-log-footer {
-        text-align: center;
-        margin-top: 30px;
-      }
-      .sub-b-log-footer a {
-        margin: 0 10px;
-        color: #d17609;
-        font-size: 1.2rem;
-        text-decoration: none;
-        transition: color 0.3s;
-      }
-      .sub-b-log-footer a:hover {
-        color: #242527;
-      }
-
-      .sub-b-log-nav {
-        display: flex;
         justify-content: space-between;
-        margin-top: 40px;
+        gap: 16px;
       }
 
-      .sub-b-log-arrow {
-        background: #d17609;
-        color: #fff;
-        padding: 10px 20px;
-        border-radius: 8px;
-        text-decoration: none;
+      .post-back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85rem;
         font-weight: 600;
-        transition: background 0.3s;
-      }
-      .sub-b-log-nav a:hover {
-        background: #242527;
+        color: var(--rv-mid);
+        text-decoration: none;
+        transition: var(--rv-transition);
       }
 
-      .questions {
-        margin-bottom: 20px;
-        flex-direction: column;
-        align-items: start;
-        gap: 10px;
-        color: #404051;
-        padding-left: 20px;
+      .post-back-link:hover {
+        color: var(--rv-orange);
+      }
+      .post-back-link i {
+        font-size: 0.75rem;
+      }
+
+      .post-topbar-share {
         display: flex;
-      }
-      .italic-text {
-        font-style: italic;
+        align-items: center;
+        gap: 8px;
       }
 
-      .header {
-        color: #404051;
+      .share-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #aaa;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .share-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: 1.5px solid var(--rv-gray-2);
+        background: var(--rv-white);
+        color: var(--rv-mid);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        text-decoration: none;
+        font-size: 0.8rem;
+        transition: var(--rv-transition);
+      }
+
+      .share-btn:hover {
+        border-color: var(--rv-orange);
+        color: var(--rv-orange);
+        background: var(--rv-orange-light);
+      }
+
+      /* ---- HERO IMAGE ---- */
+      .post-hero {
+        width: 100%;
+        height: clamp(280px, 45vw, 520px);
+        overflow: hidden;
+        position: relative;
+      }
+
+      .post-hero img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .post-hero-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          to bottom,
+          transparent 40%,
+          rgba(36, 37, 39, 0.55) 100%
+        );
+      }
+
+      /* ---- ARTICLE CONTAINER ---- */
+      .post-container {
+        width: 90%;
+        max-width: var(--reading-width);
+        margin: 0 auto;
+      }
+
+      /* ---- ARTICLE HEADER ---- */
+      .post-header {
+        padding: 44px 0 36px;
+        border-bottom: 1px solid var(--rv-gray-2);
+        margin-bottom: 40px;
+      }
+
+      .post-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--rv-orange);
+        background: var(--rv-orange-light);
+        padding: 5px 14px;
+        border-radius: 999px;
+        margin-bottom: 18px;
+      }
+
+      .post-title {
+        font-size: clamp(1.7rem, 4vw, 2.5rem);
+        font-weight: 900;
+        color: var(--rv-dark);
+        line-height: 1.15;
+        letter-spacing: -0.025em;
+        margin-bottom: 20px;
+      }
+
+      .post-meta-row {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+
+      .post-author-chip {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .post-author-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--rv-orange);
+        color: var(--rv-white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 800;
+        flex-shrink: 0;
+      }
+
+      .post-author-name {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--rv-dark);
+      }
+
+      .post-author-role {
+        font-size: 0.78rem;
+        color: #aaa;
+        font-weight: 400;
+      }
+
+      .post-meta-divider {
+        width: 1px;
+        height: 28px;
+        background: var(--rv-gray-2);
+      }
+
+      .post-meta-item {
+        font-size: 0.82rem;
+        color: #aaa;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .post-meta-item i {
+        font-size: 0.7rem;
+        color: var(--rv-orange);
+      }
+
+      /* ---- ARTICLE BODY ---- */
+      .post-body {
+        font-size: 1.05rem;
+        line-height: 1.8;
+        color: var(--rv-mid);
+        font-weight: 400;
+      }
+
+      .post-body p {
+        margin-bottom: 24px;
+      }
+      .post-body h2 {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: var(--rv-dark);
+        margin: 40px 0 16px;
+        letter-spacing: -0.015em;
+        line-height: 1.3;
+      }
+      .post-body h3 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--rv-dark);
+        margin: 32px 0 12px;
+      }
+      .post-body ul,
+      .post-body ol {
+        padding-left: 24px;
+        margin-bottom: 24px;
+      }
+      .post-body li {
+        margin-bottom: 8px;
+        line-height: 1.7;
+      }
+      .post-body strong {
+        color: var(--rv-dark);
+        font-weight: 700;
+      }
+      .post-body em {
+        color: var(--rv-mid);
+      }
+      .post-body blockquote {
+        border-left: 4px solid var(--rv-orange);
+        padding: 12px 24px;
+        background: var(--rv-orange-light);
+        border-radius: 0 var(--rv-radius) var(--rv-radius) 0;
+        margin: 32px 0;
+        font-style: italic;
+        color: var(--rv-dark);
+        font-size: 1.05rem;
+        line-height: 1.7;
+      }
+
+      /* ---- POST INLINE IMAGE ---- */
+      .post-body img {
+        width: 100%;
+        border-radius: var(--rv-radius);
+        margin: 32px 0;
+        display: block;
+      }
+
+      /* ---- SOCIAL SHARE STRIP ---- */
+      .post-share-strip {
+        margin-top: 56px;
+        padding: 28px 0;
+        border-top: 1px solid var(--rv-gray-2);
+        border-bottom: 1px solid var(--rv-gray-2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .post-share-strip-label {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--rv-dark);
+      }
+
+      .post-share-buttons {
+        display: flex;
+        gap: 8px;
+      }
+
+      .post-share-social {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 36px;
+        padding: 0 16px;
+        border-radius: 999px;
+        border: 1.5px solid var(--rv-gray-2);
+        background: var(--rv-white);
+        font-family: "DM Sans", sans-serif;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--rv-mid);
+        cursor: pointer;
+        text-decoration: none;
+        transition: var(--rv-transition);
+      }
+
+      .post-share-social:hover {
+        border-color: var(--rv-orange);
+        color: var(--rv-orange);
+        background: var(--rv-orange-light);
+      }
+
+      /* ---- PREV / NEXT NAVIGATION ---- */
+      /* Clean, card-based nav — shows post title so user knows where they're going */
+      .post-prevnext {
+        margin-top: 56px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      .post-nav-card {
+        background: var(--rv-gray);
+        border: 1.5px solid var(--rv-gray-2);
+        border-radius: var(--rv-radius);
+        padding: 20px 24px;
+        cursor: pointer;
+        text-decoration: none;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        transition: var(--rv-transition);
+        min-height: 90px;
+        justify-content: center;
+      }
+
+      .post-nav-card:hover {
+        border-color: var(--rv-orange);
+        background: var(--rv-orange-light);
+        transform: translateY(-2px);
+        box-shadow: var(--rv-shadow);
+      }
+
+      .post-nav-card.next {
+        text-align: right;
+      }
+
+      .post-nav-direction {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--rv-orange);
+      }
+
+      .post-nav-card.next .post-nav-direction {
+        justify-content: flex-end;
+      }
+
+      .post-nav-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--rv-dark);
+        line-height: 1.35;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .post-nav-card.disabled {
+        opacity: 0.35;
+        pointer-events: none;
+        cursor: default;
+      }
+
+      /* ---- SUGGESTED POSTS SEGMENT ---- */
+      /* The "you might also like" — warm orange-tinted strip
+         that sits naturally below the article without shouting */
+      .post-suggested-segment {
+        width: 100%;
+        background: linear-gradient(135deg, #fff9f2 0%, #fef3e2 100%);
+        border-top: 1px solid var(--rv-orange-light);
+        margin-top: 80px;
+        padding: 60px 0 80px;
+      }
+
+      .post-suggested-inner {
+        width: 90%;
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+
+      .post-suggested-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 32px;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .post-suggested-title {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: var(--rv-dark);
+        letter-spacing: -0.015em;
+      }
+
+      .post-suggested-title span {
+        color: var(--rv-orange);
+      }
+
+      .post-suggested-see-all {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--rv-orange);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: var(--rv-transition);
+      }
+
+      .post-suggested-see-all:hover {
+        color: var(--rv-orange-dark);
+      }
+      .post-suggested-see-all i {
+        font-size: 0.7rem;
+      }
+
+      .post-suggested-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+      }
+
+      .post-suggested-card {
+        background: var(--rv-white);
+        border-radius: var(--rv-radius);
+        overflow: hidden;
+        cursor: pointer;
+        transition: var(--rv-transition);
+        box-shadow: 0 2px 12px rgba(36, 37, 39, 0.06);
+        border: 1.5px solid transparent;
+      }
+
+      .post-suggested-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--rv-shadow-hover);
+        border-color: var(--rv-orange-light);
+      }
+
+      .post-suggested-img {
+        width: 100%;
+        height: 160px;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.4s ease;
+      }
+
+      .post-suggested-card:hover .post-suggested-img {
+        transform: scale(1.04);
+      }
+
+      .post-suggested-img-wrap {
+        overflow: hidden;
+        height: 160px;
+      }
+
+      .post-suggested-body {
+        padding: 18px 20px 20px;
+      }
+
+      .post-suggested-tag {
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--rv-orange);
+        margin-bottom: 8px;
+        display: block;
+      }
+
+      .post-suggested-card-title {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: var(--rv-dark);
+        line-height: 1.35;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      /* ---- STICKY CONTINUE READING STRIP ---- */
+      /* Appears fixed at the bottom after scrolling past the hero —
+         shows the next post title with a one-click jump */
+      .post-continue-strip {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--rv-dark);
+        color: var(--rv-white);
+        padding: 14px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        z-index: 200;
+        transform: translateY(100%);
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 -4px 24px rgba(36, 37, 39, 0.2);
+      }
+
+      .post-continue-strip.visible {
+        transform: translateY(0);
+      }
+
+      .post-continue-left {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .post-continue-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--rv-orange);
+      }
+
+      .post-continue-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--rv-white);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .post-continue-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 40px;
+        padding: 0 20px;
+        border-radius: 999px;
+        background: var(--rv-orange);
+        border: none;
+        font-family: "DM Sans", sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--rv-white);
+        cursor: pointer;
+        text-decoration: none;
+        transition: var(--rv-transition);
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .post-continue-btn:hover {
+        background: var(--rv-orange-dark);
+        transform: scale(1.03);
+      }
+
+      .post-continue-close {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: rgba(255, 255, 255, 0.6);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        transition: var(--rv-transition);
+        flex-shrink: 0;
+      }
+
+      .post-continue-close:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: var(--rv-white);
+      }
+
+      /* ---- ERROR / NOT FOUND STATE ---- */
+      .post-not-found {
+        width: 90%;
+        max-width: 500px;
+        margin: 120px auto;
+        text-align: center;
+      }
+
+      .post-not-found i {
+        font-size: 3rem;
+        color: var(--rv-gray-2);
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .post-not-found h2 {
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: var(--rv-dark);
         margin-bottom: 10px;
       }
 
-      .sub-b-log-body h2 {
-        font-size: 1.2rem;
+      .post-not-found p {
+        font-size: 0.95rem;
+        color: #aaa;
+        margin-bottom: 24px;
+      }
+
+      .post-not-found a {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 44px;
+        padding: 0 24px;
+        border-radius: 999px;
+        background: var(--rv-orange);
+        color: var(--rv-white);
+        font-weight: 700;
+        font-size: 0.9rem;
+        text-decoration: none;
+        transition: var(--rv-transition);
+      }
+
+      .post-not-found a:hover {
+        background: var(--rv-orange-dark);
+      }
+
+      /* ---- RESPONSIVE ---- */
+      @media (max-width: 780px) {
+        .post-prevnext {
+          grid-template-columns: 1fr;
+        }
+        .post-nav-card.next {
+          text-align: left;
+        }
+        .post-nav-card.next .post-nav-direction {
+          justify-content: flex-start;
+        }
+        .post-suggested-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .post-topbar-share .share-label {
+          display: none;
+        }
+        .post-continue-strip {
+          padding: 12px 16px;
+        }
+        .post-continue-title {
+          font-size: 0.82rem;
+        }
+      }
+
+      @media (max-width: 520px) {
+        .post-title {
+          font-size: 1.5rem;
+        }
+        .post-suggested-grid {
+          grid-template-columns: 1fr;
+        }
+        .post-meta-divider {
+          display: none;
+        }
+        .post-share-buttons {
+          flex-wrap: wrap;
+        }
       }
     </style>
   </head>
+
   <body>
-    <div class="sub-b-log-page">
-      <div class="sub-b-log-top-nav">
-        <!-- Article Content -->
-        <span class="sub-b-log-tag">Productivity</span>
-        <a href="./blog.html">
+    <!-- Reading progress bar -->
+    <div class="rv-progress-bar" id="progressBar"></div>
+
+    <!-- ==========================================
+         HEADER — untouched from original
+         ========================================== -->
+    <header id="header">
+      <nav>
+        <div class="nav-content">
+          <div class="logo-and-navlinks">
+            <div class="logo">
+              <img
+                src="https://res.cloudinary.com/dmvltush8/image/upload/v1760973008/without_bg_black_font_pjd8q9.png"
+                alt="Revit Systems"
+              />
+            </div>
+            <ul class="nav-links">
+              <li><a href="../index.html">Home</a></li>
+              <li><a href="./about-us.html">About Us</a></li>
+              <li><a href="./services.html">Services</a></li>
+              <li><a href="./resources-page.html">Resources</a></li>
+              <li><a href="./blog.html">Blog</a></li>
+              <li><a href="./contact.html">Contact Us</a></li>
+            </ul>
+          </div>
+          <button id="getStartedBtn" class="nav-cta-btn">Get Started</button>
+          <button
+            class="menu-toggle"
+            id="menuToggleBtn"
+            aria-controls="navMenu"
+            aria-expanded="false"
+            aria-label="Open menu"
+          >
+            <span class="icon-line" aria-hidden="true"></span>
+          </button>
+        </div>
+      </nav>
+    </header>
+
+    <div class="menu-overlay" id="menuOverlay" tabindex="-1"></div>
+
+    <aside
+      class="menu-panel"
+      id="navMenu"
+      role="navigation"
+      aria-label="Main menu"
+    >
+      <div class="menu-panel-header">
+        <h2 class="menu-panel-title">Revit-Systems</h2>
+        <button class="menu-close" id="menuCloseBtn" aria-label="Close menu">
           <svg
-            class="sub-b-log-return"
             xmlns="http://www.w3.org/2000/svg"
             width="24"
             height="24"
@@ -173,330 +816,503 @@
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            class="lucide lucide-circle-x-icon lucide-circle-x"
           >
-            <circle cx="12" cy="12" r="10" />
-            <path d="m15 9-6 6" />
-            <path d="m9 9 6 6" />
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
           </svg>
-        </a>
+        </button>
       </div>
-
-      <h1 class="sub-b-log-title">Why Branding is More Than Just a Logo</h1>
-      <div class="sub-b-log-image1">
-        <img
-          src="../assets/Image/The hero Images/Image_fx (9).jpg"
-          alt="Branding workspace"
-        />
-      </div>
-
-      <div class="sub-b-log-body">
-        <p>
-          In a world where customers are spoilt for choice and attention spans
-          are shrinking, businesses that fail to evaluate and evolve risk
-          becoming irrelevant. At Revit Systems, we believe every successful
-          transformation begins with three powerful actions: Review. Reveal.
-          Revamp. This framework helps businesses diagnose their current brand
-          position, clarify their unique story, and execute changes that drive
-          growth.
-        </p>
-        <p>
-          In this article, we’ll break down the 3-step brand transformation
-          framework, with practical insights you can apply immediately.
-        </p>
-
-        <p class="header">Step 1: Review, Take an Honest Audit of Your Brand</p>
-        <p>
-          Most businesses struggle not because their products are weak, but
-          because their brand is inconsistent or unclear. That’s why
-          transformation begins with a review.
-          <br />A brand review is more than checking your logo or website. It’s
-          about asking:
-        </p>
-        <ul class="questions">
-          <li>Is our brand message clear and consistent across platforms?</li>
-          <li>Do customers perceive us the way we intend?</li>
-          <li>Are we aligned with market trends and consumer expectations?</li>
-          <li>Does our brand voice resonate with our target audience?</li>
+      <nav class="menu-nav">
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="./about-us.html">About Us</a></li>
+          <li><a href="./services.html">Services</a></li>
+          <li><a href="./resources-page.html">Resources</a></li>
+          <li><a href="./blog.html">Blog</a></li>
+          <li><a href="./contact.html">Contact Us</a></li>
         </ul>
+      </nav>
+      <div class="menu-footer">
+        Signed in as <strong>you@example.com</strong>
+      </div>
+    </aside>
 
-        <p><strong>Practical ways to review your brand:</strong></p>
-        <p>
-          Customer Feedback: Run surveys or interviews to understand how people
-          truly see your brand.
-        </p>
-
-        <p>
-          Competitor Benchmarking: Compare your positioning against industry
-          leaders.
-        </p>
-
-        <p>
-          Digital Audit: Assess your website, social media, and content for
-          clarity and consistency.
-        </p>
-
-        <p>
-          <em
-            >Tip: Treat this review like a health check. The goal is to uncover
-            gaps, not cover them up.</em
-          >
-        </p>
-        <p class="header">
-          >Step 2: Reveal — Define and Communicate What Makes You Different >
-        </p>
-        <p>
-          Once you know where you stand, it’s time to reveal your brand’s truth.
-          This is where clarity turns into power.
-          <br />Reveal means identifying your unique value and showing it
-          boldly. Many businesses hide behind generic messaging like “quality
-          services” or “customer satisfaction.” But customers want specificity
-          and authenticity. <br />
-          Questions to ask in this stage:
-        </p>
-        <div class="questions">
-          <ul>
-            <li>What’s our core promise to customers?</li>
-            <li>Which emotions and values should our brand evoke?</li>
-            <li>What story do we want customers to tell about us?</li>
-          </ul>
+    <!-- ==========================================
+         ARTICLE PAGE — rendered by JS
+         ========================================== -->
+    <div class="post-page" id="postPage">
+      <!-- Sticky back/share bar -->
+      <div class="post-topbar">
+        <div class="post-topbar-inner">
+          <a href="./blog.html" class="post-back-link">
+            <i class="fas fa-arrow-left"></i>
+            Back to Blog
+          </a>
+          <div class="post-topbar-share">
+            <span class="share-label">Share</span>
+            <a
+              id="shareTwitter"
+              href="#"
+              target="_blank"
+              rel="noopener"
+              class="share-btn"
+              title="Share on Twitter"
+            >
+              <i class="fab fa-twitter"></i>
+            </a>
+            <a
+              id="shareLinkedin"
+              href="#"
+              target="_blank"
+              rel="noopener"
+              class="share-btn"
+              title="Share on LinkedIn"
+            >
+              <i class="fab fa-linkedin-in"></i>
+            </a>
+            <button class="share-btn" id="copyLinkBtn" title="Copy link">
+              <i class="fas fa-link"></i>
+            </button>
+          </div>
         </div>
-        <p>How to reveal your brand’s uniqueness:</p>
-        <p>
-          Craft a Clear Value Proposition: A one-sentence statement of what you
-          do, who you serve, and why it matters.
-        </p>
+      </div>
 
-        <p>
-          Clarify Your Brand Voice: Are you professional, playful, visionary, or
-          bold? Stick with it.
-        </p>
+      <!-- Hero image -->
+      <div class="post-hero">
+        <img id="postHeroImg" src="" alt="" />
+        <div class="post-hero-overlay"></div>
+      </div>
 
-        <p>
-          Show Your Story: Highlight your journey, challenges, and wins — human
-          stories attract loyalty.
-        </p>
+      <!-- Article -->
+      <div class="post-container">
+        <!-- Article header -->
+        <header class="post-header">
+          <div class="post-tag" id="postTag">
+            <i class="fas fa-tag"></i>
+            <span id="postTagText">Article</span>
+          </div>
+          <h1 class="post-title" id="postTitle">Loading...</h1>
+          <div class="post-meta-row">
+            <div class="post-author-chip">
+              <div class="post-author-avatar" id="postAuthorAvatar">RI</div>
+              <div>
+                <div class="post-author-name">Revit Info</div>
+                <div class="post-author-role">Revit Systems</div>
+              </div>
+            </div>
+            <div class="post-meta-divider"></div>
+            <div class="post-meta-item">
+              <i class="far fa-clock"></i>
+              <span id="postReadTime">5 min read</span>
+            </div>
+          </div>
+        </header>
 
-        <p>
-          <em>
-            Example: In Nigeria’s competitive fashion market, a brand that
-            simply says “we make clothes” gets lost. But a fashion brand that
-            reveals its mission, “empowering young professionals with bold,
-            African-inspired corporate wear” instantly stands out.</em
-          >
-        </p>
-        <p class="header">
-          Step 3: Revamp — Implement Changes that Drive Growth
-        </p>
-        <p>
-          A brand audit and story only create impact when you revamp. This is
-          the execution stage — where strategy meets design, content, and
-          customer experience. <br />Revamp means upgrading touchpoints so they
-          reflect your brand’s true value. <br />Areas to revamp:
-        </p>
-        <div class="questions">
-          <ul>
-            <li>
-              Visual Identity: Update your logo, typography, and color palette
-              for consistency.
-            </li>
-            <li>
-              Digital Presence: Redesign your website, strengthen SEO, and
-              optimize user experience.
-            </li>
-            <li>
-              Content Strategy: Share stories, case studies, and insights that
-              match your new brand narrative.
-            </li>
-            <li>
-              Customer Engagement: Train your team to embody your brand values
-              at every interaction.
-            </li>
-          </ul>
+        <!-- Article body -->
+        <div class="post-body" id="postBody">
+          <!-- Populated by JS -->
         </div>
-        <p><strong> How to reveal your brand’s uniqueness:</strong></p>
-        <p>
-          Craft a Clear Value Proposition: A one-sentence statement of what you
-          do, who you serve, and why it matters.
-        </p>
 
-        <p>
-          Clarify Your Brand Voice: Are you professional, playful, visionary, or
-          bold? Stick with it.
-        </p>
-
-        <p>
-          Show Your Story: Highlight your journey, challenges, and wins — human
-          stories attract loyalty.
-        </p>
-
-        <p class="italic-text">
-          Example: In Nigeria’s competitive fashion market, a brand that simply
-          says “we make clothes” gets lost. But a fashion brand that reveals its
-          mission, “empowering young professionals with bold, African-inspired
-          corporate wear” instantly stands out.
-        </p>
-      </div>
-
-      <div class="sub-b-log-image">
-        <img
-          src="../assets/Image/The hero Images/Image_fx (13).jpg"
-          alt="Designer working"
-        />
-      </div>
-
-      <div class="sub-b-log-body">
-        <p>
-          Branding goes far beyond colors, fonts, and logos—it's the story you
-          tell and the experience you create for your audience...
-        </p>
-      </div>
-
-      <!-- Socials -->
-      <div class="sub-b-log-footer">
-        <a href="https://www.instagram.com/revitsystems/"
-          ><svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="lucide lucide-instagram-icon lucide-instagram"
+        <!-- Social share strip -->
+        <div class="post-share-strip">
+          <span class="post-share-strip-label"
+            >Found this useful? Share it.</span
           >
-            <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-            e x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-          </svg>
-        </a>
-        <a href="https://x.com/revitsystems"
-          ><svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="lucide lucide-twitter-icon lucide-twitter"
-          >
-            <path
-              d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"
-            />
-          </svg>
-        </a>
-        <a
-          href="https://www.facebook.com/profile.php?id=61568188626000&mibextid=ZbWKwL"
-          ><svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="lucide lucide-facebook-icon lucide-facebook"
-          >
-            <path
-              d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"
-            />
-          </svg>
-        </a>
-        <a
-          href="https://www.linkedin.com/company/revit-systems-limited/?viewAsMember=true"
-          ><svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="lucide lucide-linkedin-icon lucide-linkedin"
-          >
-            <path
-              d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"
-            />
-            <rect width="4" height="12" x="2" y="9" />
-            <circle cx="4" cy="4" r="2" />
-          </svg>
-        </a>
-      </div>
+          <div class="post-share-buttons">
+            <a
+              id="shareTwitter2"
+              href="#"
+              target="_blank"
+              rel="noopener"
+              class="post-share-social"
+            >
+              <i class="fab fa-twitter"></i> Twitter
+            </a>
+            <a
+              id="shareLinkedin2"
+              href="#"
+              target="_blank"
+              rel="noopener"
+              class="post-share-social"
+            >
+              <i class="fab fa-linkedin-in"></i> LinkedIn
+            </a>
+            <button class="post-share-social" id="copyLinkBtn2">
+              <i class="fas fa-link"></i> Copy link
+            </button>
+          </div>
+        </div>
 
-      <!-- Prev / Next navigation -->
-      <div class="sub-b-log-nav">
-        <svg
-          class="sub-b-log-arrow"
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="lucide lucide-arrow-left-to-line-icon lucide-arrow-left-to-line"
-        >
-          <path d="M3 19V5" />
-          <path d="m13 6-6 6 6 6" />
-          <path d="M7 12h14" />
-        </svg>
-        <svg
-          class="sub-b-log-arrow"
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="lucide lucide-arrow-right-to-line-icon lucide-arrow-right-to-line"
-        >
-          <path d="M17 12H3" />
-          <path d="m11 18 6-6-6-6" />
-          <path d="M21 5v14" />
-        </svg>
+        <!-- Prev / Next navigation -->
+        <nav class="post-prevnext" id="postPrevNext">
+          <div class="post-nav-card prev disabled" id="prevCard">
+            <div class="post-nav-direction">
+              <i class="fas fa-arrow-left"></i> Previous
+            </div>
+            <div class="post-nav-title" id="prevTitle">No previous post</div>
+          </div>
+          <div class="post-nav-card next disabled" id="nextCard">
+            <div class="post-nav-direction">
+              Next <i class="fas fa-arrow-right"></i>
+            </div>
+            <div class="post-nav-title" id="nextTitle">No next post</div>
+          </div>
+        </nav>
       </div>
+      <!-- /post-container -->
+
+      <!-- Suggested posts segment -->
+      <section class="post-suggested-segment" id="suggestedSegment">
+        <div class="post-suggested-inner">
+          <div class="post-suggested-header">
+            <h2 class="post-suggested-title">Keep <span>reading</span></h2>
+            <a href="./blog.html" class="post-suggested-see-all">
+              View all articles <i class="fas fa-arrow-right"></i>
+            </a>
+          </div>
+          <div class="post-suggested-grid" id="suggestedGrid">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer — untouched from original -->
+      <footer class="rv-footprint">
+        <div class="rv-foot-main">
+          <div class="rv-brand-block">
+            <div class="rv-logo">
+              <div class="rv-logo-mark">
+                <img
+                  src="https://res.cloudinary.com/dmvltush8/image/upload/v1760973011/without_bg_white_font_db7hbk.png"
+                  alt=""
+                />
+              </div>
+              <div class="rv-tagline">
+                Connecting people with impactful opportunities in the Revit
+                ecosystem.
+              </div>
+            </div>
+            <div class="rv-socials">
+              <a
+                href="https://www.facebook.com/profile.php?id=61568188626000&mibextid=ZbWKwL"
+                aria-label="Facebook"
+                class="rv-social-link"
+                target="_blank"
+                rel="noopener"
+              >
+                <img src="../assets/SVG/facebook-176-svgrepo-com.svg" alt="" />
+              </a>
+              <a
+                href="https://x.com/revitsystems"
+                aria-label="Twitter"
+                class="rv-social-link"
+                target="_blank"
+                rel="noopener"
+              >
+                <img src="../assets/SVG/twitter-3-svgrepo-com.svg" alt="" />
+              </a>
+              <a
+                href="https://www.instagram.com/revitsystems/"
+                aria-label="Instagram"
+                class="rv-social-link"
+                target="_blank"
+                rel="noopener"
+              >
+                <img src="../assets/SVG/instagram-167-svgrepo-com.svg" alt="" />
+              </a>
+              <a
+                href="https://www.linkedin.com/company/revit-systems-limited/?viewAsMember=true"
+                aria-label="LinkedIn"
+                class="rv-social-link"
+                target="_blank"
+                rel="noopener"
+              >
+                <img src="../assets/SVG/linkedin-161-svgrepo-com.svg" alt="" />
+              </a>
+            </div>
+          </div>
+          <div class="rv-link-columns">
+            <div class="rv-col">
+              <div class="rv-col-head">Revit Hub</div>
+              <a href="../index.html">Home</a>
+              <a href="./services.html">Services</a>
+              <a href="#">About</a>
+            </div>
+            <div class="rv-col">
+              <div class="rv-col-head">Support</div>
+              <a href="./faqs.html">FAQs</a>
+              <a href="./contact.html">Help Center</a>
+              <a href="./blog.html">Blog</a>
+            </div>
+          </div>
+        </div>
+        <div class="rv-foot-note">© 2025 Revit Systems.</div>
+      </footer>
     </div>
+    <!-- /post-page -->
+
+    <!-- Sticky continue reading strip -->
+    <div class="post-continue-strip" id="continueStrip">
+      <div class="post-continue-left">
+        <span class="post-continue-label">Up next</span>
+        <span class="post-continue-title" id="continueTitle">—</span>
+      </div>
+      <button class="post-continue-btn" id="continueBtn">
+        Read next <i class="fas fa-arrow-right"></i>
+      </button>
+      <button
+        class="post-continue-close"
+        id="continueClose"
+        aria-label="Dismiss"
+      >
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
     <script>
+      /* =============================================
+         BLOG POST PAGE LOGIC
+         - Reads selectedPost from localStorage
+         - Reads allPosts from localStorage for prev/next
+         - Renders article content
+         - Reading progress bar
+         - Prev/Next navigation
+         - Suggested posts (3 from the same pool)
+         - Sticky continue reading strip
+         - Share buttons
+         ============================================= */
+
+      const imgFallback =
+        "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=900&q=80";
+
+      /* ---- Estimated read time ---- */
+      const readTime = (content = "") => {
+        const words = content
+          .replace(/<[^>]+>/g, "")
+          .split(/\s+/)
+          .filter(Boolean).length;
+        const mins = Math.max(1, Math.round(words / 200));
+        return `${mins} min read`;
+      };
+
+      /* ---- Author initials ---- */
+      const initials = (name = "R") =>
+        name
+          .split(" ")
+          .map((w) => w[0])
+          .join("")
+          .slice(0, 2)
+          .toUpperCase();
+
+      /* ---- Init ---- */
       document.addEventListener("DOMContentLoaded", () => {
-        const post = JSON.parse(localStorage.getItem("selectedPost"));
+        const post = (() => {
+          try {
+            return JSON.parse(localStorage.getItem("selectedPost"));
+          } catch {
+            return null;
+          }
+        })();
+
+        const allPosts = (() => {
+          try {
+            return JSON.parse(localStorage.getItem("allPosts")) || [];
+          } catch {
+            return [];
+          }
+        })();
 
         if (!post) {
-          document.querySelector(".sub-b-log-page").innerHTML =
-            "<p>Post not found. Please return to <a href='./blog.html'>the blog page</a>.</p>";
+          document.getElementById("postPage").innerHTML = `
+            <div class="post-not-found">
+              <i class="fas fa-file-alt"></i>
+              <h2>Article not found</h2>
+              <p>We couldn't load this article. It may have been moved or deleted.</p>
+              <a href="./blog.html"><i class="fas fa-arrow-left"></i> Back to Blog</a>
+            </div>
+          `;
           return;
         }
 
-        // Populate your page dynamically
-        document.querySelector(".sub-b-log-title").textContent = post.title;
-        document.querySelector(".sub-b-log-image1 img").src =
-          post.cover_image_url;
-        document.querySelector(".sub-b-log-tag").textContent =
-          post.category || "Blog";
-        document.querySelector(".sub-b-log-body").innerHTML = `
-      <p>${post.content}</p>
-    `;
+        /* ---- Populate article ---- */
+        document.title = `${post.title} — Revit Systems`;
+        document.getElementById("postHeroImg").src =
+          post.cover_image_url || imgFallback;
+        document.getElementById("postHeroImg").alt = post.title;
+        document.getElementById("postTitle").textContent = post.title;
+        document.getElementById("postTagText").textContent =
+          post.category || "Article";
+        document.getElementById("postAuthorAvatar").textContent =
+          initials("Revit Info");
+        document.getElementById("postReadTime").textContent = readTime(
+          post.content || post.excerpt || ""
+        );
+        document.getElementById("postBody").innerHTML = post.content
+          ? post.content
+          : `<p>${post.excerpt || ""}</p>`;
 
-        const elements = document.querySelectorAll("[contenteditable]");
+        /* ---- Share URLs ---- */
+        const pageUrl = encodeURIComponent(window.location.href);
+        const pageTitle = encodeURIComponent(post.title);
+        const twitterUrl = `https://twitter.com/intent/tweet?url=${pageUrl}&text=${pageTitle}`;
+        const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${pageUrl}`;
 
-        // Loop through each element and set the attribute to "false"
-        elements.forEach((el) => {
-          el.setAttribute("contenteditable", "false");
+        ["shareTwitter", "shareTwitter2"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.href = twitterUrl;
         });
+        ["shareLinkedin", "shareLinkedin2"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.href = linkedinUrl;
+        });
+
+        const copyLink = () => {
+          navigator.clipboard.writeText(window.location.href).then(() => {
+            ["copyLinkBtn", "copyLinkBtn2"].forEach((id) => {
+              const btn = document.getElementById(id);
+              if (btn) {
+                btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                setTimeout(() => {
+                  btn.innerHTML = '<i class="fas fa-link"></i> Copy link';
+                }, 2000);
+              }
+            });
+          });
+        };
+
+        document
+          .getElementById("copyLinkBtn")
+          ?.addEventListener("click", copyLink);
+        document
+          .getElementById("copyLinkBtn2")
+          ?.addEventListener("click", copyLink);
+
+        /* ---- Prev / Next ---- */
+        const currentIndex = allPosts.findIndex((p) => p.id === post.id);
+
+        const navigate = (targetPost) => {
+          if (!targetPost) return;
+          localStorage.setItem("selectedPost", JSON.stringify(targetPost));
+          localStorage.setItem("allPosts", JSON.stringify(allPosts));
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          setTimeout(() => window.location.reload(), 300);
+        };
+
+        const prevPost = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
+        const nextPost =
+          currentIndex < allPosts.length - 1
+            ? allPosts[currentIndex + 1]
+            : null;
+
+        const prevCard = document.getElementById("prevCard");
+        const nextCard = document.getElementById("nextCard");
+
+        if (prevPost) {
+          prevCard.classList.remove("disabled");
+          document.getElementById("prevTitle").textContent = prevPost.title;
+          prevCard.addEventListener("click", () => navigate(prevPost));
+        }
+
+        if (nextPost) {
+          nextCard.classList.remove("disabled");
+          document.getElementById("nextTitle").textContent = nextPost.title;
+          nextCard.addEventListener("click", () => navigate(nextPost));
+        }
+
+        /* ---- Suggested posts (up to 3, excluding current) ---- */
+        const suggested = allPosts.filter((p) => p.id !== post.id).slice(0, 3);
+
+        const suggestedGrid = document.getElementById("suggestedGrid");
+
+        if (suggested.length === 0) {
+          document.getElementById("suggestedSegment").style.display = "none";
+        } else {
+          suggestedGrid.innerHTML = suggested
+            .map(
+              (p) => `
+            <div class="post-suggested-card" onclick="navigateTo(${JSON.stringify(
+              p
+            ).replace(/"/g, "&quot;")})">
+              <div class="post-suggested-img-wrap">
+                <img
+                  class="post-suggested-img"
+                  src="${p.cover_image_url || imgFallback}"
+                  alt="${p.title}"
+                  onerror="this.src='${imgFallback}'"
+                  loading="lazy"
+                />
+              </div>
+              <div class="post-suggested-body">
+                <span class="post-suggested-tag">${
+                  p.category || "Article"
+                }</span>
+                <h3 class="post-suggested-card-title">${p.title}</h3>
+              </div>
+            </div>
+          `
+            )
+            .join("");
+        }
+
+        /* ---- Sticky continue reading strip ---- */
+        const continueStrip = document.getElementById("continueStrip");
+        const continueTitle = document.getElementById("continueTitle");
+        const continueBtn = document.getElementById("continueBtn");
+        const continueClose = document.getElementById("continueClose");
+        let stripDismissed = false;
+
+        if (nextPost) {
+          continueTitle.textContent = nextPost.title;
+          continueBtn.addEventListener("click", () => navigate(nextPost));
+        } else if (suggested.length > 0) {
+          continueTitle.textContent = suggested[0].title;
+          continueBtn.addEventListener("click", () => navigateTo(suggested[0]));
+        } else {
+          // No next — strip stays hidden
+          continueStrip.style.display = "none";
+        }
+
+        continueClose.addEventListener("click", () => {
+          stripDismissed = true;
+          continueStrip.classList.remove("visible");
+        });
+
+        /* ---- Reading progress bar + strip trigger ---- */
+        const progressBar = document.getElementById("progressBar");
+        const hero = document.querySelector(".post-hero");
+
+        const onScroll = () => {
+          const scrollTop = window.scrollY;
+          const docHeight =
+            document.documentElement.scrollHeight - window.innerHeight;
+          const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+          progressBar.style.width = `${Math.min(progress, 100)}%`;
+
+          // Show continue strip after scrolling past hero
+          const heroBottom = hero ? hero.offsetTop + hero.offsetHeight : 400;
+          if (!stripDismissed && scrollTop > heroBottom) {
+            continueStrip.classList.add("visible");
+          }
+        };
+
+        window.addEventListener("scroll", onScroll, { passive: true });
+        onScroll(); // run once on load
       });
+
+      /* ---- Global navigation helper (called from suggested cards) ---- */
+      function navigateTo(post) {
+        const allPosts = (() => {
+          try {
+            return JSON.parse(localStorage.getItem("allPosts")) || [];
+          } catch {
+            return [];
+          }
+        })();
+        localStorage.setItem("selectedPost", JSON.stringify(post));
+        localStorage.setItem("allPosts", JSON.stringify(allPosts));
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        setTimeout(() => window.location.reload(), 300);
+      }
     </script>
   </body>
 </html>
