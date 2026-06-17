@@ -45,7 +45,7 @@ body {
 .blog-header-band {
   background: var(--rv-white);
   border-bottom: 1px solid var(--rv-gray-2);
-  padding: 60px 0 40px;
+  padding: 80px 0 40px;
 }
 
 .blog-header-inner {
@@ -676,7 +676,7 @@ body {
 
 @media (max-width: 600px) {
   .blog-header-band {
-    padding: 40px 0 28px;
+    padding: 80px 0 28px;
   }
   .blog-cards-grid {
     grid-template-columns: 1fr;
