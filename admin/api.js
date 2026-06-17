@@ -575,25 +575,42 @@ const API = {
   // USERS  (no list endpoint yet — kept as mock)
   // ============================================
 
-  getUsers: async (filter = "all", page = 1) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        let filtered = AppState.users;
-        if (filter !== "all") {
-          filtered = AppState.users.filter(
-            (u) => u.role === filter || u.status === filter
-          );
-        }
-        resolve({
-          users: filtered,
-          pagination: {
-            page,
-            totalPages: Math.ceil(filtered.length / 10),
-            total: filtered.length,
-          },
-        });
-      }, 300);
+  getUsers: async (filter = "all", page = 1, limit = 20) => {
+    const offset = (page - 1) * limit;
+
+    const params = new URLSearchParams({
+      limit: limit,
+      offset: offset,
     });
+
+    const roleFilters = ["admin", "editor", "author"];
+    const statusFilters = ["active", "suspended", "pending"];
+
+    if (filter !== "all") {
+      if (roleFilters.includes(filter)) {
+        params.append("role", filter);
+      } else if (statusFilters.includes(filter)) {
+        params.append("status", filter);
+      }
+    }
+
+    const response = await authFetch(`${BASE_URL}/users?${params.toString()}`);
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch users");
+    }
+
+    const data = await response.json();
+    AppState.users = data.users;
+
+    return {
+      users: data.users,
+      pagination: {
+        page,
+        totalPages: data.hasMore ? page + 1 : page,
+        total: data.users.length,
+      },
+    };
   },
 
   // Registers a new user with pending status via POST /auth/register.

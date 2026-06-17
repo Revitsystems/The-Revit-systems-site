@@ -1,9 +1,5 @@
 import { pool } from "@/config/db.js";
 
-/**
- * Find a user by email
- * Includes all columns needed for login gatekeeping and password resets
- */
 export const findUserByEmail = async (email: string) => {
   const result = await pool.query(
     "SELECT id, first_name, last_name, email, password_hash, role, status FROM users WHERE email = $1",
@@ -12,9 +8,6 @@ export const findUserByEmail = async (email: string) => {
   return result.rows[0];
 };
 
-/**
- * Create a new user (used in Registration)
- */
 export const createUser = async (
   first_name: string,
   last_name: string,
@@ -29,14 +22,9 @@ export const createUser = async (
      RETURNING id, email, first_name, last_name, status, role`,
     [first_name, last_name, email, password_hash, role, status]
   );
-
   return result.rows[0];
 };
 
-/**
- * Update the user's password (used in Reset Password)
- * This function should be called within the controller's transaction
- */
 export const updateUserPassword = async (
   userId: string,
   hashedPassword: string
@@ -48,25 +36,124 @@ export const updateUserPassword = async (
   return result.rows[0];
 };
 
-/**
- * Update the last login timestamp (used in Login)
- */
 export const updateLastLogin = async (userId: string) => {
   return await pool.query("UPDATE users SET last_login = NOW() WHERE id = $1", [
     userId,
   ]);
 };
 
-/**
- * Admin function: Update user status (approve/suspend/activate)
- */
-export const updateUserStatus = async (
-  userId: string,
-  status: "active" | "suspended" | "pending"
-) => {
+// ── Admin Extensions Moved From Controller ───────────────────
+
+export const findManyUsers = async (filters: {
+  limit: number;
+  offset: number;
+  status?: string;
+  role?: string;
+}) => {
+  const { limit, offset, status, role } = filters;
+  const conditions: string[] = [];
+  const values: unknown[] = [];
+  let idx = 1;
+
+  if (status) {
+    conditions.push(`status = $${idx++}`);
+    values.push(status);
+  }
+  if (role) {
+    conditions.push(`role = $${idx++}`);
+    values.push(role);
+  }
+
+  const whereClause =
+    conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  // Track placeholder positions for limit and offset safely
+  values.push(limit, offset);
+  const limitIdx = idx++;
+  const offsetIdx = idx;
+
   const result = await pool.query(
-    "UPDATE users SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING id, status",
+    `SELECT id, first_name, last_name, email, role, status, created_at, last_login
+     FROM users
+     ${whereClause}
+     ORDER BY created_at DESC
+     LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
+    values
+  );
+
+  return result.rows;
+};
+
+export const findUserById = async (id: string) => {
+  const result = await pool.query(
+    `SELECT id, first_name, last_name, email, role, status, created_at, last_login
+     FROM users WHERE id = $1`,
+    [id]
+  );
+  return result.rows[0];
+};
+
+export const updateUserStatus = async (userId: string, status: string) => {
+  const result = await pool.query(
+    `UPDATE users
+     SET status = $1, updated_at = NOW()
+     WHERE id = $2
+     RETURNING id, first_name, last_name, email, role, status, created_at, last_login`,
     [status, userId]
   );
   return result.rows[0];
+};
+
+export const updateUserData = async (
+  id: string,
+  updates: {
+    firstName?: string;
+    lastName?: string;
+    role?: string;
+    status?: string;
+  }
+) => {
+  const fields: string[] = [];
+  const values: unknown[] = [];
+  let idx = 1;
+
+  if (updates.firstName !== undefined) {
+    fields.push(`first_name = $${idx++}`);
+    values.push(updates.firstName.trim());
+  }
+  if (updates.lastName !== undefined) {
+    fields.push(`last_name = $${idx++}`);
+    values.push(updates.lastName.trim());
+  }
+  if (updates.role !== undefined) {
+    fields.push(`role = $${idx++}`);
+    values.push(updates.role);
+  }
+  if (updates.status !== undefined) {
+    fields.push(`status = $${idx++}`);
+    values.push(updates.status);
+  }
+
+  if (fields.length === 0) return null;
+
+  fields.push(`updated_at = NOW()`);
+  values.push(id);
+
+  const result = await pool.query(
+    `UPDATE users
+     SET ${fields.join(", ")}
+     WHERE id = $${idx}
+     RETURNING id, first_name, last_name, email, role, status, created_at, last_login`,
+    values
+  );
+
+  return result.rows[0];
+};
+
+export const deleteUserById = async (id: string) => {
+  const result = await pool.query(
+    "DELETE FROM users WHERE id = $1 RETURNING id",
+    [id]
+  );
+  return result.rowCount ? result.rowCount > 0 : false;
 };

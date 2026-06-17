@@ -339,76 +339,127 @@ const Renderers = {
   // ==================
   // USERS
   // ==================
+  // Called by Actions.loadSectionData when section = "users".
+  // Was named renderUsersTable and targeted the wrong tbody ID — fixed both.
   renderUsers: async () => {
-    // Fixed: original targeted "users-list" but index.html has id="users-table-body"
-    // causing the renderer to silently populate nothing
-    const container = document.getElementById("users-table-body");
+    const tbody = document.getElementById("users-table-body");
+    if (!tbody) return;
+
     Utils.showLoader();
 
     try {
-      const response = await API.getUsers(AppState.filters.users);
+      const data = await API.getUsers(
+        AppState.filters.users,
+        AppState.pagination.users.page
+      );
 
-      container.innerHTML = response.users
-        .map(
-          (user) => `
-        <tr>
-          <td></td>
-          <td>
-            <div class="user-info">
-              <div class="user-avatar"><i class="fas fa-user"></i></div>
-              <div>
-                <div class="user-name">${
-                  user.name ||
-                  user.display_name ||
-                  (user.first_name && user.last_name
-                    ? user.first_name + " " + user.last_name
-                    : user.email)
-                }</div>
-                <div class="user-email">${user.email}</div>
+      if (data.users.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" style="text-align:center;padding:2rem;color:var(--gray-500);">
+              No users found.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = data.users
+        .map((user) => {
+          const fullName = `${user.first_name} ${user.last_name}`;
+          const statusColor =
+            user.status === "active"
+              ? "approved"
+              : user.status === "suspended"
+              ? "spam"
+              : "pending";
+
+          return `
+          <tr>
+            <td><input type="checkbox" class="user-checkbox" data-id="${
+              user.id
+            }" /></td>
+            <td>
+              <div class="user-cell">
+                <div class="user-cell-avatar">
+                  <i class="fas fa-user"></i>
+                </div>
+                <div class="user-cell-info">
+                  <span class="user-cell-name">${fullName}</span>
+                  <span class="user-cell-email">${user.email}</span>
+                </div>
               </div>
-            </div>
-          </td>
-          <td><span class="role-badge ${user.role}">${user.role}</span></td>
-          <td><span class="status-badge ${user.status}">${
-            user.status
-          }</span></td>
-          <td>${user.posts ?? "—"}</td>
-          <td>${
-            user.joinedAt
-              ? Utils.formatDate(user.joinedAt)
-              : user.created_at
-              ? Utils.formatDate(user.created_at)
-              : "—"
-          }</td>
-          <td>${
-            user.lastActive
-              ? Utils.formatDate(user.lastActive)
-              : user.last_active_at
-              ? Utils.formatDate(user.last_active_at)
-              : "—"
-          }</td>
-          <td>
-            <div class="action-btns">
-              <button class="action-btn edit" onclick="Actions.editUser('${
-                user.id
-              }')">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="action-btn delete" onclick="Actions.deleteUser('${
-                user.id
-              }')">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
-      `
-        )
+            </td>
+            <td>
+              <span class="role-badge ${user.role}">${user.role}</span>
+            </td>
+            <td>
+              <span class="status-badge ${statusColor}">${user.status}</span>
+            </td>
+            <td>—</td>
+            <td>${Utils.formatDate(user.created_at)}</td>
+            <td>${
+              user.last_login ? Utils.formatDate(user.last_login) : "Never"
+            }</td>
+            <td>
+              <div class="action-btns">
+                <button
+                  class="action-btn edit"
+                  title="Edit user"
+                  onclick="Actions.editUser('${user.id}')"
+                >
+                  <i class="fas fa-edit"></i>
+                </button>
+                ${
+                  user.status !== "active"
+                    ? `<button
+                        class="action-btn approve"
+                        title="Approve user"
+                        onclick="Actions.approveUser('${user.id}')"
+                      >
+                        <i class="fas fa-check"></i>
+                      </button>`
+                    : `<button
+                        class="action-btn reject"
+                        title="Suspend user"
+                        onclick="Actions.suspendUser('${user.id}')"
+                      >
+                        <i class="fas fa-ban"></i>
+                      </button>`
+                }
+                <button
+                  class="action-btn delete"
+                  title="Delete user"
+                  onclick="Actions.deleteUser('${user.id}')"
+                >
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+        })
         .join("");
 
-      AppState.pagination.users = response.pagination;
+      AppState.pagination.users = data.pagination;
+
+      Renderers.renderPagination(
+        "users-pagination",
+        data.pagination,
+        (page) => {
+          AppState.pagination.users.page = page;
+          Renderers.renderUsers();
+        }
+      );
     } catch (error) {
       Utils.showToast("Failed to load users", "error");
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align:center;padding:2rem;color:var(--gray-500);">
+            Failed to load users. Try again.
+          </td>
+        </tr>
+      `;
     } finally {
       Utils.hideLoader();
     }

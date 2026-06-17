@@ -1652,52 +1652,111 @@ Blog administrator and content creator.</textarea
     </div>
 
     <!-- Edit User Modal -->
-    <div id="editUserModal" class="modal">
+    <!-- Edit User Modal -->
+    <div id="edit-user-modal" class="modal hidden">
+      <div class="modal-overlay"></div>
       <div class="modal-content">
-        <span class="close-btn" id="closeEditModal">&times;</span>
-        <h2>Edit User</h2>
-        <form id="editUserForm">
-          <input type="hidden" id="editUserId" />
-
-          <label for="editUsername">Username</label>
-          <input type="text" id="editUsername" required />
-
-          <label for="editEmail">Email</label>
-          <input type="email" id="editEmail" required />
-
-          <label for="editRole">Role</label>
-          <select id="editRole">
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-          </select>
-
-          <div class="modal-actions">
-            <button type="submit" class="btn-save">Save Changes</button>
-            <button type="button" class="btn-cancel" id="cancelEditBtn">
-              Cancel
-            </button>
+        <div class="modal-header">
+          <h2><i class="fas fa-user-edit"></i> Edit User</h2>
+          <button
+            class="close-btn"
+            id="cancel-edit-user-btn"
+            aria-label="Close"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="edit-user-id" />
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="edit-user-first-name">First Name</label>
+              <input
+                type="text"
+                id="edit-user-first-name"
+                placeholder="First name"
+              />
+            </div>
+            <div class="form-group">
+              <label for="edit-user-last-name">Last Name</label>
+              <input
+                type="text"
+                id="edit-user-last-name"
+                placeholder="Last name"
+              />
+            </div>
           </div>
-        </form>
+          <div class="form-group">
+            <label for="edit-user-email">Email</label>
+            <input
+              type="email"
+              id="edit-user-email"
+              disabled
+              style="background: var(--gray-100); cursor: not-allowed"
+              title="Email cannot be changed here"
+            />
+            <small class="help-text"
+              >Email changes must go through a reset flow.</small
+            >
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="edit-user-role">Role</label>
+              <select id="edit-user-role">
+                <option value="user">User</option>
+                <option value="editor">Editor</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="edit-user-status">Status</label>
+              <select id="edit-user-status">
+                <option value="active">Active</option>
+                <option value="pending">Pending</option>
+                <option value="suspended">Suspended</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="cancel-edit-user-btn-footer">
+            Cancel
+          </button>
+          <button class="btn-primary" id="save-user-edit-btn">
+            <i class="fas fa-save"></i> Save Changes
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Delete User Modal -->
-    <div id="deleteUserModal" class="modal">
-      <div class="modal-content">
-        <span class="close-btn" id="closeDeleteModal">&times;</span>
-        <h2>Confirm Deletion</h2>
-        <p>
-          Are you sure you want to permanently delete this user? This action
-          cannot be undone.
-        </p>
-        <input type="hidden" id="deleteUserId" />
-
-        <div class="modal-actions">
-          <button type="button" class="btn-danger" id="confirmDeleteBtn">
-            Yes, Delete
+    <!-- Delete User Confirmation Modal -->
+    <div id="delete-user-modal" class="modal hidden">
+      <div class="modal-overlay"></div>
+      <div class="modal-content small">
+        <div class="modal-header">
+          <h2><i class="fas fa-exclamation-triangle"></i> Delete User</h2>
+          <button
+            class="close-btn"
+            id="cancel-delete-user-btn"
+            aria-label="Close"
+          >
+            <i class="fas fa-times"></i>
           </button>
-          <button type="button" class="btn-cancel" id="cancelDeleteBtn">
+        </div>
+        <div class="modal-body">
+          <p>
+            You are about to permanently delete
+            <strong id="delete-user-name-display"></strong>. This cannot be
+            undone.
+          </p>
+          <input type="hidden" id="delete-user-id" />
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="cancel-delete-user-btn-footer">
             Cancel
+          </button>
+          <button class="btn-danger" id="confirm-delete-user-btn">
+            <i class="fas fa-trash"></i> Yes, Delete
           </button>
         </div>
       </div>
@@ -1713,5 +1772,23 @@ Blog administrator and content creator.</textarea
     <script src="renderers.js" defer></script>
     <script src="actions.js" defer></script>
     <script src="app.js" defer></script>
+    <script>
+      // Wire up the secondary cancel buttons in modal footers
+      // (the header X button is handled by app.js initializeEventListeners)
+      document.addEventListener("DOMContentLoaded", () => {
+        document
+          .getElementById("cancel-edit-user-btn-footer")
+          ?.addEventListener("click", () => {
+            document.getElementById("edit-user-modal").classList.add("hidden");
+          });
+        document
+          .getElementById("cancel-delete-user-btn-footer")
+          ?.addEventListener("click", () => {
+            document
+              .getElementById("delete-user-modal")
+              .classList.add("hidden");
+          });
+      });
+    </script>
   </body>
 </html>

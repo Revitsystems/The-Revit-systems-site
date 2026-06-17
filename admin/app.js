@@ -286,6 +286,28 @@ function initializeEventListeners() {
     .getElementById("send-invite-btn")
     .addEventListener("click", Actions.inviteUser);
 
+  // Edit user modal
+  document
+    .getElementById("save-user-edit-btn")
+    .addEventListener("click", Actions.saveUserEdit);
+
+  document
+    .getElementById("cancel-edit-user-btn")
+    ?.addEventListener("click", () => {
+      document.getElementById("edit-user-modal").classList.add("hidden");
+    });
+
+  // Delete user modal
+  document
+    .getElementById("confirm-delete-user-btn")
+    .addEventListener("click", Actions.confirmDeleteUser);
+
+  document
+    .getElementById("cancel-delete-user-btn")
+    ?.addEventListener("click", () => {
+      document.getElementById("delete-user-modal").classList.add("hidden");
+    });
+
   // --- Category management ---
   document
     .getElementById("add-category-btn")

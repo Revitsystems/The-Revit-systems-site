@@ -369,6 +369,107 @@ const Actions = {
   // ==================
   // USERS
   // ==================
+  // Opens the edit modal and populates it with the selected user's data.
+  // Reads from AppState.users so no extra API call is needed on open.
+  editUser: (id) => {
+    const user = AppState.users.find((u) => u.id === id);
+    if (!user) return;
+
+    document.getElementById("edit-user-id").value = id;
+    document.getElementById("edit-user-first-name").value =
+      user.first_name || "";
+    document.getElementById("edit-user-last-name").value = user.last_name || "";
+    document.getElementById("edit-user-email").value = user.email || "";
+    document.getElementById("edit-user-role").value = user.role || "user";
+    document.getElementById("edit-user-status").value =
+      user.status || "pending";
+
+    document.getElementById("edit-user-modal").classList.remove("hidden");
+  },
+
+  // Submits the edit-user form to PATCH /users/:id
+  saveUserEdit: async () => {
+    const id = document.getElementById("edit-user-id").value;
+    const updates = {
+      firstName: document.getElementById("edit-user-first-name").value.trim(),
+      lastName: document.getElementById("edit-user-last-name").value.trim(),
+      role: document.getElementById("edit-user-role").value,
+      status: document.getElementById("edit-user-status").value,
+    };
+
+    if (!updates.firstName || !updates.lastName) {
+      Utils.showToast("First and last name are required", "warning");
+      return;
+    }
+
+    Utils.showLoader();
+    try {
+      await API.updateUser(id, updates);
+      Utils.showToast("User updated successfully", "success");
+      document.getElementById("edit-user-modal").classList.add("hidden");
+      Renderers.renderUsers();
+    } catch (error) {
+      Utils.showToast(error.message || "Failed to update user", "error");
+    } finally {
+      Utils.hideLoader();
+    }
+  },
+
+  // One-click approve: sets status → "active"
+  approveUser: async (id) => {
+    Utils.showLoader();
+    try {
+      await API.updateUser(id, { status: "active" });
+      Utils.showToast("User approved", "success");
+      Renderers.renderUsers();
+    } catch (error) {
+      Utils.showToast(error.message || "Failed to approve user", "error");
+    } finally {
+      Utils.hideLoader();
+    }
+  },
+
+  // One-click suspend: sets status → "suspended"
+  suspendUser: async (id) => {
+    Utils.showLoader();
+    try {
+      await API.updateUser(id, { status: "suspended" });
+      Utils.showToast("User suspended", "warning");
+      Renderers.renderUsers();
+    } catch (error) {
+      Utils.showToast(error.message || "Failed to suspend user", "error");
+    } finally {
+      Utils.hideLoader();
+    }
+  },
+
+  // Opens the delete confirmation modal — no window.confirm()
+  deleteUser: (id) => {
+    const user = AppState.users.find((u) => u.id === id);
+    if (!user) return;
+
+    const fullName = `${user.first_name} ${user.last_name}`;
+    document.getElementById("delete-user-id").value = id;
+    document.getElementById("delete-user-name-display").textContent = fullName;
+    document.getElementById("delete-user-modal").classList.remove("hidden");
+  },
+
+  // Confirmed delete from the modal
+  confirmDeleteUser: async () => {
+    const id = document.getElementById("delete-user-id").value;
+    Utils.showLoader();
+    try {
+      await API.deleteUser(id);
+      Utils.showToast("User deleted", "success");
+      document.getElementById("delete-user-modal").classList.add("hidden");
+      Renderers.renderUsers();
+    } catch (error) {
+      Utils.showToast(error.message || "Failed to delete user", "error");
+    } finally {
+      Utils.hideLoader();
+    }
+  },
+
   inviteUser: async () => {
     const email = document.getElementById("invite-email").value;
     const role = document.getElementById("invite-role").value;
@@ -389,17 +490,6 @@ const Actions = {
     } finally {
       Utils.hideLoader();
     }
-  },
-
-  editUser: (id) => {
-    Utils.showToast("User edit functionality coming soon", "info");
-  },
-
-  deleteUser: (id) => {
-    if (!confirm("Are you sure you want to delete this user?")) return;
-    AppState.users = AppState.users.filter((u) => u.id !== id);
-    Renderers.renderUsers();
-    Utils.showToast("User deleted", "success");
   },
 
   // ==================

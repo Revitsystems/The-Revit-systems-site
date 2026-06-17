@@ -16,6 +16,7 @@ import categoryRoutes from "@/routes/categoryRoutes.js";
 import { postCommentRouter, commentRouter } from "@/routes/commentRoutes.js";
 import postAnalyticsRoutes from "@/routes/postAnalyticsRoutes.js";
 import notificationRoutes from "@/routes/notificationRoutes.js";
+import userRoutes from "@/routes/userRoutes.js"; // <-- Add this import
 
 const app = express();
 
@@ -75,5 +76,8 @@ app.use("/posts/:postId", postAnalyticsRoutes);
 app.use("/categories", categoryRoutes);
 app.use("/comments", commentRouter); // Admin moderation + replies
 app.use("/notifications", notificationRoutes);
+
+// ── User management (New) ───────────────────────────────
+app.use("/users", userRoutes); // <-- Pass the imported router here
 
 export default app;

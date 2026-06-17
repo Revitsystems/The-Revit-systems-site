@@ -123,23 +123,23 @@ function generateMockData() {
   }
 
   // Users
-  const roles = ["admin", "editor", "author"];
-  for (let i = 1; i <= 10; i++) {
-    AppState.users.push({
-      id: Utils.generateId(),
-      name: `User ${i}`,
-      email: `user${i}@blog.com`,
-      role: roles[Math.floor(Math.random() * roles.length)],
-      status: "active",
-      posts: Math.floor(Math.random() * 20),
-      joinedAt: new Date(
-        Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000
-      ).toISOString(),
-      lastActive: new Date(
-        Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000
-      ).toISOString(),
-    });
-  }
+  // const roles = ["admin", "editor", "author"];
+  // for (let i = 1; i <= 10; i++) {
+  //   AppState.users.push({
+  //     id: Utils.generateId(),
+  //     name: `User ${i}`,
+  //     email: `user${i}@blog.com`,
+  //     role: roles[Math.floor(Math.random() * roles.length)],
+  //     status: "active",
+  //     posts: Math.floor(Math.random() * 20),
+  //     joinedAt: new Date(
+  //       Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000
+  //     ).toISOString(),
+  //     lastActive: new Date(
+  //       Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000
+  //     ).toISOString(),
+  //   });
+  // }
 
   // Categories
   categories.forEach((cat) => {
