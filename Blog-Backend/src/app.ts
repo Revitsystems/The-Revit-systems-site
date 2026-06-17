@@ -68,9 +68,8 @@ app.use(globalLimiter);
 app.use("/posts", postRoutes);
 
 // ── Post-scoped sub-resources (new) ──────────────────────────
-// These use mergeParams: true internally so :postId flows through
-app.use("/posts/:postId", postCommentRouter); // GET|POST /posts/:postId/comments
-app.use("/posts/:postId", postAnalyticsRoutes); // POST|GET /posts/:postId/views, /referrers
+app.use("/posts/:postId/comments", postCommentRouter);
+app.use("/posts/:postId", postAnalyticsRoutes);
 
 // ── Standalone resource routes (new) ─────────────────────────
 app.use("/categories", categoryRoutes);

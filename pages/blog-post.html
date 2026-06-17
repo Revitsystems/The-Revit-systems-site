@@ -21,9 +21,10 @@
       type="image/png"
       href="https://res.cloudinary.com/dmvltush8/image/upload/v1760973008/favicon_qdd9zl.png"
     />
+    <link rel="stylesheet" href="../assets/css/blog-post.css" />
+    <script defer src="../assets/js/config.js"></script>
     <script defer src="../assets/js/script.js"></script>
     <script defer src="../assets/js/blog-post.js"></script>
-    <link rel="stylesheet" href="../assets/css/blog-post.css" />
   </head>
 
   <body>
@@ -229,6 +230,118 @@
             <div class="post-nav-title" id="nextTitle">No next post</div>
           </div>
         </nav>
+
+        <!-- ==========================================
+             COMMENTS SECTION
+             ========================================== -->
+        <section class="post-comments-section" id="commentsSection">
+          <!-- Heading -->
+          <div class="post-comments-heading">
+            <h2>Comments</h2>
+            <span class="post-comments-count" id="commentsCount">0</span>
+          </div>
+
+          <!-- Comment list — populated by JS -->
+          <div class="post-comments-list" id="commentsList">
+            <!-- Skeleton placeholders shown while loading -->
+            <div class="rv-comment-skeleton">
+              <div class="rv-sk rv-sk-circle"></div>
+              <div class="rv-sk-lines">
+                <div class="rv-sk rv-sk-name"></div>
+                <div class="rv-sk rv-sk-line"></div>
+                <div class="rv-sk rv-sk-short"></div>
+              </div>
+            </div>
+            <div class="rv-comment-skeleton">
+              <div class="rv-sk rv-sk-circle"></div>
+              <div class="rv-sk-lines">
+                <div class="rv-sk rv-sk-name"></div>
+                <div class="rv-sk rv-sk-line"></div>
+                <div class="rv-sk rv-sk-short"></div>
+              </div>
+            </div>
+            <div class="rv-comment-skeleton">
+              <div class="rv-sk rv-sk-circle"></div>
+              <div class="rv-sk-lines">
+                <div class="rv-sk rv-sk-name"></div>
+                <div class="rv-sk rv-sk-line"></div>
+                <div class="rv-sk rv-sk-short"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- "Show more" button — hidden until there are >3 comments -->
+          <div
+            class="post-comments-more-wrap"
+            id="commentsMoreWrap"
+            style="display: none"
+          >
+            <button class="post-comments-more-btn" id="commentsMoreBtn">
+              <i class="fas fa-chevron-down"></i>
+              Show more comments
+            </button>
+          </div>
+
+          <!-- Comment form -->
+          <div class="post-comment-form-wrap">
+            <p class="post-comment-form-title">
+              <i class="fas fa-pen-nib"></i> Leave a comment
+            </p>
+
+            <div class="post-comment-fields-row">
+              <div class="post-comment-field">
+                <label for="commentName"
+                  >Your name
+                  <span style="color: var(--rv-orange)">*</span></label
+                >
+                <input
+                  type="text"
+                  id="commentName"
+                  placeholder="Jane Doe"
+                  maxlength="80"
+                  autocomplete="name"
+                />
+              </div>
+              <div class="post-comment-field">
+                <label for="commentEmail">Email (optional)</label>
+                <input
+                  type="email"
+                  id="commentEmail"
+                  placeholder="jane@example.com"
+                  maxlength="120"
+                  autocomplete="email"
+                />
+              </div>
+            </div>
+
+            <div class="post-comment-field post-comment-field-full">
+              <label for="commentText"
+                >Your comment
+                <span style="color: var(--rv-orange)">*</span></label
+              >
+              <textarea
+                id="commentText"
+                placeholder="Share your thoughts on this article…"
+                maxlength="2000"
+                rows="4"
+              ></textarea>
+            </div>
+
+            <div class="post-comment-submit-row">
+              <p class="post-comment-note">
+                Comments go through a quick review before they appear publicly.
+                Your email is never displayed.
+              </p>
+              <button class="post-comment-submit-btn" id="commentSubmitBtn">
+                Post comment <i class="fas fa-paper-plane"></i>
+              </button>
+            </div>
+
+            <!-- Inline feedback message -->
+            <div class="post-comment-feedback" id="commentFeedback"></div>
+          </div>
+        </section>
+        <!-- /comments section -->
       </div>
       <!-- /post-container -->
 

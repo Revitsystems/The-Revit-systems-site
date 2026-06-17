@@ -1,2 +1,2 @@
 window.host = "localhost:5000";
-window.baseURL = `https://${window.host}`;
+window.baseURL = `http://${window.host}`;

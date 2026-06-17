@@ -727,3 +727,501 @@ body {
     flex-wrap: wrap;
   }
 }
+
+/* =============================================
+         COMMENTS SECTION
+         ============================================= */
+
+/* ---- Section wrapper ---- */
+.post-comments-section {
+  margin-top: 56px;
+  padding-top: 48px;
+  border-top: 2px solid var(--rv-gray-2);
+}
+
+/* ---- Section heading row ---- */
+.post-comments-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.post-comments-heading h2 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--rv-dark);
+  letter-spacing: -0.01em;
+}
+
+.post-comments-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--rv-orange-light);
+  color: var(--rv-orange);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+/* ---- Comment list ---- */
+.post-comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ---- Single comment card ---- */
+.rv-comment {
+  display: flex;
+  gap: 14px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--rv-gray-2);
+  animation: rv-comment-in 0.3s ease both;
+}
+
+@keyframes rv-comment-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rv-comment:last-child {
+  border-bottom: none;
+}
+
+/* Avatar circle — initials-based */
+.rv-comment-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--rv-orange);
+  color: var(--rv-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+/* Different muted colour palette for reader avatars (not staff orange) */
+.rv-comment-avatar.reader {
+  background: var(--rv-mid);
+}
+
+.rv-comment-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.rv-comment-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.rv-comment-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--rv-dark);
+}
+
+.rv-comment-date {
+  font-size: 0.75rem;
+  color: #bbb;
+}
+
+/* "Pending review" badge — shown for guest comments that haven't been approved yet */
+.rv-comment-pending {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #e09b00;
+  background: #fff8e1;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.rv-comment-text {
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--rv-mid);
+}
+
+/* ---- "Show more comments" button ---- */
+.post-comments-more-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.post-comments-more-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 24px;
+  border-radius: 999px;
+  border: 1.5px solid var(--rv-gray-2);
+  background: var(--rv-white);
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--rv-mid);
+  cursor: pointer;
+  transition: var(--rv-transition);
+}
+
+.post-comments-more-btn:hover {
+  border-color: var(--rv-orange);
+  color: var(--rv-orange);
+  background: var(--rv-orange-light);
+}
+
+.post-comments-more-btn i {
+  font-size: 0.75rem;
+  transition: transform 0.25s;
+}
+
+.post-comments-more-btn:hover i {
+  transform: translateY(2px);
+}
+
+/* Skeleton rows shown while first load is in progress */
+.rv-comment-skeleton {
+  display: flex;
+  gap: 14px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--rv-gray-2);
+}
+
+.rv-comment-skeleton:last-child {
+  border-bottom: none;
+}
+
+@keyframes rv-shimmer {
+  0% {
+    background-position: -500px 0;
+  }
+  100% {
+    background-position: 500px 0;
+  }
+}
+
+.rv-sk {
+  background: linear-gradient(90deg, #f0eeeb 25%, #e6e3de 50%, #f0eeeb 75%);
+  background-size: 500px 100%;
+  animation: rv-shimmer 1.4s infinite;
+  border-radius: 6px;
+}
+
+.rv-sk-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rv-sk-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.rv-sk-name {
+  height: 13px;
+  width: 120px;
+}
+.rv-sk-line {
+  height: 11px;
+  width: 100%;
+}
+.rv-sk-short {
+  height: 11px;
+  width: 65%;
+}
+
+/* Empty state when no comments yet */
+.post-comments-empty {
+  text-align: center;
+  padding: 32px 0 8px;
+  color: #bbb;
+}
+
+.post-comments-empty i {
+  font-size: 2rem;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.post-comments-empty p {
+  font-size: 0.88rem;
+}
+
+/* ---- COMMENT FORM ---- */
+.post-comment-form-wrap {
+  margin-top: 40px;
+  background: var(--rv-gray);
+  border-radius: var(--rv-radius);
+  padding: 28px 28px 32px;
+  border: 1.5px solid var(--rv-gray-2);
+}
+
+.post-comment-form-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--rv-dark);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.post-comment-form-title i {
+  color: var(--rv-orange);
+  font-size: 0.9rem;
+}
+
+/* Two-column row for name + email */
+.post-comment-fields-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.post-comment-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.post-comment-field label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--rv-mid);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.post-comment-field input,
+.post-comment-field textarea {
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.9rem;
+  color: var(--rv-dark);
+  background: var(--rv-white);
+  border: 1.5px solid var(--rv-gray-2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  outline: none;
+  transition: var(--rv-transition);
+  resize: none;
+}
+
+.post-comment-field input:focus,
+.post-comment-field textarea:focus {
+  border-color: var(--rv-orange);
+  box-shadow: 0 0 0 3px var(--rv-orange-mid);
+}
+
+.post-comment-field input::placeholder,
+.post-comment-field textarea::placeholder {
+  color: #bbb;
+}
+
+/* Message textarea field — full width */
+.post-comment-field-full {
+  margin-bottom: 16px;
+}
+
+.post-comment-field-full textarea {
+  width: 100%;
+  min-height: 100px;
+}
+
+/* Submit button row */
+.post-comment-submit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.post-comment-note {
+  font-size: 0.75rem;
+  color: #bbb;
+  line-height: 1.5;
+  max-width: 340px;
+}
+
+.post-comment-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 28px;
+  border-radius: 999px;
+  border: none;
+  background: var(--rv-orange);
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--rv-white);
+  cursor: pointer;
+  transition: var(--rv-transition);
+  flex-shrink: 0;
+}
+
+.post-comment-submit-btn:hover {
+  background: var(--rv-orange-dark);
+  transform: translateY(-1px);
+}
+
+.post-comment-submit-btn:disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.post-comment-submit-btn i {
+  font-size: 0.8rem;
+}
+
+/* Inline success / error feedback below the form */
+.post-comment-feedback {
+  margin-top: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+}
+
+.post-comment-feedback.success {
+  display: flex;
+  color: #1a7a4a;
+  background: #e9f7ef;
+}
+
+.post-comment-feedback.error {
+  display: flex;
+  color: #b33232;
+  background: #fde8e8;
+}
+
+/* ---- Responsive tweaks ---- */
+@media (max-width: 520px) {
+  .post-comment-fields-row {
+    grid-template-columns: 1fr;
+  }
+  .post-comment-form-wrap {
+    padding: 20px 16px 24px;
+  }
+  .post-comment-submit-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .post-comment-submit-btn {
+    justify-content: center;
+  }
+}
+
+/* ---- STAFF REPLIES ---- */
+/* Indented thread under each comment */
+.rv-comment-replies {
+  margin-top: 12px;
+  margin-left: 52px; /* aligns with comment text, past the avatar */
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.rv-reply {
+  display: flex;
+  gap: 10px;
+  padding: 12px 0;
+  border-top: 1px dashed var(--rv-gray-2);
+  animation: rv-comment-in 0.25s ease both;
+}
+
+/* Orange avatar for staff replies — distinct from reader grey */
+.rv-reply-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--rv-orange);
+  color: var(--rv-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+.rv-reply-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.rv-reply-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.rv-reply-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--rv-dark);
+}
+
+/* Small "Staff" badge on every reply so readers know it's official */
+.rv-reply-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--rv-orange);
+  background: var(--rv-orange-light);
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.rv-reply-date {
+  font-size: 0.72rem;
+  color: #bbb;
+}
+
+.rv-reply-text {
+  font-size: 0.87rem;
+  line-height: 1.6;
+  color: var(--rv-mid);
+}
+
+@media (max-width: 520px) {
+  .rv-comment-replies {
+    margin-left: 28px;
+  }
+}
