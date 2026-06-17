@@ -14,54 +14,6 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="skeleton.css" />
-    <style>
-      /* Modal Overlay */
-      .modal {
-        display: none; /* Hidden by default */
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
-        align-items: center;
-        justify-content: center;
-      }
-
-      /* Modal Content Box */
-      .modal-content {
-        background-color: #fff;
-        padding: 24px;
-        border-radius: 8px;
-        width: 100%;
-        max-width: 400px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        position: relative;
-      }
-
-      /* Close Button */
-      .close-btn {
-        position: absolute;
-        top: 12px;
-        right: 16px;
-        font-size: 24px;
-        cursor: pointer;
-        color: #666;
-      }
-
-      .close-btn:hover {
-        color: #000;
-      }
-
-      /* Button Layout */
-      .modal-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 12px;
-        margin-top: 20px;
-      }
-    </style>
   </head>
   <body>
     <!--Skeleton Elements-->
@@ -1703,7 +1655,7 @@ Blog administrator and content creator.</textarea
             <div class="form-group">
               <label for="edit-user-role">Role</label>
               <select id="edit-user-role">
-                <option value="user">User</option>
+                <option value="author">Author</option>
                 <option value="editor">Editor</option>
                 <option value="admin">Admin</option>
               </select>
@@ -1757,6 +1709,56 @@ Blog administrator and content creator.</textarea
           </button>
           <button class="btn-danger" id="confirm-delete-user-btn">
             <i class="fas fa-trash"></i> Yes, Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reply Comment Modal -->
+    <div id="reply-comment-modal" class="modal hidden">
+      <div class="modal-overlay"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2><i class="fas fa-reply"></i> Reply to Comment</h2>
+          <button class="close-btn" data-modal="reply-comment-modal">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label
+              >Replying to <strong id="reply-comment-author"></strong
+            ></label>
+            <div
+              id="reply-original-comment"
+              style="
+                background: var(--gray-100);
+                border-left: 3px solid var(--primary);
+                padding: 0.75rem 1rem;
+                border-radius: var(--radius);
+                margin-bottom: 1rem;
+                font-size: 0.9rem;
+                color: var(--gray-700);
+              "
+            ></div>
+          </div>
+          <div class="form-group">
+            <label for="reply-text">Your Reply</label>
+            <textarea
+              id="reply-text"
+              rows="4"
+              placeholder="Write your reply here..."
+              style="resize: vertical"
+            ></textarea>
+          </div>
+          <input type="hidden" id="reply-comment-id" />
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" data-modal="reply-comment-modal">
+            Cancel
+          </button>
+          <button class="btn-primary" id="send-reply-btn">
+            <i class="fas fa-paper-plane"></i> Send Reply
           </button>
         </div>
       </div>

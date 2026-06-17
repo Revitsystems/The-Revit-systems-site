@@ -291,22 +291,14 @@ function initializeEventListeners() {
     .getElementById("save-user-edit-btn")
     .addEventListener("click", Actions.saveUserEdit);
 
-  document
-    .getElementById("cancel-edit-user-btn")
-    ?.addEventListener("click", () => {
-      document.getElementById("edit-user-modal").classList.add("hidden");
-    });
-
   // Delete user modal
   document
     .getElementById("confirm-delete-user-btn")
     .addEventListener("click", Actions.confirmDeleteUser);
 
   document
-    .getElementById("cancel-delete-user-btn")
-    ?.addEventListener("click", () => {
-      document.getElementById("delete-user-modal").classList.add("hidden");
-    });
+    .getElementById("send-reply-btn")
+    .addEventListener("click", Actions.confirmReply);
 
   // --- Category management ---
   document

@@ -9,7 +9,7 @@ export const fetchAllUsers = async (req: Request, res: Response) => {
   const role = req.query.role as string | undefined;
 
   const validStatuses = ["active", "suspended", "pending"];
-  const validRoles = ["admin", "editor", "author", "user"];
+  const validRoles = ["admin", "editor", "author"];
 
   if (status && !validStatuses.includes(status)) {
     return res.status(400).json({ message: "Invalid status filter" });
@@ -80,7 +80,7 @@ export const editUser = async (req: Request, res: Response) => {
   }
 
   const { firstName, lastName, role, status } = req.body;
-  const validRoles = ["admin", "editor", "author", "user"];
+  const validRoles = ["admin", "editor", "author"];
   const validStatuses = ["active", "suspended", "pending"];
 
   if (role && !validRoles.includes(role)) {

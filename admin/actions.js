@@ -331,23 +331,36 @@ const Actions = {
     }
   },
 
-  replyComment: async (id) => {
+  replyComment: (id) => {
     const comment = AppState.comments.find((c) => c.id === id);
     if (!comment) return;
 
-    const reply = prompt(`Reply to ${comment.author}:`);
-    if (!reply || !reply.trim()) return;
+    document.getElementById("reply-comment-id").value = id;
+    document.getElementById("reply-comment-author").textContent =
+      comment.author;
+    document.getElementById("reply-original-comment").textContent =
+      comment.text;
+    document.getElementById("reply-text").value = "";
+    document.getElementById("reply-comment-modal").classList.remove("hidden");
+  },
+
+  confirmReply: async () => {
+    const id = document.getElementById("reply-comment-id").value;
+    const reply = document.getElementById("reply-text").value.trim();
+
+    if (!reply) {
+      Utils.showToast("Please enter a reply", "warning");
+      return;
+    }
 
     Utils.showLoader();
     try {
-      await authFetch(`${BASE_URL}/comments/${id}/reply`, {
-        method: "POST",
-        body: JSON.stringify({ commentText: reply.trim() }),
-      });
+      await API.replyToComment(id, reply);
       Utils.showToast("Reply posted successfully", "success");
+      document.getElementById("reply-comment-modal").classList.add("hidden");
       Renderers.renderComments();
     } catch (error) {
-      Utils.showToast("Failed to post reply", "error");
+      Utils.showToast(error.message || "Failed to post reply", "error");
     } finally {
       Utils.hideLoader();
     }

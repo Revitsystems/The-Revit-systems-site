@@ -122,7 +122,8 @@ export const fetchPostStats = async (req: Request, res: Response) => {
 // Update an existing post's content fields
 // =============================================
 export const updateExistingPost = async (req: Request, res: Response) => {
-  const { categoryId, title, slug, content, excerpt, featuredImage } = req.body;
+  const { categoryId, title, slug, content, excerpt, featuredImage, status } =
+    req.body;
   const id = req.params.id;
 
   if (!id || Array.isArray(id)) {
@@ -135,7 +136,8 @@ export const updateExistingPost = async (req: Request, res: Response) => {
     return res.status(404).json({ message: "Post not found" });
   }
 
-  if (post.author_id !== req.user!.id) {
+  // Admins can edit any post; authors can only edit their own
+  if (req.user!.role !== "admin" && post.author_id !== req.user!.id) {
     return res.status(403).json({ message: "Not allowed" });
   }
 
@@ -146,6 +148,7 @@ export const updateExistingPost = async (req: Request, res: Response) => {
     content?: string;
     excerpt?: string;
     featuredImage?: string;
+    status?: string;
   } = {};
 
   if (categoryId !== undefined) updates.categoryId = categoryId;
@@ -154,6 +157,7 @@ export const updateExistingPost = async (req: Request, res: Response) => {
   if (content !== undefined) updates.content = content;
   if (excerpt !== undefined) updates.excerpt = excerpt;
   if (featuredImage !== undefined) updates.featuredImage = featuredImage;
+  if (status !== undefined) updates.status = status;
 
   try {
     const updated = await updatePost(id, updates);
@@ -200,7 +204,7 @@ export const publishExistingPost = async (req: Request, res: Response) => {
 };
 
 // =============================================
-// Delete a post — author only
+// Delete a post — author and admins only
 // =============================================
 export const removePost = async (req: Request, res: Response) => {
   const id = req.params.id;
@@ -215,7 +219,8 @@ export const removePost = async (req: Request, res: Response) => {
     return res.status(404).json({ message: "Post not found" });
   }
 
-  if (post.author_id !== req.user!.id) {
+  // Admins can delete any post; authors can only delete their own
+  if (req.user!.role !== "admin" && post.author_id !== req.user!.id) {
     return res.status(403).json({ message: "Not allowed" });
   }
 
@@ -256,7 +261,7 @@ export const scheduleExistingPost = async (req: Request, res: Response) => {
     return res.status(404).json({ message: "Post not found" });
   }
 
-  if (post.author_id !== req.user!.id) {
+  if (req.user!.role !== "admin" && post.author_id !== req.user!.id) {
     return res.status(403).json({ message: "Not allowed" });
   }
 

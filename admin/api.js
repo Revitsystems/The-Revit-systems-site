@@ -201,19 +201,13 @@ const API = {
   },
 
   updatePost: async (id, postData) => {
-    // Publishing has its own dedicated endpoint in postRoutes.ts
-    if (postData.status === "published") {
-      return API.publishPost(id);
-    }
-
-    // Rescheduling has its own dedicated endpoint in postRoutes.ts
+    // Rescheduling has its own dedicated endpoint — handle that separately
     if (postData.scheduledAt) {
       return API.schedulePost(id, postData.scheduledAt);
     }
 
+    // Everything else — including status changes — goes through PUT /posts/:id
     const body = {};
-    // postData may carry either categoryId or category depending on
-    // which part of the UI triggered the update — normalise both to categoryId
     if (postData.categoryId !== undefined)
       body.categoryId = postData.categoryId;
     if (postData.category !== undefined) body.categoryId = postData.category;
@@ -223,6 +217,7 @@ const API = {
     if (postData.excerpt !== undefined) body.excerpt = postData.excerpt;
     if (postData.featuredImage !== undefined)
       body.featuredImage = postData.featuredImage;
+    if (postData.status !== undefined) body.status = postData.status;
 
     const response = await authFetch(`${BASE_URL}/posts/${id}`, {
       method: "PUT",
@@ -236,7 +231,6 @@ const API = {
 
     const updated = await response.json();
 
-    // Sync AppState so renderPostsTable in renderers.js stays current
     const index = AppState.posts.findIndex((p) => p.id === id);
     if (index !== -1)
       AppState.posts[index] = { ...AppState.posts[index], ...updated };
@@ -445,6 +439,20 @@ const API = {
     return updated;
   },
 
+  replyToComment: async (id, commentText) => {
+    const response = await authFetch(`${BASE_URL}/comments/${id}/reply`, {
+      method: "POST",
+      body: JSON.stringify({ commentText }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to post reply");
+    }
+
+    return response.json();
+  },
+
   // ============================================
   // NOTIFICATIONS
   // ============================================
@@ -611,6 +619,40 @@ const API = {
         total: data.users.length,
       },
     };
+  },
+
+  updateUser: async (id, updates) => {
+    const response = await authFetch(`${BASE_URL}/users/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to update user");
+    }
+
+    const updated = await response.json();
+
+    const index = AppState.users.findIndex((u) => u.id === id);
+    if (index !== -1)
+      AppState.users[index] = { ...AppState.users[index], ...updated };
+
+    return updated;
+  },
+
+  deleteUser: async (id) => {
+    const response = await authFetch(`${BASE_URL}/users/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to delete user");
+    }
+
+    AppState.users = AppState.users.filter((u) => u.id !== id);
+    return { success: true };
   },
 
   // Registers a new user with pending status via POST /auth/register.

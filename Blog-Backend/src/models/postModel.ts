@@ -193,6 +193,7 @@ export const updatePost = async (
     content?: string;
     excerpt?: string;
     featuredImage?: string;
+    status?: string;
   }
 ) => {
   const fields: string[] = [];
@@ -229,6 +230,19 @@ export const updatePost = async (
     values.push(updates.featuredImage);
   }
 
+  if (updates.status !== undefined) {
+    fields.push(`status = $${index++}`);
+    values.push(updates.status);
+    // stamp published_at when publishing via edit
+    if (updates.status === "published") {
+      fields.push(`published_at = CURRENT_TIMESTAMP`);
+    }
+    // clear published_at when moving back to draft or scheduled
+    if (updates.status === "draft" || updates.status === "scheduled") {
+      fields.push(`published_at = NULL`);
+    }
+  }
+
   if (fields.length === 0) {
     throw new Error("No fields provided for update");
   }
@@ -245,7 +259,6 @@ export const updatePost = async (
   values.push(id);
 
   const result = await pool.query(query, values);
-
   return result.rows[0];
 };
 

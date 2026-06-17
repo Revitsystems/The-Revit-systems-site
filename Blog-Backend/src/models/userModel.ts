@@ -136,7 +136,6 @@ export const updateUserData = async (
 
   if (fields.length === 0) return null;
 
-  fields.push(`updated_at = NOW()`);
   values.push(id);
 
   const result = await pool.query(

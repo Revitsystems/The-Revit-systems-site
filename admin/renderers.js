@@ -259,7 +259,18 @@ const Renderers = {
     Utils.showLoader();
 
     try {
-      const response = await API.getComments(AppState.filters.comments);
+      const response = await API.getComments(
+        AppState.filters.comments,
+        AppState.pagination.comments.page
+      );
+
+      if (response.comments.length === 0) {
+        container.innerHTML = `
+          <div class="comment-item" style="justify-content:center;padding:2rem;color:var(--gray-500);">
+            No comments found.
+          </div>`;
+        return;
+      }
 
       container.innerHTML = response.comments
         .map(
@@ -290,11 +301,9 @@ const Renderers = {
             <div class="comment-actions">
               ${
                 comment.status !== "approved"
-                  ? `
-                <button class="approve-btn" onclick="Actions.approveComment('${comment.id}')">
-                  <i class="fas fa-check"></i> Approve
-                </button>
-              `
+                  ? `<button class="approve-btn" onclick="Actions.approveComment('${comment.id}')">
+                      <i class="fas fa-check"></i> Approve
+                    </button>`
                   : ""
               }
               <button class="reply-btn" onclick="Actions.replyComment('${
@@ -316,8 +325,6 @@ const Renderers = {
 
       AppState.pagination.comments = response.pagination;
 
-      // Wire up comment pagination — was missing in the original,
-      // meaning pages beyond the first 10 were unreachable
       Renderers.renderPagination(
         "comments-pagination",
         response.pagination,
@@ -330,7 +337,12 @@ const Renderers = {
         }
       );
     } catch (error) {
-      Utils.showToast("Failed to load comments", "error");
+      console.error("renderComments error:", error);
+      container.innerHTML = `
+        <div class="comment-item" style="justify-content:center;padding:2rem;color:var(--gray-500);">
+          Failed to load comments: ${error.message}
+        </div>`;
+      Utils.showToast(`Failed to load comments: ${error.message}`, "error");
     } finally {
       Utils.hideLoader();
     }
@@ -655,38 +667,18 @@ const Renderers = {
           : `<div class="notification-item"><div class="notification-content"><p>No notifications</p></div></div>`;
 
       badge.textContent = countData.unreadCount || 0;
-    } catch {
-      // Fall back to static placeholder notifications
-      const fallback = [
-        {
-          icon: "comment",
-          text: "New comment pending moderation",
-          time: "Just now",
-          unread: true,
-        },
-        {
-          icon: "calendar",
-          text: "Scheduled post will publish soon",
-          time: "1 hour ago",
-          unread: false,
-        },
-      ];
-
-      list.innerHTML = fallback
-        .map(
-          (n) => `
-        <div class="notification-item ${n.unread ? "unread" : ""}">
-          <i class="fas fa-${n.icon}"></i>
+    } catch (error) {
+      console.error("renderNotifications error:", error);
+      // Show the real error in the dropdown so it's visible during development
+      list.innerHTML = `
+        <div class="notification-item">
+          <i class="fas fa-exclamation-circle" style="color:var(--danger)"></i>
           <div class="notification-content">
-            <p>${n.text}</p>
-            <span class="time">${n.time}</span>
+            <p>Could not load notifications</p>
+            <span class="time">${error.message}</span>
           </div>
-        </div>
-      `
-        )
-        .join("");
-
-      badge.textContent = fallback.filter((n) => n.unread).length;
+        </div>`;
+      badge.textContent = 0;
     }
   },
 
