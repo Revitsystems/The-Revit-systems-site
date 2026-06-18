@@ -159,32 +159,26 @@ async function checkAuthStatus() {
 
 /**
  * Login User
+ *
+ * Was previously a standalone fetch() with its own local
+ * `let accessToken = null;` declared at the top of this file. login.html
+ * loads this script and api.js as plain (non-module) <script> tags, so they
+ * share one global scope — and api.js ALSO declares `let accessToken = null;`
+ * at its top level. Two `let` declarations of the same name in the same
+ * scope is a SyntaxError ("Identifier 'accessToken' has already been
+ * declared"), thrown the moment api.js parses, which aborted ALL of api.js
+ * (so `window.API` never got defined) and broke checkAuthStatus() below,
+ * which calls API.refreshToken().
+ *
+ * Fix: don't keep a second copy of the token here at all — delegate to
+ * API.login(), which already does this exact fetch and stores the token in
+ * the one place authFetch (api.js) actually reads it from.
  */
-// At the top of your api.js or login.js
-let accessToken = null; // single source of truth, lives in memory
-
 async function loginUser(email, password) {
   showLoader("Signing in...");
 
   try {
-    const response = await fetch("http://localhost:5000/auth/login", {
-      method: "POST",
-      credentials: "include", // ← critical: lets browser save the httpOnly cookie
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Login failed");
-    }
-
-    // Store access token in memory only — backend handles refresh via httpOnly cookie
-    accessToken = data.accessToken; // ← matches what your backend actually returns
-    console.log("Received access token:", accessToken); // Debugging line
+    await API.login(email, password);
 
     hideLoader();
     showToast("Login successful! Redirecting...", "success");

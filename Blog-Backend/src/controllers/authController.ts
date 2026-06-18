@@ -29,23 +29,32 @@ export const register = async (req: Request, res: Response) => {
   // sanitize applied to email as well as name fields
   const cleanEmail = sanitize(email).trim().toLowerCase();
 
-  const existingUser = await findUserByEmail(cleanEmail);
-  if (existingUser) {
-    return res.status(400).json({ message: "User already exists" });
+  try {
+    const existingUser = await findUserByEmail(cleanEmail);
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await createUser(
+      cleanFirstName,
+      cleanLastName,
+      cleanEmail,
+      hashedPassword,
+      "user",
+      "pending"
+    );
+
+    res
+      .status(201)
+      .json({ id: user.id, email: user.email, status: user.status });
+  } catch (error) {
+    console.error("register error:", error);
+    res
+      .status(503)
+      .json({ message: "Service temporarily unavailable. Please try again." });
   }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  const user = await createUser(
-    cleanFirstName,
-    cleanLastName,
-    cleanEmail,
-    hashedPassword,
-    "user",
-    "pending"
-  );
-
-  res.status(201).json({ id: user.id, email: user.email, status: user.status });
 };
 
 // ============================================
@@ -59,63 +68,76 @@ export const login = async (req: Request, res: Response) => {
   }
 
   const cleanEmail = email.trim().toLowerCase();
-  const user = await findUserByEmail(cleanEmail);
 
-  if (!user) {
-    await recordLogin(null, req, false);
-    return res.status(401).json({ message: "Invalid credentials" });
+  try {
+    const user = await findUserByEmail(cleanEmail);
+
+    if (!user) {
+      await recordLogin(null, req, false);
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+
+    if (!isMatch) {
+      await recordLogin(user.id, req, false);
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    if (user.status === "pending") {
+      return res.status(403).json({ message: "Account pending approval" });
+    }
+
+    if (user.status === "suspended") {
+      return res.status(403).json({ message: "Account suspended" });
+    }
+
+    await recordLogin(user.id, req, true);
+    await updateLastLogin(user.id);
+
+    const tokenId = crypto.randomUUID();
+    const rawRefreshToken = crypto.randomBytes(64).toString("hex");
+    const refreshTokenHash = await bcrypt.hash(rawRefreshToken, 10);
+
+    await createSession({
+      userId: user.id,
+      tokenId,
+      refreshTokenHash,
+      userAgent: req.headers["user-agent"] || "",
+      ipAddress: req.ip || "",
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+
+    const accessToken = jwt.sign(
+      {
+        id: user.id,
+        role: user.role,
+        sid: tokenId,
+      },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "15m" }
+    );
+
+    res.cookie("refreshToken", `${tokenId}.${rawRefreshToken}`, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/auth/refresh",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.json({ accessToken });
+  } catch (error) {
+    // Was previously completely unguarded — a dropped DB connection here
+    // (findUserByEmail, recordLogin, createSession, etc.) had nowhere to go
+    // but an unhandled promise rejection, which could hang the request or
+    // crash the process, and on the client surfaced as a JSON.parse error
+    // ("Unexpected token...") instead of a usable error message.
+    console.error("login error:", error);
+    return res
+      .status(503)
+      .json({ message: "Service temporarily unavailable. Please try again." });
   }
-
-  const isMatch = await bcrypt.compare(password, user.password_hash);
-
-  if (!isMatch) {
-    await recordLogin(user.id, req, false);
-    return res.status(401).json({ message: "Invalid credentials" });
-  }
-
-  if (user.status === "pending") {
-    return res.status(403).json({ message: "Account pending approval" });
-  }
-
-  if (user.status === "suspended") {
-    return res.status(403).json({ message: "Account suspended" });
-  }
-
-  await recordLogin(user.id, req, true);
-  await updateLastLogin(user.id);
-
-  const tokenId = crypto.randomUUID();
-  const rawRefreshToken = crypto.randomBytes(64).toString("hex");
-  const refreshTokenHash = await bcrypt.hash(rawRefreshToken, 10);
-
-  await createSession({
-    userId: user.id,
-    tokenId,
-    refreshTokenHash,
-    userAgent: req.headers["user-agent"] || "",
-    ipAddress: req.ip || "",
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  });
-
-  const accessToken = jwt.sign(
-    {
-      id: user.id,
-      role: user.role,
-      sid: tokenId,
-    },
-    process.env.JWT_SECRET as string,
-    { expiresIn: "15m" }
-  );
-
-  res.cookie("refreshToken", `${tokenId}.${rawRefreshToken}`, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/auth/refresh",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
-
-  return res.json({ accessToken });
 };
 
 // ============================================
@@ -123,34 +145,39 @@ export const login = async (req: Request, res: Response) => {
 // ============================================
 export const requestPasswordReset = async (req: Request, res: Response) => {
   const { email } = req.body;
-  const user = await findUserByEmail(email?.toLowerCase().trim());
-
-  // Always return the same message to prevent user enumeration
-  if (!user) {
-    return res.json({
-      message: "If an account exists, a reset link has been sent.",
-    });
-  }
-
-  const rawToken = crypto.randomBytes(32).toString("hex");
-  const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
-  const expiresAt = new Date(Date.now() + 3600000); // 1 hour
-
-  await pool.query("DELETE FROM password_reset_tokens WHERE user_id = $1", [
-    user.id,
-  ]);
-  await pool.query(
-    "INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)",
-    [user.id, tokenHash, expiresAt]
-  );
-
-  const resetLink = `http://localhost:5000/reset-password.html?token=${rawToken}&id=${user.id}`;
 
   try {
-    await sendEmail({
-      email: user.email,
-      subject: "Password Reset Request - Revit Systems",
-      message: `
+    const user = await findUserByEmail(email?.toLowerCase().trim());
+
+    // Always return the same message to prevent user enumeration
+    if (!user) {
+      return res.json({
+        message: "If an account exists, a reset link has been sent.",
+      });
+    }
+
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(rawToken)
+      .digest("hex");
+    const expiresAt = new Date(Date.now() + 3600000); // 1 hour
+
+    await pool.query("DELETE FROM password_reset_tokens WHERE user_id = $1", [
+      user.id,
+    ]);
+    await pool.query(
+      "INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)",
+      [user.id, tokenHash, expiresAt]
+    );
+
+    const resetLink = `http://localhost:5000/reset-password.html?token=${rawToken}&id=${user.id}`;
+
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: "Password Reset Request - Revit Systems",
+        message: `
         <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee;">
           <h2>Password Reset</h2>
           <p>You requested a password reset for your Revit Systems account.</p>
@@ -159,19 +186,27 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
           <p>If you did not request this, you can safely ignore this email.</p>
         </div>
       `,
-    });
+      });
 
-    console.log("DEBUG - Reset Link:", resetLink);
+      console.log("DEBUG - Reset Link:", resetLink);
 
-    res.json({
-      message:
-        "If an account exists, a reset link has been sent. Check spam folder if not found in inbox",
-    });
+      res.json({
+        message:
+          "If an account exists, a reset link has been sent. Check spam folder if not found in inbox",
+      });
+    } catch (error) {
+      console.error("Failed to send reset email:", error);
+      res
+        .status(500)
+        .json({ message: "Error sending email. Please try again later." });
+    }
   } catch (error) {
-    console.error("Failed to send reset email:", error);
+    // Covers findUserByEmail / the DELETE+INSERT pool.query calls above,
+    // which were previously unguarded.
+    console.error("requestPasswordReset error:", error);
     res
-      .status(500)
-      .json({ message: "Error sending email. Please try again later." });
+      .status(503)
+      .json({ message: "Service temporarily unavailable. Please try again." });
   }
 };
 
@@ -187,21 +222,31 @@ export const resetPassword = async (req: Request, res: Response) => {
 
   // Check and validate the reset token BEFORE opening a transaction —
   // no point holding a DB client while doing bcrypt work
-  const tokenResult = await pool.query(
-    "SELECT * FROM password_reset_tokens WHERE user_id = $1",
-    [userId]
-  );
-  const tokenRecord = tokenResult.rows[0];
+  let tokenRecord;
+  try {
+    const tokenResult = await pool.query(
+      "SELECT * FROM password_reset_tokens WHERE user_id = $1",
+      [userId]
+    );
+    tokenRecord = tokenResult.rows[0];
 
-  if (!tokenRecord) {
-    return res.status(400).json({ message: "Invalid or expired reset link." });
-  }
+    if (!tokenRecord) {
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired reset link." });
+    }
 
-  if (new Date(tokenRecord.expires_at) < new Date()) {
-    await pool.query("DELETE FROM password_reset_tokens WHERE user_id = $1", [
-      userId,
-    ]);
-    return res.status(400).json({ message: "Reset link has expired." });
+    if (new Date(tokenRecord.expires_at) < new Date()) {
+      await pool.query("DELETE FROM password_reset_tokens WHERE user_id = $1", [
+        userId,
+      ]);
+      return res.status(400).json({ message: "Reset link has expired." });
+    }
+  } catch (error) {
+    console.error("resetPassword lookup error:", error);
+    return res
+      .status(503)
+      .json({ message: "Service temporarily unavailable. Please try again." });
   }
 
   const incomingHash = crypto.createHash("sha256").update(token).digest("hex");
@@ -217,7 +262,15 @@ export const resetPassword = async (req: Request, res: Response) => {
   // BEGIN / all queries / COMMIT all run on the same connection.
   // Using pool.query("BEGIN") routes each call to a potentially
   // different connection, breaking atomicity entirely.
-  const client = await pool.connect();
+  let client;
+  try {
+    client = await pool.connect();
+  } catch (error) {
+    console.error("resetPassword connect error:", error);
+    return res
+      .status(503)
+      .json({ message: "Service temporarily unavailable. Please try again." });
+  }
 
   try {
     await client.query("BEGIN");

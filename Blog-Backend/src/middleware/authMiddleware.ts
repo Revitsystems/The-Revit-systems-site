@@ -14,13 +14,24 @@ export const authenticate = async (
     return res.status(401).json({ message: "No token provided" });
   }
 
+  // Step 1: verify the JWT itself. Failures here (bad signature, malformed,
+  // or genuinely expired) are real auth failures — 401 is correct.
+  let decoded: { id: string; role: string; sid: string };
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
+    decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
       id: string;
       role: string;
       sid: string;
     };
+  } catch {
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
 
+  // Step 2: look up the session / user status in the DB. Failures here are
+  // infrastructure problems (e.g. a dropped connection to Supabase), not
+  // proof the token is bad — they must NOT be reported as 401, or the
+  // frontend will treat a transient DB hiccup as "log this user out".
+  try {
     // Verify the session exists and has not been revoked.
     // This is what makes logout actually work — a revoked session
     // blocks the request even if the JWT itself is still within its 15m window.
@@ -55,7 +66,10 @@ export const authenticate = async (
 
     req.user = decoded;
     next();
-  } catch {
-    return res.status(401).json({ message: "Invalid token" });
+  } catch (error) {
+    console.error("authenticate DB error:", error);
+    return res
+      .status(503)
+      .json({ message: "Service temporarily unavailable. Please try again." });
   }
 };

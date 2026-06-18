@@ -116,7 +116,16 @@ export const refresh = async (req: Request, res: Response) => {
 
     return res.json({ accessToken: newAccessToken });
   } catch (error) {
+    // Every explicit auth decision above (no token, expired session,
+    // revoked session, suspended/pending user) already returns its own
+    // 401/403 before this point. Anything that lands here is an
+    // unexpected/infrastructure failure (e.g. a dropped DB connection) —
+    // it is NOT proof the session is invalid, so it must not be a 401/500
+    // that the frontend interprets as "log this user out". 503 tells the
+    // frontend this is transient and safe to retry.
     console.error("refresh error:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res
+      .status(503)
+      .json({ message: "Service temporarily unavailable. Please try again." });
   }
 };

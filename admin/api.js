@@ -59,23 +59,46 @@ const API = {
   // AUTH
   // ============================================
 
-  refreshToken: async () => {
+  refreshToken: async (retriesLeft = 1) => {
     try {
       const response = await fetch(`${BASE_URL}/auth/refresh`, {
         method: "POST",
         credentials: "include",
       });
 
-      if (!response.ok) {
+      if (response.ok) {
+        const data = await response.json();
+        accessToken = data.accessToken;
+        return true;
+      }
+
+      // 401/403 = the backend explicitly says this session is invalid
+      // (no cookie, expired/revoked session, suspended/pending user).
+      // That's the only case where bouncing to the login page is correct.
+      if (response.status === 401 || response.status === 403) {
         window.location.href = LOGIN_URL;
         return false;
       }
 
-      const data = await response.json();
-      accessToken = data.accessToken;
-      return true;
-    } catch {
-      window.location.href = LOGIN_URL;
+      // Anything else (503 from a DB hiccup, etc.) is transient — retry
+      // once before giving up, and never redirect for it. A failed retry
+      // here just means the dashboard shows "failed to load" toasts until
+      // the next successful call; it does not destroy the user's session.
+      if (retriesLeft > 0) {
+        await new Promise((r) => setTimeout(r, 1000));
+        return API.refreshToken(retriesLeft - 1);
+      }
+
+      console.error("Refresh failed after retry:", response.status);
+      return false;
+    } catch (err) {
+      // Network-level failure (server unreachable, etc.) — same logic:
+      // retry once, then fail soft without redirecting.
+      if (retriesLeft > 0) {
+        await new Promise((r) => setTimeout(r, 1000));
+        return API.refreshToken(retriesLeft - 1);
+      }
+      console.error("Refresh network error:", err);
       return false;
     }
   },

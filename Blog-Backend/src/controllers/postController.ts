@@ -130,7 +130,15 @@ export const updateExistingPost = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Invalid post ID" });
   }
 
-  const post = await getPostById(id);
+  let post;
+  try {
+    post = await getPostById(id);
+  } catch (error) {
+    console.error("updateExistingPost lookup error:", error);
+    return res
+      .status(503)
+      .json({ message: "Service temporarily unavailable. Please try again." });
+  }
 
   if (!post) {
     return res.status(404).json({ message: "Post not found" });
@@ -184,7 +192,15 @@ export const publishExistingPost = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Invalid post ID" });
   }
 
-  const post = await getPostById(id);
+  let post;
+  try {
+    post = await getPostById(id);
+  } catch (error) {
+    console.error("publishExistingPost lookup error:", error);
+    return res
+      .status(503)
+      .json({ message: "Service temporarily unavailable. Please try again." });
+  }
 
   if (!post) {
     return res.status(404).json({ message: "Post not found" });
@@ -213,7 +229,15 @@ export const removePost = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Invalid post ID" });
   }
 
-  const post = await getPostById(id);
+  let post;
+  try {
+    post = await getPostById(id);
+  } catch (error) {
+    console.error("removePost lookup error:", error);
+    return res
+      .status(503)
+      .json({ message: "Service temporarily unavailable. Please try again." });
+  }
 
   if (!post) {
     return res.status(404).json({ message: "Post not found" });
@@ -255,7 +279,15 @@ export const scheduleExistingPost = async (req: Request, res: Response) => {
     });
   }
 
-  const post = await getPostById(id);
+  let post;
+  try {
+    post = await getPostById(id);
+  } catch (error) {
+    console.error("scheduleExistingPost lookup error:", error);
+    return res
+      .status(503)
+      .json({ message: "Service temporarily unavailable. Please try again." });
+  }
 
   if (!post) {
     return res.status(404).json({ message: "Post not found" });
