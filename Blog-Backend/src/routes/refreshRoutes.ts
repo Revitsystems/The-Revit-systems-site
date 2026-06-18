@@ -15,6 +15,6 @@ const refreshLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-router.post("/refresh", refreshLimiter, refresh);
+router.post("/", refreshLimiter, refresh);
 
 export default router;

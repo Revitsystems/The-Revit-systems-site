@@ -6,7 +6,6 @@ import {
   resetPassword,
   changeUserStatus,
 } from "@/controllers/authController.js";
-import { refresh } from "@/controllers/refreshController.js";
 import { logout, logoutAll } from "@/controllers/logoutController.js";
 import { authenticate } from "@/middleware/authMiddleware.js";
 import { authorize } from "@/middleware/roleMiddleware.js";
@@ -15,7 +14,6 @@ const router = Router();
 
 router.post("/register", register);
 router.post("/login", login);
-router.post("/refresh", refresh);
 router.post("/forgot-password", requestPasswordReset);
 router.post("/reset-password", resetPassword);
 
