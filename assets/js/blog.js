@@ -213,7 +213,7 @@ const fetchPosts = async (append = false) => {
     }
 
     // fetch requires the protocol (http://) and manual query string concatenation
-    const res = await fetch(`http://localhost:5000/posts?${params.toString()}`);
+    const res = await fetch(`${window.baseURL}/posts?${params.toString()}`);
 
     // fetch does not throw automatically on HTTP error statuses
     if (!res.ok) {
