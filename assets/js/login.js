@@ -144,14 +144,31 @@ function clearValidation(inputId, errorId) {
 
 /**
  * Check if user is already logged in
+ *
+ * api.js's refreshToken() returns a structured result object —
+ * { ok: true } on success, or { ok: false, redirected, reason } on
+ * failure — NOT a plain boolean. An object is always truthy in JS, so
+ * checking `if (ok)` on the raw return value is true even when
+ * ok === false, which would send every visitor straight to the
+ * dashboard regardless of whether they actually have a valid session.
+ * Must check `result.ok` specifically.
+ *
+ * Also: if there's no session at all, refreshToken() gets a 401 from
+ * the backend and already calls window.location.href = LOGIN_URL itself
+ * (see api.js). Since LOGIN_URL is this same page, that's a harmless
+ * no-op redirect-to-self in that case — nothing extra needed here for it.
  */
 async function checkAuthStatus() {
   try {
-    const ok = await API.refreshToken();
+    const result = await API.refreshToken();
 
-    if (ok) {
+    if (result.ok) {
       window.location.href = "/admin/index.html";
     }
+    // result.ok === false: either already redirected to login (no-op,
+    // we're already here), or the backend is unreachable — in which
+    // case staying on the login page and letting the user retry the
+    // login form (which will surface its own error) is the right move.
   } catch (error) {
     console.log("No active session");
   }
@@ -475,3 +492,4 @@ function init() {
 
 // Start the app
 document.addEventListener("DOMContentLoaded", init);
+
