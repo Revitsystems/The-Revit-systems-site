@@ -268,7 +268,21 @@
       </div>
     </div>
 
-    <script src="../assets/js/login.js"></script>
+    <!--
+      Script order matters here even without defer/async, because these are
+      plain classic scripts executed synchronously in document order:
+
+        config.js  — sets window.baseURL. Must run before api.js evaluates
+                     `const BASE_URL = window.baseURL;` at its own top level.
+        api.js     — defines the global API object. Must run before login.js's
+                     init() (called on DOMContentLoaded) invokes API.refreshToken()
+                     or API.login().
+        login.js   — wires up the form and calls into API.*
+
+      config.js lives in the same folder as login.js per the project layout.
+    -->
+    <script src="../assets/js/config.js"></script>
     <script src="../admin/api.js"></script>
+    <script src="../assets/js/login.js"></script>
   </body>
 </html>
