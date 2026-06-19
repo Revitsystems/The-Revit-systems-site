@@ -4,7 +4,7 @@
    Depends on: utils.js, state.js, cache.js
    ============================================ */
 
-const BASE_URL = "http://localhost:5000";
+const BASE_URL = window.baseURL;
 const LOGIN_URL = "../pages/login.html"; // set once, use everywhere
 
 // Access token lives in memory only — never in localStorage
