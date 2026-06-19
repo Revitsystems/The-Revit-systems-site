@@ -22,9 +22,6 @@ import userRoutes from "@/routes/userRoutes.js";
 import { authenticate } from "@/middleware/authMiddleware.js";
 import { getCurrentUser } from "@/controllers/authController.js";
 
-// ── Scheduler ─────────────────────────────────────────────────
-import { startScheduler } from "@/scheduler.js";
-
 const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -65,6 +62,15 @@ app.use(express.static(path.join(__dirname, "../../")));
 
 app.set("trust proxy", 1);
 
+app.get("/health", (req, res) => {
+  try {
+    res.status(200).json({ status: "ok" });
+  } catch (err) {
+    console.log("Health check failed:", err);
+    res.status(503).json({ status: "error" });
+  }
+});
+
 // ── Auth (existing) ───────────────────────────────────────────
 app.use("/auth/refresh", refreshRoutes);
 
@@ -88,9 +94,6 @@ app.use("/comments", commentRouter); // Admin moderation + replies
 app.use("/notifications", notificationRoutes);
 
 // ── User management (New) ───────────────────────────────
-app.use("/users", userRoutes);
-
-// ── Start the post scheduler ─────────────────────────────
-startScheduler();
+app.use("/users", userRoutes); // <-- Pass the imported router here
 
 export default app;
