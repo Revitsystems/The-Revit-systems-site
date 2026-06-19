@@ -1,7 +1,7 @@
 /* ============================================
    API.JS — All data fetching & mutations
    Wired to the RevitSystems Express backend.
-   Depends on: utils.js, state.js
+   Depends on: utils.js, state.js, cache.js
    ============================================ */
 
 const BASE_URL = "http://localhost:5000";
@@ -81,9 +81,7 @@ const API = {
       }
 
       // Anything else (503 from a DB hiccup, etc.) is transient — retry
-      // once before giving up, and never redirect for it. A failed retry
-      // here just means the dashboard shows "failed to load" toasts until
-      // the next successful call; it does not destroy the user's session.
+      // once before giving up, and never redirect for it.
       if (retriesLeft > 0) {
         await new Promise((r) => setTimeout(r, 1000));
         return API.refreshToken(retriesLeft - 1);
@@ -92,8 +90,6 @@ const API = {
       console.error("Refresh failed after retry:", response.status);
       return false;
     } catch (err) {
-      // Network-level failure (server unreachable, etc.) — same logic:
-      // retry once, then fail soft without redirecting.
       if (retriesLeft > 0) {
         await new Promise((r) => setTimeout(r, 1000));
         return API.refreshToken(retriesLeft - 1);
@@ -123,16 +119,6 @@ const API = {
 
   logout: async () => {
     try {
-      // The logout route added to authRoutes.ts requires the refreshToken
-      // in the request body so logoutController.ts can extract the tokenId
-      // and call revokeSessionByTokenId in sessionModel.ts.
-      // We read it from the cookie string — it is not httpOnly on the
-      // client path because the cookie path is /auth/refresh, but we
-      // stored tokenId.rawToken in a cookie named "refreshToken".
-      // Since document.cookie won't expose httpOnly cookies, we instead
-      // ask the server to revoke via the sid already in the access token —
-      // the authenticate middleware on POST /auth/logout attaches req.user
-      // which includes sid from the JWT, so logoutController can use that.
       await authFetch(`${BASE_URL}/auth/logout`, {
         method: "POST",
         body: JSON.stringify({}),
@@ -141,26 +127,60 @@ const API = {
       // Proceed with local cleanup even if the server call fails
     } finally {
       accessToken = null;
+      Cache.clear(); // wipe all cached data on logout
       window.location.href = LOGIN_URL;
     }
+  },
+
+  // "Who am I" — cached for the session duration
+  // force=true bypasses the cache (used by the profile reload button)
+  getCurrentUser: async (force = false) => {
+    const key = "currentUser";
+    if (!force) {
+      const cached = Cache.get(key);
+      if (cached) return cached;
+    }
+
+    const response = await authFetch(`${BASE_URL}/auth/me`);
+    if (!response.ok) throw new Error("Failed to fetch current user");
+    const data = await response.json();
+    Cache.set(key, data, "currentUser");
+    return data;
   },
 
   // ============================================
   // POSTS
   // ============================================
 
-  getPostStats: async () => {
+  // force=true skips the cache — used by the reload button
+  getPostStats: async (force = false) => {
+    const key = "postStats";
+    if (!force) {
+      const cached = Cache.get(key);
+      if (cached) return cached;
+    }
+
     const response = await authFetch(`${BASE_URL}/posts/stats`);
     if (!response.ok) throw new Error("Failed to fetch post stats");
-    return response.json();
+    const data = await response.json();
+    Cache.set(key, data, "postStats");
+    return data;
   },
 
   // Returns { posts, pagination }
   // filter: "all" | "published" | "draft" | "scheduled"
-  // "all" omits the status param — postController.ts fetchPosts
-  // now maps a missing status to null which getPosts handles
-  // by running without a WHERE clause.
-  getPosts: async (filter = "published", page = 1, limit = 10) => {
+  getPosts: async (
+    filter = "published",
+    page = 1,
+    limit = 10,
+    force = false
+  ) => {
+    const key = `posts:${filter}:${page}:${limit}`;
+    if (!force) {
+      const cached = Cache.get(key);
+      if (cached) return cached;
+    }
+
     const offset = (page - 1) * limit;
     const statusParam = filter && filter !== "all" ? `&status=${filter}` : "";
     const url = `${BASE_URL}/posts?limit=${limit}&offset=${offset}${statusParam}`;
@@ -169,8 +189,7 @@ const API = {
     if (!response.ok) throw new Error("Failed to fetch posts");
 
     const data = await response.json();
-
-    return {
+    const result = {
       posts: data.posts,
       pagination: {
         page,
@@ -178,18 +197,26 @@ const API = {
         total: data.posts.length,
       },
     };
+
+    Cache.set(key, result, "posts");
+    return result;
   },
 
-  getPostById: async (id) => {
+  getPostById: async (id, force = false) => {
+    const key = `posts:id:${id}`;
+    if (!force) {
+      const cached = Cache.get(key);
+      if (cached) return cached;
+    }
+
     const response = await authFetch(`${BASE_URL}/posts/${id}`);
     if (!response.ok) throw new Error("Failed to fetch post");
-    return response.json();
+    const data = await response.json();
+    Cache.set(key, data, "posts");
+    return data;
   },
 
   createPost: async (postData) => {
-    // Map frontend field names to backend field names.
-    // postData.category holds the category UUID from the blog-category
-    // select in index.html — mapped to categoryId for the backend.
     const body = {
       categoryId: postData.category || null,
       title: postData.title,
@@ -200,8 +227,6 @@ const API = {
       status: postData.status || "draft",
     };
 
-    // scheduledDate is only included when status is "scheduled".
-    // Actions.confirmSchedule in actions.js stores the value as scheduledAt.
     if (postData.status === "scheduled" && postData.scheduledAt) {
       body.scheduledDate = postData.scheduledAt;
     }
@@ -217,19 +242,18 @@ const API = {
     }
 
     const newPost = await response.json();
-
-    // Keep AppState in sync so renderers that read AppState still work
     AppState.posts.unshift(newPost);
+
+    // New post changes counts and the list — invalidate both
+    Cache.invalidateMany("posts", "postStats");
     return newPost;
   },
 
   updatePost: async (id, postData) => {
-    // Rescheduling has its own dedicated endpoint — handle that separately
     if (postData.scheduledAt) {
       return API.schedulePost(id, postData.scheduledAt);
     }
 
-    // Everything else — including status changes — goes through PUT /posts/:id
     const body = {};
     if (postData.categoryId !== undefined)
       body.categoryId = postData.categoryId;
@@ -258,6 +282,8 @@ const API = {
     if (index !== -1)
       AppState.posts[index] = { ...AppState.posts[index], ...updated };
 
+    // Status may have changed — invalidate list and stats
+    Cache.invalidateMany("posts", "postStats");
     return updated;
   },
 
@@ -277,6 +303,7 @@ const API = {
     if (index !== -1)
       AppState.posts[index] = { ...AppState.posts[index], ...updated };
 
+    Cache.invalidateMany("posts", "postStats");
     return updated;
   },
 
@@ -291,6 +318,7 @@ const API = {
       throw new Error(error.message || "Failed to schedule post");
     }
 
+    Cache.invalidateMany("posts", "postStats");
     return response.json();
   },
 
@@ -305,6 +333,7 @@ const API = {
     }
 
     AppState.posts = AppState.posts.filter((p) => p.id !== id);
+    Cache.invalidateMany("posts", "postStats");
     return { success: true };
   },
 
@@ -312,19 +341,25 @@ const API = {
   // CATEGORIES
   // ============================================
 
-  getCategories: async () => {
+  getCategories: async (force = false) => {
+    const key = "categories";
+    if (!force) {
+      const cached = Cache.get(key);
+      if (cached) {
+        AppState.categories = cached;
+        return cached;
+      }
+    }
+
     const response = await authFetch(`${BASE_URL}/categories`);
     if (!response.ok) throw new Error("Failed to fetch categories");
 
     const categories = await response.json();
-
-    // Sync AppState so renderCategoryOptions in renderers.js works
     AppState.categories = categories;
+    Cache.set(key, categories, "categories");
     return categories;
   },
 
-  // Handles both create (no id) and update (has id).
-  // Called by Actions.saveCategory in actions.js.
   saveCategory: async (categoryData) => {
     if (categoryData.id) {
       const body = {};
@@ -351,6 +386,9 @@ const API = {
         (c) => c.id === categoryData.id
       );
       if (index !== -1) AppState.categories[index] = updated;
+
+      // Changing a category also affects post list display
+      Cache.invalidateMany("categories", "posts");
       return updated;
     } else {
       const body = { name: categoryData.name };
@@ -370,6 +408,7 @@ const API = {
 
       const created = await response.json();
       AppState.categories.push(created);
+      Cache.invalidate("categories");
       return created;
     }
   },
@@ -385,6 +424,8 @@ const API = {
     }
 
     AppState.categories = AppState.categories.filter((c) => c.id !== id);
+    // Deleting a category un-categorizes posts — invalidate both
+    Cache.invalidateMany("categories", "posts");
     return { success: true };
   },
 
@@ -392,19 +433,27 @@ const API = {
   // COMMENTS
   // ============================================
 
-  // filter: "pending" | "approved" | "rejected" | "all"
-  // "spam" and "trash" are frontend-only labels used in index.html tabs.
-  // commentController.ts only accepts "approved", "pending", "rejected".
-  // "spam" maps to "rejected", "trash" maps to "rejected" as well.
-  // "all" omits the status param entirely.
-  getComments: async (filter = "pending", page = 1, limit = 10) => {
-    const offset = (page - 1) * limit;
-
+  getComments: async (
+    filter = "pending",
+    page = 1,
+    limit = 10,
+    force = false
+  ) => {
     // Normalise frontend-only filter labels to backend-valid status values
     let backendFilter = filter;
     if (filter === "spam" || filter === "trash") backendFilter = "rejected";
     if (filter === "all") backendFilter = null;
 
+    const key = `comments:${backendFilter ?? "all"}:${page}:${limit}`;
+    if (!force) {
+      const cached = Cache.get(key);
+      if (cached) {
+        AppState.comments = cached.comments;
+        return cached;
+      }
+    }
+
+    const offset = (page - 1) * limit;
     const statusParam = backendFilter ? `&status=${backendFilter}` : "";
     const url = `${BASE_URL}/comments?limit=${limit}&offset=${offset}${statusParam}`;
 
@@ -413,9 +462,6 @@ const API = {
 
     const data = await response.json();
 
-    // Normalise DB column names to the shape renderers.js renderComments expects.
-    // visitor_name is null for staff comments — falls back to "Staff".
-    // post_id is shown as postTitle until the backend joins the posts table.
     const normalised = data.comments.map((c) => ({
       id: c.id,
       author: c.visitor_name || "Staff",
@@ -428,7 +474,7 @@ const API = {
 
     AppState.comments = normalised;
 
-    return {
+    const result = {
       comments: normalised,
       pagination: {
         page,
@@ -436,11 +482,11 @@ const API = {
         total: normalised.length,
       },
     };
+
+    Cache.set(key, result, "comments");
+    return result;
   },
 
-  // status: "approved" | "pending" | "rejected" | "spam"
-  // commentController.ts moderateComment validates against
-  // ["approved", "pending", "rejected"] — "spam" is mapped to "rejected".
   updateComment: async (id, status) => {
     const mappedStatus = status === "spam" ? "rejected" : status;
 
@@ -459,6 +505,8 @@ const API = {
     const index = AppState.comments.findIndex((c) => c.id === id);
     if (index !== -1) AppState.comments[index].status = mappedStatus;
 
+    // Status changed — all comment filter pages are potentially stale
+    Cache.invalidate("comments");
     return updated;
   },
 
@@ -473,6 +521,8 @@ const API = {
       throw new Error(error.message || "Failed to post reply");
     }
 
+    // A new reply shows up in the approved list
+    Cache.invalidate("comments");
     return response.json();
   },
 
@@ -480,18 +530,34 @@ const API = {
   // NOTIFICATIONS
   // ============================================
 
-  getNotifications: async (limit = 10) => {
+  getNotifications: async (limit = 10, force = false) => {
+    const key = `notifications:${limit}`;
+    if (!force) {
+      const cached = Cache.get(key);
+      if (cached) return cached;
+    }
+
     const response = await authFetch(
       `${BASE_URL}/notifications?limit=${limit}`
     );
     if (!response.ok) throw new Error("Failed to fetch notifications");
-    return response.json();
+    const data = await response.json();
+    Cache.set(key, data, "notifications");
+    return data;
   },
 
-  getUnreadCount: async () => {
+  getUnreadCount: async (force = false) => {
+    const key = "notifications:unreadCount";
+    if (!force) {
+      const cached = Cache.get(key);
+      if (cached) return cached;
+    }
+
     const response = await authFetch(`${BASE_URL}/notifications/unread-count`);
     if (!response.ok) return { unreadCount: 0 };
-    return response.json();
+    const data = await response.json();
+    Cache.set(key, data, "notifications");
+    return data;
   },
 
   markNotificationRead: async (id) => {
@@ -499,6 +565,7 @@ const API = {
       method: "PATCH",
     });
     if (!response.ok) throw new Error("Failed to mark notification as read");
+    Cache.invalidate("notifications");
     return response.json();
   },
 
@@ -508,6 +575,7 @@ const API = {
     });
     if (!response.ok)
       throw new Error("Failed to mark all notifications as read");
+    Cache.invalidate("notifications");
     return response.json();
   },
 
@@ -515,12 +583,13 @@ const API = {
   // ANALYTICS
   // ============================================
 
-  // Pulls real post stats and category data from the backend.
-  // Traffic trend and device breakdown remain estimated until a
-  // dedicated /analytics/summary endpoint is built — the per-post
-  // view summary routes in postAnalyticsRoutes.ts exist but require
-  // one request per post which is too costly for a dashboard summary.
-  getAnalytics: async (period = 30) => {
+  getAnalytics: async (period = 30, force = false) => {
+    const key = `postStats:analytics:${period}`;
+    if (!force) {
+      const cached = Cache.get(key);
+      if (cached) return cached;
+    }
+
     const [statsResponse] = await Promise.all([
       authFetch(`${BASE_URL}/posts/stats`),
     ]);
@@ -549,7 +618,7 @@ const API = {
         bounceRate: 38,
       }));
 
-    return {
+    const result = {
       trafficData,
       deviceData,
       topPosts,
@@ -560,6 +629,9 @@ const API = {
         { name: "LinkedIn", count: 0, icon: "linkedin" },
       ],
     };
+
+    Cache.set(key, result, "postStats");
+    return result;
   },
 
   // ============================================
@@ -603,16 +675,21 @@ const API = {
   },
 
   // ============================================
-  // USERS  (no list endpoint yet — kept as mock)
+  // USERS
   // ============================================
 
-  getUsers: async (filter = "all", page = 1, limit = 20) => {
-    const offset = (page - 1) * limit;
+  getUsers: async (filter = "all", page = 1, limit = 20, force = false) => {
+    const key = `users:${filter}:${page}:${limit}`;
+    if (!force) {
+      const cached = Cache.get(key);
+      if (cached) {
+        AppState.users = cached.users;
+        return cached;
+      }
+    }
 
-    const params = new URLSearchParams({
-      limit: limit,
-      offset: offset,
-    });
+    const offset = (page - 1) * limit;
+    const params = new URLSearchParams({ limit, offset });
 
     const roleFilters = ["admin", "editor", "author"];
     const statusFilters = ["active", "suspended", "pending"];
@@ -626,15 +703,12 @@ const API = {
     }
 
     const response = await authFetch(`${BASE_URL}/users?${params.toString()}`);
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch users");
-    }
+    if (!response.ok) throw new Error("Failed to fetch users");
 
     const data = await response.json();
     AppState.users = data.users;
 
-    return {
+    const result = {
       users: data.users,
       pagination: {
         page,
@@ -642,6 +716,9 @@ const API = {
         total: data.users.length,
       },
     };
+
+    Cache.set(key, result, "users");
+    return result;
   },
 
   updateUser: async (id, updates) => {
@@ -661,6 +738,7 @@ const API = {
     if (index !== -1)
       AppState.users[index] = { ...AppState.users[index], ...updated };
 
+    Cache.invalidate("users");
     return updated;
   },
 
@@ -675,12 +753,11 @@ const API = {
     }
 
     AppState.users = AppState.users.filter((u) => u.id !== id);
+    Cache.invalidate("users");
     return { success: true };
   },
 
   // Registers a new user with pending status via POST /auth/register.
-  // Uses a cryptographically weak Math.random() password — acceptable only
-  // because the account starts as "pending" and must be approved before use.
   inviteUser: async (email, role) => {
     const response = await authFetch(`${BASE_URL}/auth/register`, {
       method: "POST",
@@ -698,6 +775,8 @@ const API = {
       throw new Error(error.message || "Failed to invite user");
     }
 
+    // New user should appear in the list on next load
+    Cache.invalidate("users");
     return response.json();
   },
 };

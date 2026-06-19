@@ -8,6 +8,7 @@ import { createSession } from "@/models/sessionModel.js";
 import {
   createUser,
   findUserByEmail,
+  findUserById,
   updateLastLogin,
   updateUserStatus,
 } from "@/models/userModel.js";
@@ -328,5 +329,25 @@ export const changeUserStatus = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Update Status Error:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// ============================================
+// 6. GET CURRENT USER  (self profile — "who am I")
+// ============================================
+export const getCurrentUser = async (req: Request, res: Response) => {
+  try {
+    const user = await findUserById(req.user!.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(user); // already safe — no password_hash in this query
+  } catch (error) {
+    console.error("getCurrentUser error:", error);
+    res
+      .status(503)
+      .json({ message: "Service temporarily unavailable. Please try again." });
   }
 };

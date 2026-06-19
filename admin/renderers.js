@@ -1,17 +1,37 @@
 /* ============================================
    RENDERERS.JS — All DOM rendering logic
-   Depends on: utils.js, state.js, api.js
+   Depends on: utils.js, state.js, api.js, cache.js
+
+   Every renderer that hits the network accepts an optional
+   `force` boolean. When true it bypasses the cache so the
+   reload button always fetches fresh data.
    ============================================ */
+
+// ─── shared reload-button helper ──────────────────────────────────────────────
+// Spins the icon while the async fn runs, then restores it.
+// Usage: Renderers._withReloadSpin(btn, () => Renderers.renderPostsTable(true))
+const _runReload = async (btn, asyncFn) => {
+  const icon = btn.querySelector("i");
+  if (icon) icon.classList.add("fa-spin");
+  btn.disabled = true;
+  try {
+    await asyncFn();
+  } finally {
+    if (icon) icon.classList.remove("fa-spin");
+    btn.disabled = false;
+  }
+};
 
 const Renderers = {
   // ==================
   // DASHBOARD
   // ==================
 
-  // Pulls real post stats from the backend via API.getPostStats in api.js
-  updateDashboardStats: async () => {
+  // Pulls real post stats from the backend via API.getPostStats in api.js.
+  // force=true used by the dashboard reload button.
+  updateDashboardStats: async (force = false) => {
     try {
-      const stats = await API.getPostStats();
+      const stats = await API.getPostStats(force);
 
       document.getElementById("published-count").textContent =
         stats.published || 0;
@@ -104,17 +124,30 @@ const Renderers = {
       .join("");
   },
 
+  // ─── reload the entire dashboard section ─────────────────────────────────
+  reloadDashboard: async (force = true) => {
+    await Promise.allSettled([
+      Renderers.updateDashboardStats(force),
+      Renderers.renderNotifications(force),
+    ]);
+    Renderers.renderRecentPosts();
+    Renderers.renderTopPosts();
+    await Renderers.renderAnalytics(force);
+  },
+
   // ==================
   // POSTS
   // ==================
-  renderPostsTable: async () => {
+  renderPostsTable: async (force = false) => {
     const tbody = document.getElementById("all-posts-table");
     Utils.showLoader();
 
     try {
       const response = await API.getPosts(
         AppState.filters.posts,
-        AppState.pagination.posts.page
+        AppState.pagination.posts.page,
+        10,
+        force
       );
 
       // Keep AppState in sync so dashboard and top posts renderers work
@@ -139,20 +172,16 @@ const Renderers = {
             <div class="action-btns">
               ${
                 post.status === "draft"
-                  ? `
-                <button class="action-btn publish" onclick="Actions.publishPost('${post.id}')" title="Publish">
-                  <i class="fas fa-check"></i>
-                </button>
-              `
+                  ? `<button class="action-btn publish" onclick="Actions.publishPost('${post.id}')" title="Publish">
+                      <i class="fas fa-check"></i>
+                    </button>`
                   : ""
               }
               ${
                 post.status === "scheduled"
-                  ? `
-                <button class="action-btn schedule" onclick="Actions.editSchedule('${post.id}')" title="Edit Schedule">
-                  <i class="fas fa-calendar"></i>
-                </button>
-              `
+                  ? `<button class="action-btn schedule" onclick="Actions.editSchedule('${post.id}')" title="Edit Schedule">
+                      <i class="fas fa-calendar"></i>
+                    </button>`
                   : ""
               }
               <button class="action-btn edit" onclick="Actions.editPost('${
@@ -254,14 +283,16 @@ const Renderers = {
   // ==================
   // COMMENTS
   // ==================
-  renderComments: async () => {
+  renderComments: async (force = false) => {
     const container = document.getElementById("comments-list");
     Utils.showLoader();
 
     try {
       const response = await API.getComments(
         AppState.filters.comments,
-        AppState.pagination.comments.page
+        AppState.pagination.comments.page,
+        10,
+        force
       );
 
       if (response.comments.length === 0) {
@@ -351,9 +382,7 @@ const Renderers = {
   // ==================
   // USERS
   // ==================
-  // Called by Actions.loadSectionData when section = "users".
-  // Was named renderUsersTable and targeted the wrong tbody ID — fixed both.
-  renderUsers: async () => {
+  renderUsers: async (force = false) => {
     const tbody = document.getElementById("users-table-body");
     if (!tbody) return;
 
@@ -362,7 +391,9 @@ const Renderers = {
     try {
       const data = await API.getUsers(
         AppState.filters.users,
-        AppState.pagination.users.page
+        AppState.pagination.users.page,
+        20,
+        force
       );
 
       if (data.users.length === 0) {
@@ -402,12 +433,10 @@ const Renderers = {
                 </div>
               </div>
             </td>
-            <td>
-              <span class="role-badge ${user.role}">${user.role}</span>
-            </td>
-            <td>
-              <span class="status-badge ${statusColor}">${user.status}</span>
-            </td>
+            <td><span class="role-badge ${user.role}">${user.role}</span></td>
+            <td><span class="status-badge ${statusColor}">${
+            user.status
+          }</span></td>
             <td>—</td>
             <td>${Utils.formatDate(user.created_at)}</td>
             <td>${
@@ -415,35 +444,23 @@ const Renderers = {
             }</td>
             <td>
               <div class="action-btns">
-                <button
-                  class="action-btn edit"
-                  title="Edit user"
-                  onclick="Actions.editUser('${user.id}')"
-                >
+                <button class="action-btn edit" title="Edit user" onclick="Actions.editUser('${
+                  user.id
+                }')">
                   <i class="fas fa-edit"></i>
                 </button>
                 ${
                   user.status !== "active"
-                    ? `<button
-                        class="action-btn approve"
-                        title="Approve user"
-                        onclick="Actions.approveUser('${user.id}')"
-                      >
+                    ? `<button class="action-btn approve" title="Approve user" onclick="Actions.approveUser('${user.id}')">
                         <i class="fas fa-check"></i>
                       </button>`
-                    : `<button
-                        class="action-btn reject"
-                        title="Suspend user"
-                        onclick="Actions.suspendUser('${user.id}')"
-                      >
+                    : `<button class="action-btn reject" title="Suspend user" onclick="Actions.suspendUser('${user.id}')">
                         <i class="fas fa-ban"></i>
                       </button>`
                 }
-                <button
-                  class="action-btn delete"
-                  title="Delete user"
-                  onclick="Actions.deleteUser('${user.id}')"
-                >
+                <button class="action-btn delete" title="Delete user" onclick="Actions.deleteUser('${
+                  user.id
+                }')">
                   <i class="fas fa-trash"></i>
                 </button>
               </div>
@@ -480,20 +497,14 @@ const Renderers = {
   // ==================
   // CATEGORIES
   // ==================
-
-  // Renders the category management list in the Categories & Tags section.
-  // Called by Actions.loadSectionData in actions.js when section = "categories".
-  // Was completely missing from the original — caused a fatal
-  // TypeError: Renderers.renderCategories is not a function crash
-  // that halted all further JS execution when the section was opened.
-  renderCategories: async () => {
+  renderCategories: async (force = false) => {
     const container = document.getElementById("categories-list");
     if (!container) return;
 
     Utils.showLoader();
 
     try {
-      const categories = await API.getCategories();
+      const categories = await API.getCategories(force);
 
       if (categories.length === 0) {
         container.innerHTML = `
@@ -507,7 +518,6 @@ const Renderers = {
         return;
       }
 
-      // Build a parent name lookup so child categories can show their parent
       const parentMap = {};
       categories.forEach((c) => {
         parentMap[c.id] = c.name;
@@ -565,17 +575,10 @@ const Renderers = {
     }
   },
 
-  // Renders the tags cloud in the Categories & Tags section.
-  // Was completely missing from the original — called by
-  // Actions.loadSectionData in actions.js but never defined.
-  // Tags have no backend yet so renders a placeholder state.
   renderTags: () => {
     const container = document.getElementById("tags-cloud");
     if (!container) return;
 
-    // Tags have no backend endpoint yet — AppState.tags is seeded
-    // as an empty array in state.js. Show a placeholder until
-    // a tags table and API endpoint are added.
     if (!AppState.tags || AppState.tags.length === 0) {
       container.innerHTML = `
         <div style="color:var(--gray-500);font-size:0.9rem;padding:1rem 0;">
@@ -599,14 +602,12 @@ const Renderers = {
       .join("");
   },
 
-  // Populates the category select dropdowns in the write form,
-  // edit modal, and category parent selector in the category modal.
-  // Referenced by multiple Actions methods in actions.js.
-  renderCategoryOptions: async () => {
+  // force=true used when a category is saved/deleted so dropdowns are fresh
+  renderCategoryOptions: async (force = false) => {
     const selects = ["blog-category", "edit-category", "category-parent"];
 
     try {
-      const categories = await API.getCategories();
+      const categories = await API.getCategories(force);
 
       selects.forEach((selectId) => {
         const select = document.getElementById(selectId);
@@ -635,14 +636,14 @@ const Renderers = {
   // ==================
   // NOTIFICATIONS
   // ==================
-  renderNotifications: async () => {
+  renderNotifications: async (force = false) => {
     const list = document.getElementById("notification-list");
     const badge = document.getElementById("notification-badge");
 
     try {
       const [notifData, countData] = await Promise.all([
-        API.getNotifications(10),
-        API.getUnreadCount(),
+        API.getNotifications(10, force),
+        API.getUnreadCount(force),
       ]);
 
       const notifications = notifData.notifications || [];
@@ -669,7 +670,6 @@ const Renderers = {
       badge.textContent = countData.unreadCount || 0;
     } catch (error) {
       console.error("renderNotifications error:", error);
-      // Show the real error in the dropdown so it's visible during development
       list.innerHTML = `
         <div class="notification-item">
           <i class="fas fa-exclamation-circle" style="color:var(--danger)"></i>
@@ -683,15 +683,75 @@ const Renderers = {
   },
 
   // ==================
+  // USER PROFILE
+  // ==================
+  renderUserProfile: () => {
+    const user = AppState.currentUser;
+    if (!user) return;
+
+    const roleLabels = {
+      admin: "Administrator",
+      editor: "Editor",
+      author: "Author",
+    };
+
+    const dropdownName = document.getElementById("dropdown-user-name");
+    const dropdownEmail = document.getElementById("dropdown-user-email");
+    if (dropdownName) dropdownName.textContent = user.name;
+    if (dropdownEmail) dropdownEmail.textContent = user.email;
+
+    const profileName = document.getElementById("profile-name");
+    const profileEmail = document.getElementById("profile-email");
+    const profileRole = document.getElementById("profile-role");
+    const profileJoined = document.getElementById("profile-joined");
+    const lastLogin = document.getElementById("last-login");
+
+    if (profileName) profileName.textContent = user.name;
+    if (profileEmail) profileEmail.textContent = user.email;
+    if (profileRole)
+      profileRole.textContent = roleLabels[user.role] || user.role;
+    if (profileJoined && user.createdAt)
+      profileJoined.textContent = Utils.formatDate(user.createdAt);
+    if (lastLogin)
+      lastLogin.textContent = user.lastLogin
+        ? Utils.formatDateTime(user.lastLogin)
+        : "First login";
+
+    const displayNameInput = document.getElementById("profile-display-name");
+    const emailInput = document.getElementById("profile-email-edit");
+    if (displayNameInput) displayNameInput.value = user.name;
+    if (emailInput) emailInput.value = user.email;
+  },
+
+  // Reload profile from network, update AppState, re-render
+  reloadUserProfile: async () => {
+    try {
+      const me = await API.getCurrentUser(true);
+      AppState.currentUser = {
+        id: me.id,
+        name: `${me.first_name} ${me.last_name}`,
+        email: me.email,
+        role: me.role,
+        createdAt: me.created_at,
+        lastLogin: me.last_login,
+      };
+      Renderers.renderUserProfile();
+      Utils.showToast("Profile refreshed", "success");
+    } catch (err) {
+      Utils.showToast("Failed to refresh profile", "error");
+    }
+  },
+
+  // ==================
   // ANALYTICS
   // ==================
-  renderAnalytics: async () => {
+  renderAnalytics: async (force = false) => {
     Utils.showLoader();
 
     try {
       const period =
         document.getElementById("main-analytics-period")?.value || 30;
-      const data = await API.getAnalytics(period);
+      const data = await API.getAnalytics(period, force);
 
       const totalViews = data.trafficData.data.reduce((a, b) => a + b, 0);
       document.getElementById("analytics-total-views").textContent =

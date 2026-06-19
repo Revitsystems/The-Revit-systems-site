@@ -316,6 +316,10 @@ function initializeEventListeners() {
     .getElementById("logout-btn")
     ?.addEventListener("click", Actions.logoutUser);
 
+  document
+    .getElementById("confirm-logout-btn")
+    ?.addEventListener("click", Actions.confirmLogout);
+
   // --- Profile form ---
   document
     .getElementById("profile-form")
@@ -394,6 +398,62 @@ function initializeEventListeners() {
       window.currentPageCallback(page);
     }
   };
+
+  // ─── Reload buttons ───────────────────────────────────────────────────────
+  // Each button clears the relevant cache namespace(s) then re-renders.
+  // _runReload spins the icon while the async work runs.
+
+  document
+    .getElementById("reload-dashboard-btn")
+    ?.addEventListener("click", function () {
+      _runReload(this, () => Renderers.reloadDashboard(true));
+    });
+
+  document
+    .getElementById("reload-posts-btn")
+    ?.addEventListener("click", function () {
+      _runReload(this, () => Renderers.renderPostsTable(true));
+    });
+
+  document
+    .getElementById("reload-comments-btn")
+    ?.addEventListener("click", function () {
+      _runReload(this, () => Renderers.renderComments(true));
+    });
+
+  document
+    .getElementById("reload-users-btn")
+    ?.addEventListener("click", function () {
+      _runReload(this, () => Renderers.renderUsers(true));
+    });
+
+  document
+    .getElementById("reload-categories-btn")
+    ?.addEventListener("click", function () {
+      _runReload(this, async () => {
+        await Renderers.renderCategories(true);
+        Renderers.renderTags();
+        await Renderers.renderCategoryOptions(true);
+      });
+    });
+
+  document
+    .getElementById("reload-analytics-btn")
+    ?.addEventListener("click", function () {
+      _runReload(this, () => Renderers.renderAnalytics(true));
+    });
+
+  document
+    .getElementById("reload-media-btn")
+    ?.addEventListener("click", function () {
+      _runReload(this, () => Renderers.renderMediaGrid());
+    });
+
+  document
+    .getElementById("reload-profile-btn")
+    ?.addEventListener("click", function () {
+      _runReload(this, () => Renderers.reloadUserProfile());
+    });
 }
 
 // ==================
@@ -406,6 +466,21 @@ async function init() {
   const ok = await API.refreshToken();
   if (!ok) return; // refreshToken already redirects to login
 
+  try {
+    const me = await API.getCurrentUser();
+    AppState.currentUser = {
+      id: me.id,
+      name: `${me.first_name} ${me.last_name}`,
+      email: me.email,
+      role: me.role,
+      createdAt: me.created_at,
+      lastLogin: me.last_login,
+    };
+  } catch (err) {
+    console.error("Failed to load current user:", err);
+    Utils.showToast("Could not load your profile info", "warning");
+  }
+
   // 2. Auth confirmed — now show the app
   document.getElementById("dashboard-app").style.display = "block";
   document.getElementById("skeleton-body").style.display = "none";
@@ -416,6 +491,7 @@ async function init() {
   initializeEditor();
   initializeEventListeners();
   initializeDateDisplay();
+  Renderers.renderUserProfile();
 
   // 4. Load all real data in parallel for the dashboard
   await Promise.allSettled([

@@ -290,3 +290,29 @@ export const publishPost = async (id: string) => {
 export const deletePost = async (id: string) => {
   await pool.query(`DELETE FROM posts WHERE id = $1`, [id]);
 };
+
+// =============================================
+// Publishes all scheduled posts whose
+// scheduled_date is in the past or now.
+// Called by the scheduler every minute.
+// Returns the rows that were updated so the
+// scheduler can log them by ID and title.
+// =============================================
+
+export const publishDueScheduledPosts = async (): Promise<
+  { id: string; title: string }[]
+> => {
+  const result = await pool.query(
+    `UPDATE posts
+     SET
+       status       = 'published',
+       published_at = NOW(),
+       updated_at   = NOW()
+     WHERE
+       status         = 'scheduled'
+       AND scheduled_date <= NOW()
+     RETURNING id, title`
+  );
+
+  return result.rows;
+};

@@ -16,7 +16,14 @@ import categoryRoutes from "@/routes/categoryRoutes.js";
 import { postCommentRouter, commentRouter } from "@/routes/commentRoutes.js";
 import postAnalyticsRoutes from "@/routes/postAnalyticsRoutes.js";
 import notificationRoutes from "@/routes/notificationRoutes.js";
-import userRoutes from "@/routes/userRoutes.js"; // <-- Add this import
+import userRoutes from "@/routes/userRoutes.js";
+
+// ── New: needed for the /auth/me endpoint ──────────────────────
+import { authenticate } from "@/middleware/authMiddleware.js";
+import { getCurrentUser } from "@/controllers/authController.js";
+
+// ── Scheduler ─────────────────────────────────────────────────
+import { startScheduler } from "@/scheduler.js";
 
 const app = express();
 
@@ -60,6 +67,9 @@ app.set("trust proxy", 1);
 
 // ── Auth (existing) ───────────────────────────────────────────
 app.use("/auth/refresh", refreshRoutes);
+
+app.get("/auth/me", authenticate, getCurrentUser);
+
 app.use("/auth", authLimiter, authRoutes);
 
 // ── Global rate limiter (existing) ───────────────────────────
@@ -78,6 +88,9 @@ app.use("/comments", commentRouter); // Admin moderation + replies
 app.use("/notifications", notificationRoutes);
 
 // ── User management (New) ───────────────────────────────
-app.use("/users", userRoutes); // <-- Pass the imported router here
+app.use("/users", userRoutes);
+
+// ── Start the post scheduler ─────────────────────────────
+startScheduler();
 
 export default app;

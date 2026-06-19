@@ -597,11 +597,17 @@ const Actions = {
     Utils.showToast("Profile updated successfully", "success");
   },
 
-  // Now calls the real logout endpoint
-  logoutUser: async () => {
-    if (!confirm("Are you sure you want to logout?")) return;
+  // Opens the styled modal instead of the native browser confirm()
+  logoutUser: () => {
+    document.getElementById("user-dropdown").classList.add("hidden");
+    document.getElementById("confirm-logout-modal").classList.remove("hidden");
+  },
+
+  // Fired by the modal's Logout button
+  confirmLogout: async () => {
+    document.getElementById("confirm-logout-modal").classList.add("hidden");
     try {
-      await API.logout();
+      await API.logout(); // redirects to LOGIN_URL regardless of outcome
     } catch {
       // logout redirects regardless
     }

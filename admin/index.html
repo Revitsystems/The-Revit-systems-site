@@ -375,7 +375,16 @@
         <main class="main-content">
           <!-- Dashboard Section -->
           <section id="dashboard-section" class="section active">
-            <h1 class="section-title">Dashboard Overview</h1>
+            <h1 class="section-title">
+              Dashboard Overview
+              <button
+                class="reload-btn"
+                id="reload-dashboard-btn"
+                title="Refresh dashboard"
+              >
+                <i class="fas fa-sync-alt"></i>
+              </button>
+            </h1>
 
             <!-- Stats Cards -->
             <div class="stats-grid">
@@ -533,7 +542,7 @@
                   </div>
                   <div class="info-row">
                     <span class="label">Joined:</span>
-                    <span class="value">January 15, 2024</span>
+                    <span class="value" id="profile-joined">—</span>
                   </div>
                   <div class="info-row">
                     <span class="label">Last Login:</span>
@@ -690,7 +699,16 @@
 
           <!-- All Posts Section -->
           <section id="posts-section" class="section">
-            <h1 class="section-title">All Posts</h1>
+            <h1 class="section-title">
+              All Posts
+              <button
+                class="reload-btn"
+                id="reload-posts-btn"
+                title="Refresh posts"
+              >
+                <i class="fas fa-sync-alt"></i>
+              </button>
+            </h1>
             <div class="content-card">
               <div class="card-header">
                 <h2>Manage Posts</h2>
@@ -730,7 +748,16 @@
 
           <!-- Media Library Section (Standalone Module) -->
           <section id="media-section" class="section">
-            <h1 class="section-title">Media Library</h1>
+            <h1 class="section-title">
+              Media Library
+              <button
+                class="reload-btn"
+                id="reload-media-btn"
+                title="Refresh media"
+              >
+                <i class="fas fa-sync-alt"></i>
+              </button>
+            </h1>
             <div class="content-card">
               <div class="card-header">
                 <h2><i class="fas fa-images"></i> All Media</h2>
@@ -801,7 +828,16 @@
 
           <!-- Analytics Section (Standalone Module) -->
           <section id="analytics-section" class="section">
-            <h1 class="section-title">Analytics Dashboard</h1>
+            <h1 class="section-title">
+              Analytics Dashboard
+              <button
+                class="reload-btn"
+                id="reload-analytics-btn"
+                title="Refresh analytics"
+              >
+                <i class="fas fa-sync-alt"></i>
+              </button>
+            </h1>
 
             <!-- Stats Overview -->
             <div class="stats-grid analytics-stats">
@@ -922,7 +958,16 @@
 
           <!-- Comments Section (Standalone Module) -->
           <section id="comments-section" class="section">
-            <h1 class="section-title">Comment Moderation</h1>
+            <h1 class="section-title">
+              Comment Moderation
+              <button
+                class="reload-btn"
+                id="reload-comments-btn"
+                title="Refresh comments"
+              >
+                <i class="fas fa-sync-alt"></i>
+              </button>
+            </h1>
 
             <div class="content-card">
               <div class="card-header">
@@ -979,7 +1024,16 @@
 
           <!-- User Management Section (Standalone Module) -->
           <section id="users-section" class="section">
-            <h1 class="section-title">User Management</h1>
+            <h1 class="section-title">
+              User Management
+              <button
+                class="reload-btn"
+                id="reload-users-btn"
+                title="Refresh users"
+              >
+                <i class="fas fa-sync-alt"></i>
+              </button>
+            </h1>
 
             <div class="content-card">
               <div class="card-header">
@@ -1044,7 +1098,16 @@
 
           <!-- Categories & Tags Section (Standalone Module) -->
           <section id="categories-section" class="section">
-            <h1 class="section-title">Categories & Tags</h1>
+            <h1 class="section-title">
+              Categories &amp; Tags
+              <button
+                class="reload-btn"
+                id="reload-categories-btn"
+                title="Refresh categories"
+              >
+                <i class="fas fa-sync-alt"></i>
+              </button>
+            </h1>
 
             <div class="taxonomies-grid">
               <!-- Categories Management -->
@@ -1087,7 +1150,16 @@
 
           <!-- Profile Section -->
           <section id="profile-section" class="section">
-            <h1 class="section-title">My Profile</h1>
+            <h1 class="section-title">
+              My Profile
+              <button
+                class="reload-btn"
+                id="reload-profile-btn"
+                title="Refresh profile"
+              >
+                <i class="fas fa-sync-alt"></i>
+              </button>
+            </h1>
             <div class="content-card">
               <div class="profile-edit">
                 <div class="profile-avatar-large">
@@ -1764,10 +1836,35 @@ Blog administrator and content creator.</textarea
       </div>
     </div>
 
+    <!-- Confirm Logout Modal -->
+    <div id="confirm-logout-modal" class="modal hidden">
+      <div class="modal-overlay"></div>
+      <div class="modal-content small">
+        <div class="modal-header">
+          <h2><i class="fas fa-sign-out-alt"></i> Confirm Logout</h2>
+          <button class="close-btn" data-modal="confirm-logout-modal">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to log out?</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" data-modal="confirm-logout-modal">
+            Cancel
+          </button>
+          <button class="btn-danger" id="confirm-logout-btn">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="uploadToCloudinary.js"></script>
+    <script src="cache.js" defer></script>
     <script src="utils.js" defer></script>
     <script src="state.js" defer></script>
     <script src="api.js" defer></script>
