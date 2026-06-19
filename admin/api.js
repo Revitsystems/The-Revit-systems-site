@@ -37,7 +37,7 @@ const authFetch = async (url, options = {}) => {
 
   if (response.status === 401) {
     const refreshed = await API.refreshToken();
-    if (!refreshed) return response; // refreshToken already redirected to login
+    if (!refreshed) return response; // refreshToken already redirected to login (if not already there)
 
     // Retry the original request with the new token
     return fetch(url, {
@@ -59,6 +59,9 @@ const API = {
   // AUTH
   // ============================================
 
+  // Returns a boolean: true on a successful refresh, false otherwise.
+  // (checkAuthStatus() in login.js relies on this exact boolean shape —
+  // see the note there if you ever change this to return an object.)
   refreshToken: async (retriesLeft = 1) => {
     try {
       const response = await fetch(`${BASE_URL}/auth/refresh`, {
@@ -76,7 +79,18 @@ const API = {
       // (no cookie, expired/revoked session, suspended/pending user).
       // That's the only case where bouncing to the login page is correct.
       if (response.status === 401 || response.status === 403) {
-        window.location.href = LOGIN_URL;
+        // Guard against redirect loops: login.html calls this on every
+        // load via checkAuthStatus(). With no session, this branch
+        // always fires. Setting location.href to the login page while
+        // already ON the login page still forces a full browser
+        // reload (it's not a no-op just because the URL matches),
+        // which re-runs init() -> checkAuthStatus() -> refreshToken()
+        // -> redirect again, forever. Only redirect if we're not
+        // already there.
+        const onLoginPage = window.location.pathname.includes("login.html");
+        if (!onLoginPage) {
+          window.location.href = LOGIN_URL;
+        }
         return false;
       }
 
