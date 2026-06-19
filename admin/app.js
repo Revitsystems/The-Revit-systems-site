@@ -1,3 +1,4 @@
+
 /* ============================================
    APP.JS — Entry point & event listeners
    Depends on: utils.js, state.js, api.js, renderers.js, actions.js
@@ -459,12 +460,49 @@ function initializeEventListeners() {
 // ==================
 // BOOT
 // ==================
+
+// Shown when the backend can't be reached at all (cold start, network
+// down, 500/503 after retries) — i.e. refreshToken failed WITHOUT already
+// redirecting to login. Replaces the skeleton's content so the user gets
+// a visible, actionable state instead of an endless spinner.
+function showBootError(reason) {
+  const skeleton = document.getElementById("skeleton-body");
+  if (!skeleton) return;
+
+  skeleton.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:1rem;text-align:center;padding:2rem;">
+      <i class="fas fa-triangle-exclamation" style="font-size:2.5rem;color:var(--danger,#dc3545)"></i>
+      <p style="max-width:400px;color:var(--gray-700,#495057)">
+        Could not connect to the server${reason ? `: ${reason}` : ""}.
+      </p>
+      <button class="btn-primary" id="boot-retry-btn">
+        <i class="fas fa-rotate-right"></i> Retry
+      </button>
+    </div>
+  `;
+
+  document
+    .getElementById("boot-retry-btn")
+    ?.addEventListener("click", () => location.reload());
+}
+
 async function init() {
   // 1. Hide app immediately — show nothing until token verified
   document.getElementById("dashboard-app").style.display = "none";
 
-  const ok = await API.refreshToken();
-  if (!ok) return; // refreshToken already redirects to login
+  const result = await API.refreshToken();
+
+  if (!result.ok) {
+    // result.redirected === true means refreshToken already sent the
+    // browser to LOGIN_URL — nothing further to do here.
+    // result.redirected === false means the backend itself never gave a
+    // definitive answer (timeout/network/5xx after retries), so the
+    // skeleton would otherwise spin forever with no explanation.
+    if (!result.redirected) {
+      showBootError(result.reason);
+    }
+    return;
+  }
 
   try {
     const me = await API.getCurrentUser();
