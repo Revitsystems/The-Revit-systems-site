@@ -145,27 +145,25 @@ function clearValidation(inputId, errorId) {
 /**
  * Check if user is already logged in
  *
- * api.js's refreshToken() returns a structured result object —
- * { ok: true } on success, or { ok: false, redirected, reason } on
- * failure — NOT a plain boolean. An object is always truthy in JS, so
- * checking `if (ok)` on the raw return value is true even when
- * ok === false, which would send every visitor straight to the
- * dashboard regardless of whether they actually have a valid session.
- * Must check `result.ok` specifically.
+ * api.js's refreshToken() returns a plain boolean — true on a
+ * successful refresh, false otherwise — NOT an { ok: ... } object.
+ * Checking `result.ok` on a boolean is always undefined (falsy),
+ * which previously meant a logged-in user landing on this page would
+ * never get redirected to the dashboard. Check the boolean directly.
  *
  * Also: if there's no session at all, refreshToken() gets a 401 from
- * the backend and already calls window.location.href = LOGIN_URL itself
- * (see api.js). Since LOGIN_URL is this same page, that's a harmless
- * no-op redirect-to-self in that case — nothing extra needed here for it.
+ * the backend and handles its own redirect-to-login internally (with
+ * a same-page guard so it doesn't loop). Nothing extra needed here
+ * for that case — just don't redirect to the dashboard.
  */
 async function checkAuthStatus() {
   try {
-    const result = await API.refreshToken();
+    const refreshed = await API.refreshToken();
 
-    if (result.ok) {
+    if (refreshed) {
       window.location.href = "/admin/index.html";
     }
-    // result.ok === false: either already redirected to login (no-op,
+    // refreshed === false: either already redirected to login (no-op,
     // we're already here), or the backend is unreachable — in which
     // case staying on the login page and letting the user retry the
     // login form (which will surface its own error) is the right move.
