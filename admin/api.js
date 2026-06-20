@@ -10,6 +10,21 @@ const LOGIN_URL = "../pages/login.html"; // set once, use everywhere
 // Access token lives in memory only — never in localStorage
 let accessToken = null;
 
+// Tracks a single in-flight call to API.refreshToken(), if any.
+// /auth/refresh issues a SINGLE-USE rotating refresh token (see
+// refreshController.ts) — each call revokes the current session and
+// mints a new one. If two callers hit /auth/refresh concurrently
+// (e.g. init()'s explicit refresh plus several authFetch 401-retries
+// firing at once from Promise.allSettled), only the first one to
+// reach the server succeeds; the second one is left holding an
+// already-revoked token, gets a real 401/403 back, and refreshToken()
+// then redirects straight to the login page — even though the
+// session was actually fine seconds earlier. This was causing the
+// "skeleton flashes, then instantly bounced back to login" loop.
+// Fix: every caller during a refresh-in-progress awaits the SAME
+// promise instead of starting a second /auth/refresh request.
+let _refreshInFlight = null;
+
 // ============================================
 // CORE FETCH WRAPPER
 // Attaches the Bearer token and retries once
@@ -62,7 +77,23 @@ const API = {
   // Returns a boolean: true on a successful refresh, false otherwise.
   // (checkAuthStatus() in login.js relies on this exact boolean shape —
   // see the note there if you ever change this to return an object.)
-  refreshToken: async (retriesLeft = 1) => {
+  //
+  // Wrapped in the _refreshInFlight lock: if a refresh is already in
+  // progress, callers await that same promise instead of firing a
+  // second /auth/refresh request (which would race the single-use
+  // rotating refresh token and get itself logged out — see the note
+  // on _refreshInFlight above).
+  refreshToken: (retriesLeft = 1) => {
+    if (_refreshInFlight) return _refreshInFlight;
+
+    _refreshInFlight = API._doRefreshToken(retriesLeft).finally(() => {
+      _refreshInFlight = null;
+    });
+
+    return _refreshInFlight;
+  },
+
+  _doRefreshToken: async (retriesLeft = 1) => {
     try {
       const response = await fetch(`${BASE_URL}/auth/refresh`, {
         method: "POST",
@@ -96,9 +127,13 @@ const API = {
 
       // Anything else (503 from a DB hiccup, etc.) is transient — retry
       // once before giving up, and never redirect for it.
+      // NOTE: recurses into _doRefreshToken directly, not API.refreshToken —
+      // calling the public method here would just return the
+      // _refreshInFlight promise for *this* call (still pending), which
+      // would deadlock.
       if (retriesLeft > 0) {
         await new Promise((r) => setTimeout(r, 1000));
-        return API.refreshToken(retriesLeft - 1);
+        return API._doRefreshToken(retriesLeft - 1);
       }
 
       console.error("Refresh failed after retry:", response.status);
@@ -106,7 +141,7 @@ const API = {
     } catch (err) {
       if (retriesLeft > 0) {
         await new Promise((r) => setTimeout(r, 1000));
-        return API.refreshToken(retriesLeft - 1);
+        return API._doRefreshToken(retriesLeft - 1);
       }
       console.error("Refresh network error:", err);
       return false;
