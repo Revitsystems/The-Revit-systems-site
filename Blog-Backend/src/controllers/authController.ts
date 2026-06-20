@@ -121,8 +121,9 @@ export const login = async (req: Request, res: Response) => {
 
     res.cookie("refreshToken", `${tokenId}.${rawRefreshToken}`, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      // after
+      secure: true,
+      sameSite: "none",
       path: "/auth/refresh",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
