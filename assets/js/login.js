@@ -423,7 +423,10 @@ function setupEventListeners() {
 
       try {
         // 3. The API Call
-        const response = await fetch("http://localhost:5000/auth/register", {
+        // Uses window.baseURL from config.js (loaded before login.js in
+        // login.html) instead of a hardcoded localhost URL — this is what
+        // was causing "Failed to fetch" against the deployed backend.
+        const response = await fetch(`${window.baseURL}/auth/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -490,4 +493,3 @@ function init() {
 
 // Start the app
 document.addEventListener("DOMContentLoaded", init);
-
