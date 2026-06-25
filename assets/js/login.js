@@ -15,12 +15,6 @@ const state = {
 // TOAST NOTIFICATIONS
 // ============================================
 
-/**
- * Show Toast Notification
- * @param {string} message - Message to display
- * @param {string} type - Type: 'success', 'error', 'warning', 'info'
- * @param {number} duration - Duration in milliseconds
- */
 function showToast(message, type = "success", duration = 5000) {
   const container = document.getElementById("toast-container");
   const toast = document.createElement("div");
@@ -40,7 +34,6 @@ function showToast(message, type = "success", duration = 5000) {
 
   container.appendChild(toast);
 
-  // Remove toast after duration
   setTimeout(() => {
     toast.classList.add("hiding");
     setTimeout(() => toast.remove(), 300);
@@ -65,24 +58,15 @@ function hideLoader() {
 // VALIDATION FUNCTIONS
 // ============================================
 
-/**
- * Validate Email Format
- */
 function isValidEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 }
 
-/**
- * Validate Password (minimum 8 characters)
- */
 function isValidPassword(password) {
   return password.length >= 8;
 }
 
-/**
- * Show Input Error
- */
 function showInputError(inputId, errorId, message) {
   const input = document.getElementById(inputId);
   const errorEl = document.getElementById(errorId);
@@ -91,7 +75,6 @@ function showInputError(inputId, errorId, message) {
   input.classList.remove("valid");
   errorEl.textContent = message;
 
-  // Show invalid icon if exists
   const wrapper = input.closest(".input-wrapper");
   const validIcon = wrapper?.querySelector(".input-status.valid");
   const invalidIcon = wrapper?.querySelector(".input-status.invalid");
@@ -100,9 +83,6 @@ function showInputError(inputId, errorId, message) {
   if (invalidIcon) invalidIcon.classList.remove("hidden");
 }
 
-/**
- * Show Input Success
- */
 function showInputSuccess(inputId, errorId) {
   const input = document.getElementById(inputId);
   const errorEl = document.getElementById(errorId);
@@ -111,7 +91,6 @@ function showInputSuccess(inputId, errorId) {
   input.classList.add("valid");
   errorEl.textContent = "";
 
-  // Show valid icon if exists
   const wrapper = input.closest(".input-wrapper");
   const validIcon = wrapper?.querySelector(".input-status.valid");
   const invalidIcon = wrapper?.querySelector(".input-status.invalid");
@@ -120,9 +99,6 @@ function showInputSuccess(inputId, errorId) {
   if (invalidIcon) invalidIcon.classList.add("hidden");
 }
 
-/**
- * Clear Input Validation
- */
 function clearValidation(inputId, errorId) {
   const input = document.getElementById(inputId);
   const errorEl = document.getElementById(errorId);
@@ -143,51 +119,23 @@ function clearValidation(inputId, errorId) {
 // ============================================
 
 /**
- * Check if user is already logged in
- *
- * api.js's refreshToken() returns a plain boolean — true on a
- * successful refresh, false otherwise — NOT an { ok: ... } object.
- * Checking `result.ok` on a boolean is always undefined (falsy),
- * which previously meant a logged-in user landing on this page would
- * never get redirected to the dashboard. Check the boolean directly.
- *
- * Also: if there's no session at all, refreshToken() gets a 401 from
- * the backend and handles its own redirect-to-login internally (with
- * a same-page guard so it doesn't loop). Nothing extra needed here
- * for that case — just don't redirect to the dashboard.
+ * Check if user is already logged in.
+ * api.js refreshToken() returns a plain boolean — true on success.
  */
 async function checkAuthStatus() {
   try {
     const refreshed = await API.refreshToken();
-
     if (refreshed) {
       window.location.href = "/admin/index.html";
     }
-    // refreshed === false: either already redirected to login (no-op,
-    // we're already here), or the backend is unreachable — in which
-    // case staying on the login page and letting the user retry the
-    // login form (which will surface its own error) is the right move.
   } catch (error) {
     console.log("No active session");
   }
 }
 
 /**
- * Login User
- *
- * Was previously a standalone fetch() with its own local
- * `let accessToken = null;` declared at the top of this file. login.html
- * loads this script and api.js as plain (non-module) <script> tags, so they
- * share one global scope — and api.js ALSO declares `let accessToken = null;`
- * at its top level. Two `let` declarations of the same name in the same
- * scope is a SyntaxError ("Identifier 'accessToken' has already been
- * declared"), thrown the moment api.js parses, which aborted ALL of api.js
- * (so `window.API` never got defined) and broke checkAuthStatus() below,
- * which calls API.refreshToken().
- *
- * Fix: don't keep a second copy of the token here at all — delegate to
- * API.login(), which already does this exact fetch and stores the token in
- * the one place authFetch (api.js) actually reads it from.
+ * Login User — delegates to API.login() so the access token is stored
+ * in the one place authFetch actually reads it from.
  */
 async function loginUser(email, password) {
   showLoader("Signing in...");
@@ -212,9 +160,7 @@ async function loginUser(email, password) {
     }
   }
 }
-/**
- * Logout User (for use in dashboard)
- */
+
 function logoutUser() {
   sessionStorage.removeItem("isLoggedIn");
   sessionStorage.removeItem("userEmail");
@@ -225,7 +171,6 @@ function logoutUser() {
   }, 1000);
 }
 
-// Make logoutUser globally accessible
 window.logoutUser = logoutUser;
 
 // ============================================
@@ -243,11 +188,8 @@ function closeModal(modalId) {
   modal.classList.add("hidden");
   document.body.style.overflow = "";
 
-  // Reset form if exists
   const form = modal.querySelector("form");
-  if (form) {
-    form.reset();
-  }
+  if (form) form.reset();
 }
 
 // ============================================
@@ -260,11 +202,7 @@ function setupEventListeners() {
   emailInput.addEventListener("blur", () => {
     const email = emailInput.value.trim();
     if (email && !isValidEmail(email)) {
-      showInputError(
-        "email",
-        "email-error",
-        "Please enter a valid email address"
-      );
+      showInputError("email", "email-error", "Please enter a valid email address");
     } else if (email) {
       showInputSuccess("email", "email-error");
     }
@@ -279,11 +217,7 @@ function setupEventListeners() {
   passwordInput.addEventListener("blur", () => {
     const password = passwordInput.value;
     if (password && !isValidPassword(password)) {
-      showInputError(
-        "password",
-        "password-error",
-        "Password must be at least 8 characters"
-      );
+      showInputError("password", "password-error", "Password must be at least 8 characters");
     } else if (password) {
       showInputSuccess("password", "password-error");
     }
@@ -310,20 +244,14 @@ function setupEventListeners() {
 
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
-    const rememberMe = document.getElementById("remember-me").checked;
 
-    // Validate inputs
     let hasError = false;
 
     if (!email) {
       showInputError("email", "email-error", "Email is required");
       hasError = true;
     } else if (!isValidEmail(email)) {
-      showInputError(
-        "email",
-        "email-error",
-        "Please enter a valid email address"
-      );
+      showInputError("email", "email-error", "Please enter a valid email address");
       hasError = true;
     }
 
@@ -331,11 +259,7 @@ function setupEventListeners() {
       showInputError("password", "password-error", "Password is required");
       hasError = true;
     } else if (!isValidPassword(password)) {
-      showInputError(
-        "password",
-        "password-error",
-        "Password must be at least 8 characters"
-      );
+      showInputError("password", "password-error", "Password must be at least 8 characters");
       hasError = true;
     }
 
@@ -344,8 +268,7 @@ function setupEventListeners() {
       return;
     }
 
-    // Attempt login
-    loginUser(email, password, rememberMe);
+    loginUser(email, password);
   });
 
   // Forgot password link
@@ -375,9 +298,12 @@ function setupEventListeners() {
     });
   });
 
-  // Forgot password form
-  document.getElementById("forgot-form").addEventListener("submit", (e) => {
+  // ─── FORGOT PASSWORD FORM ─────────────────────────────────────────────────
+  // Previously this was a fake setTimeout that never actually called the API.
+  // Now it calls POST /auth/forgot-password with the email address.
+  document.getElementById("forgot-form").addEventListener("submit", async (e) => {
     e.preventDefault();
+
     const email = document.getElementById("reset-email").value.trim();
 
     if (!email || !isValidEmail(email)) {
@@ -387,74 +313,79 @@ function setupEventListeners() {
 
     showLoader("Sending reset link...");
 
-    setTimeout(() => {
+    try {
+      const response = await fetch(`${window.baseURL}/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      // The backend always returns 200 with a generic message regardless
+      // of whether the email exists (to prevent user enumeration).
+      // We parse the body so we can show the exact server message.
+      const data = await response.json();
+
       hideLoader();
       closeModal("forgot-modal");
-      showToast(`Password reset link sent to ${email}`, "success");
-    }, 1500);
+      showToast(
+        data.message || "If that email exists, a reset link has been sent.",
+        "success",
+        7000
+      );
+    } catch (err) {
+      hideLoader();
+      showToast("Network error. Please check your connection and try again.", "error");
+    }
   });
 
-  // Sign up form
-  document
-    .getElementById("signup-form")
-    .addEventListener("submit", async (e) => {
-      e.preventDefault();
+  // ─── SIGN UP FORM ─────────────────────────────────────────────────────────
+  document.getElementById("signup-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-      // 1. Get Values
-      const firstName = document
-        .getElementById("signup-first-name")
-        .value.trim();
-      const lastName = document.getElementById("signup-last-name").value.trim();
-      const email = document.getElementById("signup-email").value.trim();
-      const password = document.getElementById("signup-password").value;
-      const confirm = document.getElementById("signup-confirm").value;
+    const firstName = document.getElementById("signup-first-name").value.trim();
+    const lastName = document.getElementById("signup-last-name").value.trim();
+    const email = document.getElementById("signup-email").value.trim();
+    const password = document.getElementById("signup-password").value;
+    const confirm = document.getElementById("signup-confirm").value;
 
-      // 2. Client-side Validation
-      if (!firstName || !lastName || !email || !password || !confirm) {
-        showToast("Please fill in all fields", "error");
-        return;
-      }
-      if (password !== confirm) {
-        showToast("Passwords do not match", "error");
-        return;
-      }
+    if (!firstName || !lastName || !email || !password || !confirm) {
+      showToast("Please fill in all fields", "error");
+      return;
+    }
+    if (password !== confirm) {
+      showToast("Passwords do not match", "error");
+      return;
+    }
 
-      showLoader("Creating account...");
+    showLoader("Creating account...");
 
-      try {
-        // 3. The API Call
-        // Uses window.baseURL from config.js (loaded before login.js in
-        // login.html) instead of a hardcoded localhost URL — this is what
-        // was causing "Failed to fetch" against the deployed backend.
-        const response = await fetch(`${window.baseURL}/auth/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            first_name: firstName, // Mapping to snake_case for backend
-            last_name: lastName,
-            email: email,
-            password: password, // Sending as 'password' for clarity
-          }),
-        });
+    try {
+      const response = await fetch(`${window.baseURL}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          email,
+          password,
+        }),
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (!response.ok)
-          throw new Error(data.message || "Registration failed");
+      if (!response.ok) throw new Error(data.message || "Registration failed");
 
-        // 4. Success Handling
-        hideLoader();
-        closeModal("signup-modal");
-        // Updated message to reflect the approval logic
-        showToast(
-          "Registration successful! Access is pending admin approval.",
-          "success"
-        );
-      } catch (error) {
-        hideLoader();
-        showToast(error.message, "error");
-      }
-    });
+      hideLoader();
+      closeModal("signup-modal");
+      showToast(
+        "Registration successful! Access is pending admin approval.",
+        "success"
+      );
+    } catch (error) {
+      hideLoader();
+      showToast(error.message, "error");
+    }
+  });
 
   // Social login buttons (demo)
   document.querySelectorAll(".social-btn").forEach((btn) => {
@@ -474,22 +405,16 @@ function setupEventListeners() {
 // ============================================
 
 function init() {
-  // Check if already logged in
   checkAuthStatus();
 
-  // Check for remembered user
   const rememberedUser = localStorage.getItem("rememberUser");
   if (rememberedUser) {
     document.getElementById("email").value = rememberedUser;
     document.getElementById("remember-me").checked = true;
   }
 
-  // Setup event listeners
   setupEventListeners();
-
-  // Focus email input on load
   document.getElementById("email").focus();
 }
 
-// Start the app
 document.addEventListener("DOMContentLoaded", init);

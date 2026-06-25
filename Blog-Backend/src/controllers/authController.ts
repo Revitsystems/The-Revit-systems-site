@@ -27,7 +27,6 @@ export const register = async (req: Request, res: Response) => {
 
   const cleanFirstName = sanitize(first_name);
   const cleanLastName = sanitize(last_name);
-  // sanitize applied to email as well as name fields
   const cleanEmail = sanitize(email).trim().toLowerCase();
 
   try {
@@ -121,7 +120,6 @@ export const login = async (req: Request, res: Response) => {
 
     res.cookie("refreshToken", `${tokenId}.${rawRefreshToken}`, {
       httpOnly: true,
-      // after
       secure: true,
       sameSite: "none",
       path: "/auth/refresh",
@@ -130,11 +128,6 @@ export const login = async (req: Request, res: Response) => {
 
     return res.json({ accessToken });
   } catch (error) {
-    // Was previously completely unguarded — a dropped DB connection here
-    // (findUserByEmail, recordLogin, createSession, etc.) had nowhere to go
-    // but an unhandled promise rejection, which could hang the request or
-    // crash the process, and on the client surfaced as a JSON.parse error
-    // ("Unexpected token...") instead of a usable error message.
     console.error("login error:", error);
     return res
       .status(503)
@@ -148,14 +141,21 @@ export const login = async (req: Request, res: Response) => {
 export const requestPasswordReset = async (req: Request, res: Response) => {
   const { email } = req.body;
 
-  try {
-    const user = await findUserByEmail(email?.toLowerCase().trim());
+  // Always return the same message to prevent user enumeration
+  const genericResponse = {
+    message:
+      "If an account with that email exists, a reset link has been sent. Check your spam folder if it doesn't appear in your inbox.",
+  };
 
-    // Always return the same message to prevent user enumeration
+  if (!email || typeof email !== "string") {
+    return res.json(genericResponse);
+  }
+
+  try {
+    const user = await findUserByEmail(email.toLowerCase().trim());
+
     if (!user) {
-      return res.json({
-        message: "If an account exists, a reset link has been sent.",
-      });
+      return res.json(genericResponse);
     }
 
     const rawToken = crypto.randomBytes(32).toString("hex");
@@ -173,42 +173,43 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
       [user.id, tokenHash, expiresAt]
     );
 
-    const resetLink = `http://localhost:5000/reset-password.html?token=${rawToken}&id=${user.id}`;
+    // Use FRONTEND_URL env var so the link works in production.
+    // Falls back to localhost for local dev if the var is not set.
+    const frontendBase =
+      process.env.FRONTEND_URL || "http://localhost:5500";
 
-    try {
-      await sendEmail({
-        email: user.email,
-        subject: "Password Reset Request - Revit Systems",
-        message: `
-        <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee;">
-          <h2>Password Reset</h2>
+    // token and id go in the query string so reset-password.html can read them
+    const resetLink = `${frontendBase}/pages/reset-password.html?token=${rawToken}&id=${user.id}`;
+
+    await sendEmail({
+      email: user.email,
+      subject: "Password Reset Request — Revit Systems",
+      message: `
+        <div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:24px;border:1px solid #eee;border-radius:8px;">
+          <h2 style="color:#d17609;">Password Reset</h2>
           <p>You requested a password reset for your Revit Systems account.</p>
-          <p>Click the button below to set a new password. This link is valid for 1 hour.</p>
-          <a href="${resetLink}" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a>
-          <p>If you did not request this, you can safely ignore this email.</p>
+          <p>Click the button below to set a new password. This link is valid for <strong>1 hour</strong>.</p>
+          <p style="margin:32px 0;">
+            <a href="${resetLink}"
+               style="background:#d17609;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;display:inline-block;">
+              Reset Password
+            </a>
+          </p>
+          <p style="font-size:0.85rem;color:#666;">
+            If you did not request this, you can safely ignore this email.<br/>
+            The link will expire in 1 hour.
+          </p>
+          <hr style="border:none;border-top:1px solid #eee;margin:24px 0;"/>
+          <p style="font-size:0.75rem;color:#aaa;">Revit Systems · revitsystems@gmail.com</p>
         </div>
       `,
-      });
+    });
 
-      console.log("DEBUG - Reset Link:", resetLink);
-
-      res.json({
-        message:
-          "If an account exists, a reset link has been sent. Check spam folder if not found in inbox",
-      });
-    } catch (error) {
-      console.error("Failed to send reset email:", error);
-      res
-        .status(500)
-        .json({ message: "Error sending email. Please try again later." });
-    }
+    res.json(genericResponse);
   } catch (error) {
-    // Covers findUserByEmail / the DELETE+INSERT pool.query calls above,
-    // which were previously unguarded.
     console.error("requestPasswordReset error:", error);
-    res
-      .status(503)
-      .json({ message: "Service temporarily unavailable. Please try again." });
+    // Still return the generic message — don't leak whether the email exists
+    res.json(genericResponse);
   }
 };
 
@@ -222,8 +223,12 @@ export const resetPassword = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
-  // Check and validate the reset token BEFORE opening a transaction —
-  // no point holding a DB client while doing bcrypt work
+  if (typeof newPassword !== "string" || newPassword.length < 8) {
+    return res
+      .status(400)
+      .json({ message: "Password must be at least 8 characters" });
+  }
+
   let tokenRecord;
   try {
     const tokenResult = await pool.query(
@@ -256,14 +261,8 @@ export const resetPassword = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Invalid reset token." });
   }
 
-  // Hash the new password before checking out the client so the
-  // client is held for as short a time as possible
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-  // Check out a single dedicated client from the pool so that
-  // BEGIN / all queries / COMMIT all run on the same connection.
-  // Using pool.query("BEGIN") routes each call to a potentially
-  // different connection, breaking atomicity entirely.
   let client;
   try {
     client = await pool.connect();
@@ -282,7 +281,6 @@ export const resetPassword = async (req: Request, res: Response) => {
       [hashedPassword, userId]
     );
 
-    // Revoke all active sessions for this user on the same client/transaction
     await client.query(
       "UPDATE sessions SET is_revoked = true, updated_at = NOW() WHERE user_id = $1",
       [userId]
@@ -300,7 +298,6 @@ export const resetPassword = async (req: Request, res: Response) => {
     console.error("Reset Password Error:", error);
     res.status(500).json({ message: "Internal server error" });
   } finally {
-    // Always release the client back to the pool whether we succeed or fail
     client.release();
   }
 };
@@ -344,7 +341,7 @@ export const getCurrentUser = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.json(user); // already safe — no password_hash in this query
+    res.json(user);
   } catch (error) {
     console.error("getCurrentUser error:", error);
     res
