@@ -20,12 +20,20 @@ export const sendEmail = async (options: {
     throw new Error("SENDGRID_FROM_EMAIL env var is not set.");
   }
 
-  await sgMail.send({
-    to: options.email,
-    from: `"Revit Systems Security" <${fromAddress}>`,
-    subject: options.subject,
-    html: options.message,
-  });
-
-  console.log(`[Email] Sent to ${options.email} via SendGrid HTTP API`);
+  try {
+    const info = await sgMail.send({
+      to: options.email,
+      from: `"Revit Systems Security" <${fromAddress}>`,
+      subject: options.subject,
+      html: options.message,
+    });
+    console.log(`[Email] Sent to ${options.email} via SendGrid HTTP API`);
+  } catch (error: any) {
+    // Log the full error body so we can see exactly what SendGrid is saying
+    console.error(
+      "[Email] SendGrid error body:",
+      JSON.stringify(error?.response?.body?.errors, null, 2)
+    );
+    throw error;
+  }
 };
