@@ -141,7 +141,8 @@ export const login = async (req: Request, res: Response) => {
 export const requestPasswordReset = async (req: Request, res: Response) => {
   const { email } = req.body;
 
-  // Always return the same message to prevent user enumeration
+  // Always return the same message to the client — prevents user enumeration
+  // (attacker cannot tell whether the email exists in the system).
   const genericResponse = {
     message:
       "If an account with that email exists, a reset link has been sent. Check your spam folder if it doesn't appear in your inbox.",
@@ -151,14 +152,21 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
     return res.json(genericResponse);
   }
 
+  // ── Phase 1: DB work ──────────────────────────────────────────────────────
+  // Separated from the email send so a DB failure (503) and an SMTP failure
+  // (502) produce distinct server-side log entries, while the client always
+  // receives the same generic 200 response (no user enumeration).
+  let user: Awaited<ReturnType<typeof findUserByEmail>>;
+  let rawToken: string;
+
   try {
-    const user = await findUserByEmail(email.toLowerCase().trim());
+    user = await findUserByEmail(email.toLowerCase().trim());
 
     if (!user) {
       return res.json(genericResponse);
     }
 
-    const rawToken = crypto.randomBytes(32).toString("hex");
+    rawToken = crypto.randomBytes(32).toString("hex");
     const tokenHash = crypto
       .createHash("sha256")
       .update(rawToken)
@@ -172,17 +180,34 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
       "INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)",
       [user.id, tokenHash, expiresAt]
     );
+  } catch (error) {
+    console.error("requestPasswordReset DB error:", error);
+    // 503 for a genuine DB failure; same generic body so client toast is unchanged.
+    return res.status(503).json(genericResponse);
+  }
 
-    // Use FRONTEND_URL env var so the link works in production.
-    // Falls back to localhost for local dev if the var is not set.
-    const frontendBase =
-      process.env.FRONTEND_URL || "http://localhost:5500";
+  // ── Phase 2: Send the reset email ─────────────────────────────────────────
+  // This is intentionally a SEPARATE try/catch from the DB work above.
+  //
+  // THE BUG THAT WAS HERE:
+  // The entire function was previously wrapped in ONE try/catch, and the catch
+  // block returned `res.json(genericResponse)` — the same 200 response as
+  // success. So when sendEmail() threw (bad credentials, unverified sender
+  // address, wrong SMTP host, etc.) the server logged the error internally but
+  // the client received "check your inbox". The email was never sent and there
+  // was no observable difference from the outside.
+  //
+  // Now a real SMTP failure returns HTTP 502 so it is visible in monitoring,
+  // while still sending the same generic message body so user enumeration
+  // remains impossible.
+  const frontendBase = process.env.FRONTEND_URL || "http://localhost:5500";
+  const resetLink = `${frontendBase}/pages/reset-password.html?token=${rawToken!}&id=${
+    user!.id
+  }`;
 
-    // token and id go in the query string so reset-password.html can read them
-    const resetLink = `${frontendBase}/pages/reset-password.html?token=${rawToken}&id=${user.id}`;
-
+  try {
     await sendEmail({
-      email: user.email,
+      email: user!.email,
       subject: "Password Reset Request — Revit Systems",
       message: `
         <div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:24px;border:1px solid #eee;border-radius:8px;">
@@ -204,13 +229,20 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
         </div>
       `,
     });
-
-    res.json(genericResponse);
   } catch (error) {
-    console.error("requestPasswordReset error:", error);
-    // Still return the generic message — don't leak whether the email exists
-    res.json(genericResponse);
+    // Log the real SMTP error loudly so it shows in server logs / dashboards.
+    // Return 502 so monitoring knows the email was NOT delivered.
+    // Same generic body preserves anti-enumeration guarantee.
+    console.error(
+      `[requestPasswordReset] SMTP failure for userId=${
+        user!.id
+      } — email NOT sent:`,
+      error
+    );
+    return res.status(502).json(genericResponse);
   }
+
+  return res.json(genericResponse);
 };
 
 // ============================================
