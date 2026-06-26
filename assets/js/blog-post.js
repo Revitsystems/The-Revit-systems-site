@@ -1,12 +1,12 @@
 /* =============================================
-         BLOG POST PAGE LOGIC
-         - Reads selectedPost from localStorage (set by blog.html)
-         - Post fields from API: id, title, slug, content, excerpt,
-           featured_image, category, created_at
-         - Tracks page view via POST /posts/:id/views
-         - Renders article, prev/next nav, suggested posts
-         - Reading progress bar + sticky continue strip
-         ============================================= */
+   BLOG POST PAGE LOGIC
+   - Reads selectedPost from localStorage (set by blog.html)
+   - Post fields from API: id, title, slug, content, excerpt,
+     featured_image, category, created_at
+   - Tracks page view via POST /posts/:id/views
+   - Renders article, prev/next nav, suggested posts
+   - Reading progress bar + sticky continue strip
+   ============================================= */
 
 const imgFallback =
   "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=900&q=80";
@@ -35,25 +35,82 @@ const initials = (name = "R") =>
     .slice(0, 2)
     .toUpperCase();
 
-/* ---- Track post view via API ---- */
-const trackView = async (postId) => {
+/* =============================================
+   ANALYTICS TRACKING
+   
+   What was missing before:
+   - No visitor ID: every view was anonymous with no way to
+     distinguish unique visitors from repeat visits.
+   - No session duration: the endpoint accepts sessionDuration
+     but it was never sent, so all rows had null there.
+   - No referrer: the backend reads req.headers.referer
+     automatically, but the initial fetch was fired with no
+     referrer header context (fine), however we were not
+     sending a second beacon on page exit with the real
+     session duration, so duration was always 0/null.
+   
+   Fix:
+   1. Generate a visitor UUID once and persist it in
+      localStorage as "rv_visitor_id". Reused on every
+      subsequent visit from the same browser so repeat
+      views are identifiable without any login.
+   2. Detect device type from viewport width (more reliable
+      than UA sniffing for tablets).
+   3. Fire an immediate view beacon on page load (counts
+      even if the reader bounces immediately).
+   4. Fire a second beacon on visibilitychange → hidden
+      (fired when tab closes, navigates away, or phone
+      locks screen) with the real elapsed session duration.
+   ============================================= */
+
+const getOrCreateVisitorId = () => {
+  let id = localStorage.getItem("rv_visitor_id");
+  if (!id) {
+    // crypto.randomUUID() is available in all modern browsers
+    id =
+      typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem("rv_visitor_id", id);
+  }
+  return id;
+};
+
+const getDeviceType = () => {
+  const w = window.innerWidth;
+  if (w <= 768) return "mobile";
+  if (w <= 1024) return "tablet";
+  return "desktop";
+};
+
+// sendBeacon with JSON content-type so Express body-parser picks it up
+const sendViewBeacon = (postId, visitorId, deviceType, sessionDuration) => {
+  const base = typeof window.baseURL !== "undefined" ? window.baseURL : "";
+  const payload = JSON.stringify({ visitorId, deviceType, sessionDuration });
+  const blob = new Blob([payload], { type: "application/json" });
+  navigator.sendBeacon(`${base}/posts/${postId}/views`, blob);
+};
+
+const trackView = (postId) => {
   try {
-    const deviceType = /Mobi|Android/i.test(navigator.userAgent)
-      ? "mobile"
-      : /iPad|Tablet/i.test(navigator.userAgent)
-      ? "tablet"
-      : "desktop";
+    const visitorId = getOrCreateVisitorId();
+    const deviceType = getDeviceType();
+    const arrivedAt = Date.now();
 
-    // Determine base URL — reuse window.baseURL if config.js is loaded
-    const base = typeof window.baseURL !== "undefined" ? window.baseURL : "";
+    // Immediate view — counts the visit even on a quick bounce
+    sendViewBeacon(postId, visitorId, deviceType, 0);
 
-    await fetch(`${base}/posts/${postId}/views`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ deviceType }),
-    });
+    // On tab hide / page close send the real session duration
+    const onHide = () => {
+      if (document.visibilityState === "hidden") {
+        const sessionDuration = Math.round((Date.now() - arrivedAt) / 1000);
+        sendViewBeacon(postId, visitorId, deviceType, sessionDuration);
+        document.removeEventListener("visibilitychange", onHide);
+      }
+    };
+    document.addEventListener("visibilitychange", onHide);
   } catch (_) {
-    // View tracking is non-critical — swallow errors silently
+    // Tracking is non-critical — never break the reading experience
   }
 };
 
@@ -270,15 +327,15 @@ function navigateTo(post) {
 }
 
 /* =============================================
-         COMMENTS LOGIC
-         API:
-           GET  /posts/:postId/comments?limit=20&offset=0
-                → { comments: [...], hasMore }
-           POST /posts/:postId/comments/guest
-                → body: { visitorName, visitorEmail?, commentText }
-         Comment fields: id, visitor_name, comment_text,
-                         created_at, status
-         ============================================= */
+   COMMENTS LOGIC
+   API:
+     GET  /posts/:postId/comments?limit=20&offset=0
+          → { comments: [...], hasMore }
+     POST /posts/:postId/comments/guest
+          → body: { visitorName, visitorEmail?, commentText }
+   Comment fields: id, visitor_name, comment_text,
+                   created_at, status
+   ============================================= */
 
 const COMMENTS_PREVIEW = 3; // comments visible before "show more"
 
@@ -313,8 +370,6 @@ const relativeTime = (iso) => {
 
 /* ---- Build one reply element (staff reply) ---- */
 const buildReplyEl = (r) => {
-  // Staff replies have author_id set; visitor_name is null
-  // The name we show is "Revit Systems" since all staff reply as the team
   const name = "Revit Systems";
   const date = relativeTime(r.created_at);
 
@@ -337,11 +392,10 @@ const buildReplyEl = (r) => {
 const fetchReplies = async (commentId, repliesContainer) => {
   try {
     const res = await fetch(`${base()}/comments/${commentId}/replies`);
-    if (!res.ok) return; // silently skip — replies are non-critical
+    if (!res.ok) return;
     const replies = await res.json();
     if (!Array.isArray(replies) || replies.length === 0) return;
 
-    // Clear any placeholder and inject reply elements
     repliesContainer.innerHTML = "";
     replies.forEach((r) => repliesContainer.appendChild(buildReplyEl(r)));
   } catch (_) {
@@ -359,7 +413,6 @@ const buildCommentEl = (c) => {
   const div = document.createElement("div");
   div.className = "rv-comment";
 
-  // Replies area — empty div that fetchReplies will populate
   const repliesDiv = document.createElement("div");
   repliesDiv.className = "rv-comment-replies";
 
@@ -378,10 +431,8 @@ const buildCommentEl = (c) => {
             <p class="rv-comment-text">${c.comment_text}</p>
           </div>`;
 
-  // Append the replies container inside the comment body
   div.querySelector(".rv-comment-body").appendChild(repliesDiv);
 
-  // Only fetch replies for approved, persisted comments (not optimistic ones)
   if (c.id && !String(c.id).startsWith("opt-") && c.status !== "pending") {
     fetchReplies(c.id, repliesDiv);
   }
@@ -390,7 +441,7 @@ const buildCommentEl = (c) => {
 };
 
 /* ---- Comments state ---- */
-let _allComments = []; // full fetched list
+let _allComments = [];
 let _showingAll = false;
 
 const updateCountBadge = () => {
@@ -423,7 +474,6 @@ const renderComments = () => {
 
   visible.forEach((c) => list.appendChild(buildCommentEl(c)));
 
-  // Show / update the "show more" button
   const remaining = _allComments.length - COMMENTS_PREVIEW;
   if (!_showingAll && _allComments.length > COMMENTS_PREVIEW) {
     moreWrap.style.display = "flex";
@@ -438,14 +488,12 @@ const renderComments = () => {
 /* ---- Fetch comments from the API ---- */
 const fetchComments = async (postId) => {
   const list = document.getElementById("commentsList");
-  // Skeletons are already in the DOM from the HTML; just fetch and replace
   try {
     const res = await fetch(
       `${base()}/posts/${postId}/comments?limit=100&offset=0`
     );
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    // Response: { comments: [...], hasMore, ... }
     _allComments = Array.isArray(data.comments) ? data.comments : [];
     updateCountBadge();
     renderComments();
@@ -469,7 +517,6 @@ document.addEventListener("DOMContentLoaded", () => {
       _showingAll = !_showingAll;
       renderComments();
       if (!_showingAll) {
-        // Scroll back up to the top of the comments section
         document
           .getElementById("commentsSection")
           ?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -500,7 +547,6 @@ const setupCommentForm = (postId) => {
   };
 
   btn.addEventListener("click", async () => {
-    // Clear previous feedback
     feedback.style.display = "none";
     feedback.className = "post-comment-feedback";
 
@@ -508,7 +554,6 @@ const setupCommentForm = (postId) => {
     const visitorEmail = emailEl.value.trim();
     const commentText = textEl.value.trim();
 
-    // Client-side validation
     if (!visitorName) {
       nameEl.focus();
       return showFeedback("Please enter your name.", "error");
@@ -522,7 +567,6 @@ const setupCommentForm = (postId) => {
       return showFeedback("Please enter a valid email address.", "error");
     }
 
-    // Disable button during request
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting…';
 
@@ -542,8 +586,6 @@ const setupCommentForm = (postId) => {
         throw new Error(data.message || `HTTP ${res.status}`);
       }
 
-      // Optimistically prepend the new comment so the author sees it immediately.
-      // It will show "Pending review" since the backend sets status='pending' for guests.
       const optimistic = {
         id: data.id || `opt-${Date.now()}`,
         visitor_name: visitorName,
@@ -552,11 +594,10 @@ const setupCommentForm = (postId) => {
         status: "pending",
       };
       _allComments = [optimistic, ..._allComments];
-      _showingAll = true; // make sure the new comment is visible
+      _showingAll = true;
       updateCountBadge();
       renderComments();
 
-      // Reset form
       nameEl.value = "";
       emailEl.value = "";
       textEl.value = "";
@@ -579,10 +620,6 @@ const setupCommentForm = (postId) => {
 };
 
 /* ---- Bootstrap comments once the post is known ---- */
-// We hook into DOMContentLoaded, but the post id comes from localStorage
-// which is already read by the main init block above. We need to wait for
-// that block to run first, so we piggyback on a second DOMContentLoaded
-// listener (both fire in order on the same tick).
 document.addEventListener("DOMContentLoaded", () => {
   const raw = (() => {
     try {
@@ -591,7 +628,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return null;
     }
   })();
-  if (!raw || !raw.id) return; // no post — not-found state handles it
+  if (!raw || !raw.id) return;
   fetchComments(raw.id);
   setupCommentForm(raw.id);
 });

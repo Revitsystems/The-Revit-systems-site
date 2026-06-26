@@ -639,44 +639,171 @@ const API = {
       if (cached) return cached;
     }
 
-    const [statsResponse] = await Promise.all([
+    // ── Step 1: fetch post list + stats (needed for top-posts table) ──────
+    // We need the post list so we know which postIds to fetch view summaries
+    // for. getPosts already caches, so this is cheap on repeat calls.
+    const [statsResponse, postsResponse] = await Promise.all([
       authFetch(`${BASE_URL}/posts/stats`),
+      authFetch(`${BASE_URL}/posts?limit=50&offset=0`),
     ]);
 
-    const stats = statsResponse.ok ? await statsResponse.json() : {};
+    const postsData = postsResponse.ok
+      ? await postsResponse.json()
+      : { posts: [] };
+    const posts = postsData.posts || [];
+
+    // Keep AppState in sync so other renderers have fresh data
+    if (posts.length > 0) AppState.posts = posts;
+
+    // ── Step 2: fetch per-post view summaries in parallel ─────────────────
+    // GET /posts/:postId/views/summary returns:
+    //   { total_views, desktop, mobile, tablet, unknown }
+    // We fetch for all posts concurrently and zip the results back.
+    const summaryResults = await Promise.allSettled(
+      posts.map((p) =>
+        authFetch(`${BASE_URL}/posts/${p.id}/views/summary`)
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null)
+      )
+    );
+
+    // Attach real view counts to each post
+    const postsWithViews = posts.map((p, i) => {
+      const summary =
+        summaryResults[i].status === "fulfilled"
+          ? summaryResults[i].value
+          : null;
+      return {
+        ...p,
+        totalViews: Number(summary?.total_views || 0),
+        desktopViews: Number(summary?.desktop || 0),
+        mobileViews: Number(summary?.mobile || 0),
+        tabletViews: Number(summary?.tablet || 0),
+        unknownViews: Number(summary?.unknown || 0),
+        // avg session duration: backend stores seconds in post_views rows.
+        // The summary endpoint does not aggregate it yet, so we leave it
+        // as null — the table will show "—" instead of a fake number.
+        avgTime: null,
+      };
+    });
+
+    // ── Step 3: aggregate device breakdown across all posts ───────────────
+    const totalDesktop = postsWithViews.reduce((s, p) => s + p.desktopViews, 0);
+    const totalMobile = postsWithViews.reduce((s, p) => s + p.mobileViews, 0);
+    const totalTablet = postsWithViews.reduce((s, p) => s + p.tabletViews, 0);
+    const totalUnknown = postsWithViews.reduce((s, p) => s + p.unknownViews, 0);
+    const deviceTotal =
+      totalDesktop + totalMobile + totalTablet + totalUnknown || 1;
 
     const deviceData = {
-      labels: ["Desktop", "Mobile", "Tablet"],
-      data: [55, 35, 10],
+      labels: ["Desktop", "Mobile", "Tablet", "Unknown"],
+      data: [totalDesktop, totalMobile, totalTablet, totalUnknown],
     };
 
-    const trafficData = generateTrafficData(period);
+    // ── Step 4: build traffic timeline from raw view counts ───────────────
+    // The backend does not yet expose a /views/timeline endpoint, so we
+    // approximate by distributing each post's total views evenly across the
+    // requested period. This is a real number (not random) — once you add a
+    // timeline endpoint you can swap this block out.
+    const totalViewsAll = postsWithViews.reduce((s, p) => s + p.totalViews, 0);
+    const today = new Date();
+    const trafficLabels = [];
+    const trafficDataArr = [];
 
-    const topPosts = [...AppState.posts]
-      .sort(
-        (a, b) =>
-          (b.view_count || b.views || 0) - (a.view_count || a.views || 0)
-      )
+    for (let i = period - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      trafficLabels.push(
+        d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      );
+      // Distribute total views evenly — better than random, replaced when
+      // a real timeline endpoint exists.
+      trafficDataArr.push(Math.round(totalViewsAll / period));
+    }
+
+    const trafficData = { labels: trafficLabels, data: trafficDataArr };
+
+    // ── Step 5: top posts sorted by real view count ───────────────────────
+    const topPosts = [...postsWithViews]
+      .sort((a, b) => b.totalViews - a.totalViews)
       .slice(0, 10)
       .map((p, i) => ({
         ...p,
         rank: i + 1,
-        views: p.view_count || p.views || 0,
-        uniqueViews: Math.floor((p.view_count || p.views || 0) * 0.7),
-        avgTime: 185,
-        bounceRate: 38,
+        views: p.totalViews,
+        // unique views: count of distinct visitor_ids — not available from
+        // the summary endpoint yet, so approximate at 70% of total.
+        uniqueViews: Math.round(p.totalViews * 0.7),
+        avgTime: p.avgTime, // null until timeline endpoint added
+        bounceRate: null, // not tracked yet
       }));
+
+    // ── Step 6: referrers — fetch for the top 5 posts by views ───────────
+    // GET /posts/:postId/referrers returns:
+    //   [{ referrer_name, referrer_url, visit_count, recorded_date }]
+    // We aggregate across top posts and deduplicate by referrer_name.
+    const topFiveIds = topPosts
+      .slice(0, 5)
+      .map((p) => p.id)
+      .filter(Boolean);
+
+    const referrerResults = await Promise.allSettled(
+      topFiveIds.map((id) =>
+        authFetch(`${BASE_URL}/posts/${id}/referrers`)
+          .then((r) => (r.ok ? r.json() : []))
+          .catch(() => [])
+      )
+    );
+
+    // Merge and sum by referrer_name
+    const referrerMap = {};
+    referrerResults.forEach((res) => {
+      const rows = res.status === "fulfilled" ? res.value : [];
+      (Array.isArray(rows) ? rows : []).forEach((row) => {
+        const name = row.referrer_name || row.referrer_url || "Direct";
+        if (!referrerMap[name]) {
+          referrerMap[name] = { name, count: 0, url: row.referrer_url || "" };
+        }
+        referrerMap[name].count += Number(row.visit_count || 0);
+      });
+    });
+
+    // Map referrer names to Font Awesome brand icons (best-effort)
+    const iconFor = (name = "") => {
+      const n = name.toLowerCase();
+      if (n.includes("google")) return "google";
+      if (n.includes("facebook")) return "facebook";
+      if (n.includes("twitter") || n.includes("x.com")) return "twitter";
+      if (n.includes("linkedin")) return "linkedin";
+      if (n.includes("instagram")) return "instagram";
+      if (n.includes("youtube")) return "youtube";
+      if (n.includes("github")) return "github";
+      return "link"; // generic link icon for everything else
+    };
+
+    // Sort by visit count descending, take top 8
+    const referrers = Object.values(referrerMap)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8)
+      .map((r) => ({ ...r, icon: iconFor(r.name) }));
+
+    // If no referrer data yet (site is new), show placeholder rows so the
+    // UI is not completely empty — but with real zero counts, not fake ones.
+    const finalReferrers =
+      referrers.length > 0
+        ? referrers
+        : [
+            { name: "Google", count: 0, icon: "google" },
+            { name: "Direct", count: 0, icon: "link" },
+            { name: "Twitter", count: 0, icon: "twitter" },
+            { name: "LinkedIn", count: 0, icon: "linkedin" },
+          ];
 
     const result = {
       trafficData,
       deviceData,
       topPosts,
-      referrers: [
-        { name: "Google", count: 0, icon: "google" },
-        { name: "Direct", count: 0, icon: "link" },
-        { name: "Twitter", count: 0, icon: "twitter" },
-        { name: "LinkedIn", count: 0, icon: "linkedin" },
-      ],
+      referrers: finalReferrers,
     };
 
     Cache.set(key, result, "postStats");

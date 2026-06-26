@@ -819,10 +819,14 @@ const Renderers = {
             <td>${post.title}</td>
             <td>${Utils.formatNumber(post.views)}</td>
             <td>${Utils.formatNumber(post.uniqueViews)}</td>
-            <td>${Math.floor(post.avgTime / 60)}:${(post.avgTime % 60)
-              .toString()
-              .padStart(2, "0")}</td>
-            <td>${post.bounceRate}%</td>
+            <td>${
+              post.avgTime != null
+                ? Math.floor(post.avgTime / 60) +
+                  ":" +
+                  String(post.avgTime % 60).padStart(2, "0")
+                : "—"
+            }</td>
+            <td>${post.bounceRate != null ? post.bounceRate + "%" : "—"}</td>
           </tr>
         `
           )
