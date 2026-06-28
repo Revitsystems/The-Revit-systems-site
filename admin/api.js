@@ -1,41 +1,12 @@
-/* ============================================
-   API.JS — All data fetching & mutations
-   Wired to the RevitSystems Express backend.
-   Depends on: utils.js, state.js, cache.js
-   ============================================ */
-
 const BASE_URL = window.baseURL;
 const LOGIN_URL = "../pages/login.html"; // set once, use everywhere
 
 // Access token lives in memory only — never in localStorage
 let accessToken = null;
 
-// Tracks a single in-flight call to API.refreshToken(), if any.
-// /auth/refresh issues a SINGLE-USE rotating refresh token (see
-// refreshController.ts) — each call revokes the current session and
-// mints a new one. If two callers hit /auth/refresh concurrently
-// (e.g. init()'s explicit refresh plus several authFetch 401-retries
-// firing at once from Promise.allSettled), only the first one to
-// reach the server succeeds; the second one is left holding an
-// already-revoked token, gets a real 401/403 back, and refreshToken()
-// then redirects straight to the login page — even though the
-// session was actually fine seconds earlier. This was causing the
-// "skeleton flashes, then instantly bounced back to login" loop.
-// Fix: every caller during a refresh-in-progress awaits the SAME
-// promise instead of starting a second /auth/refresh request.
 let _refreshInFlight = null;
 
-// ============================================
-// CORE FETCH WRAPPER
-// Attaches the Bearer token and retries once
-// after a silent token refresh on 401.
-// Guards against sending "Bearer null" on first
-// load before the token is set.
-// ============================================
 const authFetch = async (url, options = {}) => {
-  // Do not send "Bearer null" — if accessToken is not yet set,
-  // omit the Authorization header entirely so the server returns
-  // a clean 401 rather than trying to verify the string "null"
   const headers = {
     "Content-Type": "application/json",
     ...options.headers,
@@ -70,19 +41,6 @@ const authFetch = async (url, options = {}) => {
 };
 
 const API = {
-  // ============================================
-  // AUTH
-  // ============================================
-
-  // Returns a boolean: true on a successful refresh, false otherwise.
-  // (checkAuthStatus() in login.js relies on this exact boolean shape —
-  // see the note there if you ever change this to return an object.)
-  //
-  // Wrapped in the _refreshInFlight lock: if a refresh is already in
-  // progress, callers await that same promise instead of firing a
-  // second /auth/refresh request (which would race the single-use
-  // rotating refresh token and get itself logged out — see the note
-  // on _refreshInFlight above).
   refreshToken: (retriesLeft = 1) => {
     if (_refreshInFlight) return _refreshInFlight;
 
@@ -106,31 +64,13 @@ const API = {
         return true;
       }
 
-      // 401/403 = the backend explicitly says this session is invalid
-      // (no cookie, expired/revoked session, suspended/pending user).
-      // That's the only case where bouncing to the login page is correct.
       if (response.status === 401 || response.status === 403) {
-        // Guard against redirect loops: login.html calls this on every
-        // load via checkAuthStatus(). With no session, this branch
-        // always fires. Setting location.href to the login page while
-        // already ON the login page still forces a full browser
-        // reload (it's not a no-op just because the URL matches),
-        // which re-runs init() -> checkAuthStatus() -> refreshToken()
-        // -> redirect again, forever. Only redirect if we're not
-        // already there.
         const onLoginPage = window.location.pathname.includes("login.html");
         if (!onLoginPage) {
           window.location.href = LOGIN_URL;
         }
         return false;
       }
-
-      // Anything else (503 from a DB hiccup, etc.) is transient — retry
-      // once before giving up, and never redirect for it.
-      // NOTE: recurses into _doRefreshToken directly, not API.refreshToken —
-      // calling the public method here would just return the
-      // _refreshInFlight promise for *this* call (still pending), which
-      // would deadlock.
       if (retriesLeft > 0) {
         await new Promise((r) => setTimeout(r, 1000));
         return API._doRefreshToken(retriesLeft - 1);
@@ -624,6 +564,27 @@ const API = {
     });
     if (!response.ok)
       throw new Error("Failed to mark all notifications as read");
+    Cache.invalidate("notifications");
+    return response.json();
+  },
+
+  // DELETE /notifications/:id — was missing entirely, needed by the
+  // dismiss (×) button added to each notification row in renderNotifications
+  deleteNotification: async (id) => {
+    const response = await authFetch(`${BASE_URL}/notifications/${id}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) throw new Error("Failed to delete notification");
+    Cache.invalidate("notifications");
+    return response.json();
+  },
+
+  // DELETE /notifications — clear all for logged-in user
+  deleteAllNotifications: async () => {
+    const response = await authFetch(`${BASE_URL}/notifications`, {
+      method: "DELETE",
+    });
+    if (!response.ok) throw new Error("Failed to clear notifications");
     Cache.invalidate("notifications");
     return response.json();
   },

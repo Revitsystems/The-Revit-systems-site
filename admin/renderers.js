@@ -642,32 +642,96 @@ const Renderers = {
 
     try {
       const [notifData, countData] = await Promise.all([
-        API.getNotifications(10, force),
+        API.getNotifications(20, force),
         API.getUnreadCount(force),
       ]);
 
       const notifications = notifData.notifications || [];
 
-      list.innerHTML =
-        notifications.length > 0
-          ? notifications
-              .map(
-                (n) => `
-            <div class="notification-item ${
-              !n.is_read ? "unread" : ""
-            }" onclick="API.markNotificationRead('${n.id}')">
-              <i class="fas fa-bell"></i>
-              <div class="notification-content">
-                <p>${n.message}</p>
-                <span class="time">${Utils.formatDateTime(n.created_at)}</span>
-              </div>
+      if (notifications.length === 0) {
+        list.innerHTML = `
+          <div class="notification-item">
+            <div class="notification-content">
+              <p style="color:var(--gray-500);font-style:italic;">No notifications yet</p>
             </div>
-          `
-              )
-              .join("")
-          : `<div class="notification-item"><div class="notification-content"><p>No notifications</p></div></div>`;
+          </div>`;
+        badge.textContent = 0;
+        return;
+      }
 
+      // Build notification items with proper event listeners instead of
+      // inline onclick — inline onclick was calling API.markNotificationRead
+      // but never re-rendering the list, so the unread highlight never cleared
+      // and the badge never updated.
+      list.innerHTML = notifications
+        .map(
+          (n) => `
+          <div class="notification-item ${!n.is_read ? "unread" : ""}"
+               data-id="${n.id}"
+               data-read="${n.is_read}"
+               style="position:relative;">
+            <i class="fas fa-${
+              n.type === "comment"
+                ? "comment"
+                : n.type === "warning"
+                ? "exclamation-triangle"
+                : "bell"
+            }"></i>
+            <div class="notification-content" style="flex:1;min-width:0;">
+              <p>${n.message}</p>
+              <span class="time">${Utils.formatDateTime(n.created_at)}</span>
+            </div>
+            <button
+              class="notif-delete-btn"
+              data-id="${n.id}"
+              title="Dismiss"
+              style="background:none;border:none;color:var(--gray-400);cursor:pointer;padding:4px 6px;flex-shrink:0;font-size:0.8rem;">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>`
+        )
+        .join("");
+
+      // Update badge with real unread count
       badge.textContent = countData.unreadCount || 0;
+
+      // Wire up click-to-read on each notification row
+      list.querySelectorAll(".notification-item[data-id]").forEach((item) => {
+        item.addEventListener("click", async (e) => {
+          // Don't trigger read when clicking the delete button
+          if (e.target.closest(".notif-delete-btn")) return;
+
+          const id = item.dataset.id;
+          const alreadyRead = item.dataset.read === "true";
+          if (alreadyRead) return;
+
+          try {
+            await API.markNotificationRead(id);
+            item.classList.remove("unread");
+            item.dataset.read = "true";
+            // Decrement badge
+            const current = parseInt(badge.textContent || "0", 10);
+            badge.textContent = Math.max(0, current - 1);
+          } catch (_) {
+            // Non-critical — ignore silently
+          }
+        });
+      });
+
+      // Wire up delete buttons
+      list.querySelectorAll(".notif-delete-btn").forEach((btn) => {
+        btn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.id;
+          try {
+            await API.deleteNotification(id);
+            // Re-render the whole list so counts stay accurate
+            await Renderers.renderNotifications(true);
+          } catch (_) {
+            Utils.showToast("Failed to dismiss notification", "error");
+          }
+        });
+      });
     } catch (error) {
       console.error("renderNotifications error:", error);
       list.innerHTML = `
@@ -819,14 +883,10 @@ const Renderers = {
             <td>${post.title}</td>
             <td>${Utils.formatNumber(post.views)}</td>
             <td>${Utils.formatNumber(post.uniqueViews)}</td>
-            <td>${
-              post.avgTime != null
-                ? Math.floor(post.avgTime / 60) +
-                  ":" +
-                  String(post.avgTime % 60).padStart(2, "0")
-                : "—"
-            }</td>
-            <td>${post.bounceRate != null ? post.bounceRate + "%" : "—"}</td>
+            <td>${Math.floor(post.avgTime / 60)}:${(post.avgTime % 60)
+              .toString()
+              .padStart(2, "0")}</td>
+            <td>${post.bounceRate}%</td>
           </tr>
         `
           )

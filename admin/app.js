@@ -161,9 +161,20 @@ function initializeEventListeners() {
     e.stopPropagation();
     document.getElementById("notification-dropdown").classList.toggle("hidden");
     document.getElementById("user-dropdown").classList.add("hidden");
-    // Mark all as read when dropdown is opened
-    API.markAllNotificationsRead().catch(() => {});
   });
+
+  // Mark all as read button — was missing entirely, badge never updated
+  document
+    .getElementById("mark-all-read-btn")
+    ?.addEventListener("click", async () => {
+      try {
+        await API.markAllNotificationsRead();
+        // Re-render so badge resets to 0 and unread highlights clear
+        await Renderers.renderNotifications(true);
+      } catch (err) {
+        Utils.showToast("Failed to mark notifications as read", "error");
+      }
+    });
 
   document.addEventListener("click", () => {
     document.getElementById("user-dropdown").classList.add("hidden");
