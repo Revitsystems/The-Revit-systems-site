@@ -14,6 +14,61 @@ import {
   CreateStaffCommentInput,
   CreateGuestCommentInput,
 } from "@/types/comment.types.js";
+import { createNotification } from "@/models/notificationModel.js";
+import { pool } from "@/config/db.js";
+
+// ── Notification helpers ───────────────────────────────────────────────────
+
+// Notify all active users of specified roles
+const notifyRoles = async (
+  roles: string[],
+  type: string,
+  message: string,
+  link?: string,
+  excludeUserId?: string
+): Promise<void> => {
+  try {
+    const placeholders = roles.map((_, i) => `$${i + 1}`).join(", ");
+    const result = await pool.query(
+      `SELECT id FROM users WHERE role IN (${placeholders}) AND status = 'active'`,
+      roles
+    );
+    const targets = result.rows.filter(
+      (u: { id: string }) => u.id !== excludeUserId
+    );
+    await Promise.all(
+      targets.map((u: { id: string }) =>
+        createNotification({
+          userId: u.id,
+          type,
+          message,
+          ...(link ? { link } : {}),
+        })
+      )
+    );
+  } catch (err) {
+    console.error("[notifyRoles] Failed:", err);
+  }
+};
+
+// Notify a single specific user
+const notifyUser = async (
+  userId: string,
+  type: string,
+  message: string,
+  link?: string
+): Promise<void> => {
+  try {
+    await createNotification({
+      userId,
+      type,
+      message,
+      ...(link ? { link } : {}),
+    });
+  } catch (err) {
+    console.error("[notifyUser] Failed:", err);
+  }
+};
 
 // ============================================
 // GET /posts/:postId/comments
@@ -159,6 +214,16 @@ export const postGuestComment = async (req: Request, res: Response) => {
 
   try {
     const comment = await createGuestComment(input);
+
+    // Notify admins + editors: new comment needs moderation
+    // Authors are NOT notified — moderation is not their responsibility.
+    // They get notified separately when a comment is approved (see moderateComment).
+    notifyRoles(
+      ["admin", "editor"],
+      "comment",
+      `New comment from ${input.visitorName} is pending review.`
+    );
+
     res.status(201).json(comment);
   } catch (error) {
     console.error("postGuestComment error:", error);
@@ -179,11 +244,9 @@ export const moderateComment = async (req: Request, res: Response) => {
 
   const validStatuses = ["approved", "pending", "rejected"];
   if (!validStatuses.includes(status)) {
-    return res
-      .status(400)
-      .json({
-        message: "Invalid status. Must be approved, pending, or rejected",
-      });
+    return res.status(400).json({
+      message: "Invalid status. Must be approved, pending, or rejected",
+    });
   }
 
   try {
@@ -191,6 +254,27 @@ export const moderateComment = async (req: Request, res: Response) => {
 
     if (!updated) {
       return res.status(404).json({ message: "Comment not found" });
+    }
+
+    // When a comment is approved, notify the post author so they know
+    // someone engaged with their content.
+    if (status === "approved" && updated.post_id) {
+      try {
+        const postResult = await pool.query(
+          `SELECT author_id, title FROM posts WHERE id = $1`,
+          [updated.post_id]
+        );
+        const post = postResult.rows[0];
+        if (post?.author_id) {
+          notifyUser(
+            post.author_id,
+            "comment",
+            `A comment on your post "${post.title}" has been approved and is now live.`
+          );
+        }
+      } catch (err) {
+        console.error("[moderateComment] Failed to notify author:", err);
+      }
     }
 
     res.json(updated);

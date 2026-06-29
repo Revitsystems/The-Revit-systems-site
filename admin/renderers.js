@@ -30,30 +30,54 @@ const Renderers = {
   // Pulls real post stats from the backend via API.getPostStats in api.js.
   // force=true used by the dashboard reload button.
   updateDashboardStats: async (force = false) => {
-    try {
-      const stats = await API.getPostStats(force);
+    const role = AppState.currentUser.role;
+    const currentUserId = AppState.currentUser.id;
 
-      document.getElementById("published-count").textContent =
-        stats.published || 0;
-      document.getElementById("drafts-count").textContent = stats.draft || 0;
-      document.getElementById("scheduled-count").textContent =
-        stats.scheduled || 0;
-      document.getElementById("total-count").textContent = stats.total || 0;
+    try {
+      if (role === "author") {
+        // Authors only see stats for their own posts.
+        // Fetch all posts and filter client-side by author_id.
+        const response = await API.getPosts("all", 1, 100, force);
+        const myPosts = (response.posts || []).filter(
+          (p) => p.author_id === currentUserId
+        );
+        document.getElementById("published-count").textContent = myPosts.filter(
+          (p) => p.status === "published"
+        ).length;
+        document.getElementById("drafts-count").textContent = myPosts.filter(
+          (p) => p.status === "draft"
+        ).length;
+        document.getElementById("scheduled-count").textContent = myPosts.filter(
+          (p) => p.status === "scheduled"
+        ).length;
+      } else {
+        // Admins and editors see site-wide stats
+        const stats = await API.getPostStats(force);
+        document.getElementById("published-count").textContent =
+          stats.published || 0;
+        document.getElementById("drafts-count").textContent = stats.draft || 0;
+        document.getElementById("scheduled-count").textContent =
+          stats.scheduled || 0;
+        document.getElementById("total-count").textContent = stats.total || 0;
+      }
     } catch {
       // Fall back to AppState counts if the request fails
-      const published = AppState.posts.filter(
+      const myPosts =
+        role === "author"
+          ? AppState.posts.filter((p) => p.author_id === currentUserId)
+          : AppState.posts;
+
+      document.getElementById("published-count").textContent = myPosts.filter(
         (p) => p.status === "published"
       ).length;
-      const drafts = AppState.posts.filter((p) => p.status === "draft").length;
-      const scheduled = AppState.posts.filter(
+      document.getElementById("drafts-count").textContent = myPosts.filter(
+        (p) => p.status === "draft"
+      ).length;
+      document.getElementById("scheduled-count").textContent = myPosts.filter(
         (p) => p.status === "scheduled"
       ).length;
-
-      document.getElementById("published-count").textContent = published;
-      document.getElementById("drafts-count").textContent = drafts;
-      document.getElementById("scheduled-count").textContent = scheduled;
-      document.getElementById("total-count").textContent =
-        AppState.posts.length;
+      const totalEl = document.getElementById("total-count");
+      if (totalEl) totalEl.textContent = myPosts.length;
     }
   },
 
@@ -153,11 +177,33 @@ const Renderers = {
       // Keep AppState in sync so dashboard and top posts renderers work
       AppState.posts = response.posts;
 
+      const role = AppState.currentUser.role;
+      const currentUserId = AppState.currentUser.id;
+
       tbody.innerHTML = response.posts
-        .map(
-          (post) => `
-        <tr>
-          <td>${post.title}</td>
+        .map((post) => {
+          const isOwn = post.author_id === currentUserId;
+          const canEdit = RoleAccess.canEditPost(role, post, currentUserId);
+          const canDelete = RoleAccess.canDeletePost(role, post, currentUserId);
+          const canPublish = RoleAccess.canPublishPost(
+            role,
+            post,
+            currentUserId
+          );
+
+          // Grey out rows that don't belong to the current author
+          const rowStyle =
+            role === "author" && !isOwn
+              ? "opacity:0.38;pointer-events:none;"
+              : "";
+
+          return `
+        <tr style="${rowStyle}">
+          <td>${post.title}${
+            role === "author" && !isOwn
+              ? ' <span style="font-size:0.72rem;color:#aaa;">(not yours)</span>'
+              : ""
+          }</td>
           <td>${post.category || post.category_id || "—"}</td>
           <td><span class="status-badge ${post.status}">${
             post.status
@@ -171,34 +217,37 @@ const Renderers = {
           <td>
             <div class="action-btns">
               ${
-                post.status === "draft"
+                canPublish && post.status === "draft"
                   ? `<button class="action-btn publish" onclick="Actions.publishPost('${post.id}')" title="Publish">
-                      <i class="fas fa-check"></i>
-                    </button>`
+                    <i class="fas fa-check"></i>
+                   </button>`
                   : ""
               }
               ${
-                post.status === "scheduled"
+                canEdit && post.status === "scheduled"
                   ? `<button class="action-btn schedule" onclick="Actions.editSchedule('${post.id}')" title="Edit Schedule">
-                      <i class="fas fa-calendar"></i>
-                    </button>`
+                    <i class="fas fa-calendar"></i>
+                   </button>`
                   : ""
               }
-              <button class="action-btn edit" onclick="Actions.editPost('${
-                post.id
-              }')" title="Edit">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="action-btn delete" onclick="Actions.deletePost('${
-                post.id
-              }')" title="Delete">
-                <i class="fas fa-trash"></i>
-              </button>
+              ${
+                canEdit
+                  ? `<button class="action-btn edit" onclick="Actions.editPost('${post.id}')" title="Edit">
+                    <i class="fas fa-edit"></i>
+                   </button>`
+                  : ""
+              }
+              ${
+                canDelete
+                  ? `<button class="action-btn delete" onclick="Actions.deletePost('${post.id}')" title="Delete">
+                    <i class="fas fa-trash"></i>
+                   </button>`
+                  : ""
+              }
             </div>
           </td>
-        </tr>
-      `
-        )
+        </tr>`;
+        })
         .join("");
 
       AppState.pagination.posts = response.pagination;
@@ -642,96 +691,32 @@ const Renderers = {
 
     try {
       const [notifData, countData] = await Promise.all([
-        API.getNotifications(20, force),
+        API.getNotifications(10, force),
         API.getUnreadCount(force),
       ]);
 
       const notifications = notifData.notifications || [];
 
-      if (notifications.length === 0) {
-        list.innerHTML = `
-          <div class="notification-item">
-            <div class="notification-content">
-              <p style="color:var(--gray-500);font-style:italic;">No notifications yet</p>
+      list.innerHTML =
+        notifications.length > 0
+          ? notifications
+              .map(
+                (n) => `
+            <div class="notification-item ${
+              !n.is_read ? "unread" : ""
+            }" onclick="API.markNotificationRead('${n.id}')">
+              <i class="fas fa-bell"></i>
+              <div class="notification-content">
+                <p>${n.message}</p>
+                <span class="time">${Utils.formatDateTime(n.created_at)}</span>
+              </div>
             </div>
-          </div>`;
-        badge.textContent = 0;
-        return;
-      }
+          `
+              )
+              .join("")
+          : `<div class="notification-item"><div class="notification-content"><p>No notifications</p></div></div>`;
 
-      // Build notification items with proper event listeners instead of
-      // inline onclick — inline onclick was calling API.markNotificationRead
-      // but never re-rendering the list, so the unread highlight never cleared
-      // and the badge never updated.
-      list.innerHTML = notifications
-        .map(
-          (n) => `
-          <div class="notification-item ${!n.is_read ? "unread" : ""}"
-               data-id="${n.id}"
-               data-read="${n.is_read}"
-               style="position:relative;">
-            <i class="fas fa-${
-              n.type === "comment"
-                ? "comment"
-                : n.type === "warning"
-                ? "exclamation-triangle"
-                : "bell"
-            }"></i>
-            <div class="notification-content" style="flex:1;min-width:0;">
-              <p>${n.message}</p>
-              <span class="time">${Utils.formatDateTime(n.created_at)}</span>
-            </div>
-            <button
-              class="notif-delete-btn"
-              data-id="${n.id}"
-              title="Dismiss"
-              style="background:none;border:none;color:var(--gray-400);cursor:pointer;padding:4px 6px;flex-shrink:0;font-size:0.8rem;">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>`
-        )
-        .join("");
-
-      // Update badge with real unread count
       badge.textContent = countData.unreadCount || 0;
-
-      // Wire up click-to-read on each notification row
-      list.querySelectorAll(".notification-item[data-id]").forEach((item) => {
-        item.addEventListener("click", async (e) => {
-          // Don't trigger read when clicking the delete button
-          if (e.target.closest(".notif-delete-btn")) return;
-
-          const id = item.dataset.id;
-          const alreadyRead = item.dataset.read === "true";
-          if (alreadyRead) return;
-
-          try {
-            await API.markNotificationRead(id);
-            item.classList.remove("unread");
-            item.dataset.read = "true";
-            // Decrement badge
-            const current = parseInt(badge.textContent || "0", 10);
-            badge.textContent = Math.max(0, current - 1);
-          } catch (_) {
-            // Non-critical — ignore silently
-          }
-        });
-      });
-
-      // Wire up delete buttons
-      list.querySelectorAll(".notif-delete-btn").forEach((btn) => {
-        btn.addEventListener("click", async (e) => {
-          e.stopPropagation();
-          const id = btn.dataset.id;
-          try {
-            await API.deleteNotification(id);
-            // Re-render the whole list so counts stay accurate
-            await Renderers.renderNotifications(true);
-          } catch (_) {
-            Utils.showToast("Failed to dismiss notification", "error");
-          }
-        });
-      });
     } catch (error) {
       console.error("renderNotifications error:", error);
       list.innerHTML = `

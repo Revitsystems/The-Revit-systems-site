@@ -10,6 +10,61 @@ import {
   deletePost,
   schedulePost,
 } from "@/models/postModel.js";
+import { createNotification } from "@/models/notificationModel.js";
+import { pool } from "@/config/db.js";
+
+// ── Notify specific roles ─────────────────────────────────────────────────
+// role: "admin" | "editor" | "author" | string[]
+// If authorId is passed, that specific user gets the notification
+// regardless of their role (used for author-specific alerts).
+const notifyByRole = async (
+  roles: string[],
+  type: string,
+  message: string,
+  link?: string,
+  excludeUserId?: string
+): Promise<void> => {
+  try {
+    const placeholders = roles.map((_, i) => `$${i + 1}`).join(", ");
+    const result = await pool.query(
+      `SELECT id FROM users WHERE role IN (${placeholders}) AND status = 'active'`,
+      roles
+    );
+    const targets = result.rows.filter(
+      (u: { id: string }) => u.id !== excludeUserId
+    );
+    await Promise.all(
+      targets.map((u: { id: string }) =>
+        createNotification({
+          userId: u.id,
+          type,
+          message,
+          ...(link ? { link } : {}),
+        })
+      )
+    );
+  } catch (err) {
+    console.error("[notifyByRole] Failed:", err);
+  }
+};
+
+const notifyUser = async (
+  userId: string,
+  type: string,
+  message: string,
+  link?: string
+): Promise<void> => {
+  try {
+    await createNotification({
+      userId,
+      type,
+      message,
+      ...(link ? { link } : {}),
+    });
+  } catch (err) {
+    console.error("[notifyUser] Failed:", err);
+  }
+};
 
 // =============================================
 // Create a new post (draft, published, or scheduled)
@@ -212,6 +267,26 @@ export const publishExistingPost = async (req: Request, res: Response) => {
 
   try {
     const updated = await publishPost(id);
+
+    // Notify the post author if someone else published their post
+    // (they published it themselves → no need to notify them)
+    if (post.author_id && post.author_id !== req.user!.id) {
+      notifyUser(
+        post.author_id,
+        "post",
+        `Your post "${post.title}" has been published.`
+      );
+    }
+
+    // Notify editors that a new post is live (so they can review content)
+    notifyByRole(
+      ["editor"],
+      "post",
+      `Post "${post.title}" has been published.`,
+      undefined,
+      req.user!.id // don't notify the editor who published it
+    );
+
     res.json(updated);
   } catch (err) {
     console.error("publishExistingPost error:", err);
@@ -250,6 +325,25 @@ export const removePost = async (req: Request, res: Response) => {
 
   try {
     await deletePost(id);
+
+    // If an admin deleted someone else's post, notify the author
+    if (post.author_id && post.author_id !== req.user!.id) {
+      notifyUser(
+        post.author_id,
+        "post",
+        `Your post "${post.title}" has been deleted by an admin.`
+      );
+    }
+
+    // Always notify admins when any post is deleted (audit trail)
+    notifyByRole(
+      ["admin"],
+      "post",
+      `Post "${post.title}" was deleted by ${req.user!.id}.`,
+      undefined,
+      req.user!.id // don't notify the admin who deleted it
+    );
+
     res.json({ message: "Post deleted" });
   } catch (err) {
     console.error("removePost error:", err);

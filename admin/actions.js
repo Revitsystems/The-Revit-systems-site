@@ -8,6 +8,16 @@ const Actions = {
   // NAVIGATION
   // ==================
   showSection: (sectionName) => {
+    // Guard: block navigation to sections the current role cannot access.
+    // This covers both sidebar clicks and any programmatic showSection() calls.
+    if (!RoleAccess.canAccess(AppState.currentUser.role, sectionName)) {
+      Utils.showToast(
+        "You don't have permission to access that section",
+        "warning"
+      );
+      return;
+    }
+
     document
       .querySelectorAll(".section")
       .forEach((s) => s.classList.remove("active"));

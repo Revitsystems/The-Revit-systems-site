@@ -1,5 +1,7 @@
 import cron from "node-cron";
 import { publishDueScheduledPosts } from "@/models/postModel.js";
+import { createNotification } from "@/models/notificationModel.js";
+import { pool } from "@/config/db.js";
 
 // ============================================
 // POST SCHEDULER
@@ -35,6 +37,35 @@ export const startScheduler = (): void => {
       published.forEach((post) => {
         console.log(`  • [${post.id}] "${post.title}"`);
       });
+
+      // Notify all active admins and editors for each post that went live.
+      // Fire-and-forget inside the cron — a notification failure should
+      // never prevent the scheduler from continuing.
+      try {
+        const staffResult = await pool.query(
+          `SELECT id FROM users WHERE role IN ('admin', 'editor') AND status = 'active'`
+        );
+        const staffIds: string[] = staffResult.rows.map(
+          (r: { id: string }) => r.id
+        );
+
+        await Promise.all(
+          published.flatMap((post) =>
+            staffIds.map((userId) =>
+              createNotification({
+                userId,
+                type: "post",
+                message: `Scheduled post "${post.title}" has been published automatically.`,
+              })
+            )
+          )
+        );
+      } catch (notifErr) {
+        console.error(
+          `[Scheduler] ${new Date().toISOString()} — Failed to create publish notifications:`,
+          notifErr
+        );
+      }
     } catch (error) {
       // Log but don't rethrow — a DB hiccup should never kill the cron task
       console.error(

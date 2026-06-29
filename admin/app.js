@@ -161,20 +161,9 @@ function initializeEventListeners() {
     e.stopPropagation();
     document.getElementById("notification-dropdown").classList.toggle("hidden");
     document.getElementById("user-dropdown").classList.add("hidden");
+    // Mark all as read when dropdown is opened
+    API.markAllNotificationsRead().catch(() => {});
   });
-
-  // Mark all as read button — was missing entirely, badge never updated
-  document
-    .getElementById("mark-all-read-btn")
-    ?.addEventListener("click", async () => {
-      try {
-        await API.markAllNotificationsRead();
-        // Re-render so badge resets to 0 and unread highlights clear
-        await Renderers.renderNotifications(true);
-      } catch (err) {
-        Utils.showToast("Failed to mark notifications as read", "error");
-      }
-    });
 
   document.addEventListener("click", () => {
     document.getElementById("user-dropdown").classList.add("hidden");
@@ -495,30 +484,39 @@ async function init() {
   // 2. Auth confirmed — now show the app
   document.getElementById("dashboard-app").style.display = "block";
   document.getElementById("skeleton-body").style.display = "none";
-  // 2. Seed mock data for media and users (no backend endpoints yet)
+
+  // Seed mock data for media (no backend endpoint yet)
   generateMockData();
 
-  // 3. Wire up the UI
+  // 3. Apply role-based UI restrictions before anything renders
+  const role = AppState.currentUser.role;
+  RoleAccess.applySidebarVisibility(role);
+  RoleAccess.applyDashboardVisibility(role);
+
+  // 4. Wire up the UI
   initializeEditor();
   initializeEventListeners();
   initializeDateDisplay();
   Renderers.renderUserProfile();
 
-  // 4. Load all real data in parallel for the dashboard
+  // 5. Load all real data in parallel for the dashboard
   await Promise.allSettled([
     Renderers.renderNotifications(),
     Renderers.updateDashboardStats(),
     Renderers.renderCategoryOptions(),
   ]);
 
-  // 5. Render dashboard sections (uses AppState + real stats)
+  // 6. Render dashboard sections
   Renderers.renderRecentPosts();
   Renderers.renderTopPosts();
-  Renderers.renderAnalytics();
+  // Authors don't see the analytics chart on the dashboard
+  if (role !== "author") {
+    Renderers.renderAnalytics();
+  }
 
   Actions.showSection("dashboard");
 
-  console.log("RevitSystems Admin Dashboard initialized");
+  console.log(`RevitSystems Admin Dashboard initialized — role: ${role}`);
 }
 
 // DOM-safe boot
