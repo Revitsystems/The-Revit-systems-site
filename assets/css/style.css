@@ -260,7 +260,7 @@ header {
   }
 
   .menu-footer {
-    margin-top: auto;
+    margin-top: 90%;
     color: #9aa6b2;
     font-size: 13px;
   }
@@ -1717,6 +1717,7 @@ hr {
   margin: 0;
   font-size: 29.39px;
   font-weight: 700;
+  text-align: center;
   font-style: bold;
 }
 .rv-news-desc {
