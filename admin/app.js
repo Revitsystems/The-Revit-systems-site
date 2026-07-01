@@ -43,6 +43,56 @@ function initializeEditor() {
     },
     placeholder: "Write your blog content here...",
   });
+
+  // Autosave the Write Blog form as the user types/edits content, so a
+  // dropped connection or backgrounded tab never means starting over.
+  AppState.editor.on("text-change", () => {
+    Actions.autosaveBlogForm();
+  });
+}
+
+// Second, independent Quill instance for the Edit Post modal. Previously
+// the edit modal used a plain <textarea> bound directly to the raw HTML
+// string stored in the DB, so authors/editors/admins saw literal tags
+// like <h1>, <p>, <br> instead of formatted text. This gives editing the
+// same WYSIWYG experience as the Write Blog page, and still serializes
+// back out to the same HTML format the DB and public blog page expect.
+function initializeEditModalEditor() {
+  if (!document.getElementById("edit-editor")) return;
+
+  AppState.editEditor = new Quill("#edit-editor", {
+    theme: "snow",
+    modules: {
+      toolbar: {
+        container: "#edit-editor-toolbar",
+        handlers: {
+          image: () => {
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = "image/*";
+
+            input.onchange = async () => {
+              const file = input.files[0];
+              if (!file) return;
+
+              try {
+                const url = await uploadToCloudinary(file);
+                const range = AppState.editEditor.getSelection(true);
+                AppState.editEditor.insertEmbed(range.index, "image", url);
+                AppState.editEditor.setSelection(range.index + 1);
+                Utils.showToast("Image inserted", "success");
+              } catch {
+                Utils.showToast("Failed to upload image", "error");
+              }
+            };
+
+            input.click();
+          },
+        },
+      },
+    },
+    placeholder: "Edit your blog content...",
+  });
 }
 
 function initializeDateDisplay() {
@@ -196,6 +246,16 @@ function initializeEventListeners() {
     .getElementById("confirm-schedule-btn")
     .addEventListener("click", Actions.confirmSchedule);
 
+  // --- Write Blog autosave: title / slug / excerpt / category ---
+  // Quill content is already covered by the text-change listener wired up
+  // in initializeEditor(). These are the remaining plain form fields.
+  ["blog-title", "blog-slug", "blog-excerpt", "blog-category"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("input", Actions.autosaveBlogForm);
+    el.addEventListener("change", Actions.autosaveBlogForm);
+  });
+
   // --- Edit modal ---
   document
     .getElementById("edit-draft-btn")
@@ -209,7 +269,7 @@ function initializeEventListeners() {
     .getElementById("confirm-delete-btn")
     .addEventListener("click", Actions.confirmDelete);
 
-  // --- Featured image upload ---
+  // --- Featured image upload (Write Blog form) ---
   document.getElementById("blog-image").addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -240,6 +300,46 @@ function initializeEventListeners() {
 
     AppState.featuredImageFile = file;
     Utils.showToast("Image selected", "success");
+  });
+
+  // --- Featured image upload (Edit Post modal) ---
+  // Fix: previously there was no way to change a post's featured image
+  // once it existed — the edit modal had no image field at all. This
+  // stages the new file; the actual Cloudinary upload happens in
+  // Actions.saveEdit() only if the user goes through with saving.
+  document.getElementById("edit-image")?.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/png", "image/jpeg"];
+
+    if (!allowedTypes.includes(file.type)) {
+      Utils.showToast("Only PNG, JPG, and JPEG images are allowed", "error");
+      return;
+    }
+
+    const maxSize = 8 * 1024 * 1024; // 8MB
+
+    if (file.size > maxSize) {
+      Utils.showToast("Image must be less than 8MB", "error");
+      return;
+    }
+
+    if (AppState.editPreviewUrl) {
+      URL.revokeObjectURL(AppState.editPreviewUrl);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    AppState.editPreviewUrl = previewUrl;
+
+    const previewContainer = document.getElementById("edit-image-preview");
+    previewContainer.innerHTML = `<img src="${previewUrl}" alt="Preview">`;
+
+    AppState.editFeaturedImageFile = file;
+    Utils.showToast(
+      "New image selected — will be saved when you update the post",
+      "success"
+    );
   });
 
   // --- Media library upload ---
@@ -495,6 +595,7 @@ async function init() {
 
   // 4. Wire up the UI
   initializeEditor();
+  initializeEditModalEditor();
   initializeEventListeners();
   initializeDateDisplay();
   Renderers.renderUserProfile();

@@ -3,6 +3,10 @@
    Depends on: utils.js, state.js, api.js, renderers.js
    ============================================ */
 
+// Key used to persist an in-progress Write Blog form to localStorage so
+// it survives tab reloads / backgrounding on slow networks.
+const AUTOSAVE_KEY = "blogAutosaveDraft";
+
 const Actions = {
   // ==================
   // NAVIGATION
@@ -68,6 +72,9 @@ const Actions = {
         break;
       case "write":
         Renderers.renderCategoryOptions();
+        // Offer to restore any unsaved work from a previous session
+        // (slow network drop, tab reload, accidental navigation, etc.)
+        Actions.checkForAutosave();
         break;
     }
   },
@@ -197,16 +204,28 @@ const Actions = {
     }
   },
 
+  // ── Edit modal ────────────────────────────────────────────────────────
+  // Opens the edit modal. Content now populates a Quill instance
+  // (AppState.editEditor) instead of a raw textarea, so authors/editors/
+  // admins see properly formatted text instead of raw HTML tags.
+  // Also restores the post's current featured image into the preview so
+  // it can be swapped out — previously there was no way to change it.
   editPost: (id) => {
     const post = AppState.posts.find((p) => p.id === id);
     if (!post) return;
+
+    Actions._resetEditImageState();
 
     AppState.editingPostId = id;
     document.getElementById("edit-id").value = id;
     document.getElementById("edit-title").value = post.title;
     document.getElementById("edit-slug").value = post.slug;
     document.getElementById("edit-excerpt").value = post.excerpt || "";
-    document.getElementById("edit-content").value = post.content || "";
+
+    if (AppState.editEditor) {
+      AppState.editEditor.root.innerHTML = post.content || "";
+    }
+
     document.getElementById("edit-category").value =
       post.category_id || post.category || "";
     document.getElementById("edit-status-display").textContent = post.status;
@@ -214,25 +233,58 @@ const Actions = {
       "edit-status-display"
     ).className = `status-display ${post.status}`;
 
+    // Show the post's existing featured image (if any) so the user can see
+    // what's currently attached and choose to replace it.
+    AppState.editFeaturedImageUrl =
+      post.featured_image || post.featuredImage || null;
+    const preview = document.getElementById("edit-image-preview");
+    if (preview) {
+      preview.innerHTML = AppState.editFeaturedImageUrl
+        ? `<img src="${AppState.editFeaturedImageUrl}" alt="Featured image">`
+        : `<i class="fas fa-cloud-upload-alt"></i><p>Click to upload image</p>`;
+    }
+
     Renderers.renderCategoryOptions();
     document.getElementById("edit-modal").classList.remove("hidden");
   },
 
+  // Submits the edit form. If the user picked a new featured image it is
+  // uploaded first; otherwise the post's existing image URL is preserved
+  // unchanged. Content is read back out of the Quill instance as HTML —
+  // same format the DB already stores and the public blog page renders.
   saveEdit: async (status) => {
     const id = document.getElementById("edit-id").value;
-    const postData = {
-      title: document.getElementById("edit-title").value,
-      slug: document.getElementById("edit-slug").value,
-      excerpt: document.getElementById("edit-excerpt").value,
-      content: document.getElementById("edit-content").value,
-      categoryId: document.getElementById("edit-category").value,
-      status,
-    };
+
     Utils.showLoader();
     try {
+      let featuredImage = AppState.editFeaturedImageUrl;
+
+      if (AppState.editFeaturedImageFile) {
+        try {
+          featuredImage = await uploadToCloudinary(
+            AppState.editFeaturedImageFile
+          );
+        } catch (err) {
+          console.error("Edit image upload error:", err);
+          Utils.showToast("Image upload failed", "error");
+          return;
+        }
+      }
+
+      const postData = {
+        title: document.getElementById("edit-title").value,
+        slug: document.getElementById("edit-slug").value,
+        excerpt: document.getElementById("edit-excerpt").value,
+        content: AppState.editEditor ? AppState.editEditor.root.innerHTML : "",
+        categoryId: document.getElementById("edit-category").value,
+        featuredImage,
+        status,
+      };
+
       await API.updatePost(id, postData);
       Utils.showToast("Post updated successfully", "success");
       document.getElementById("edit-modal").classList.add("hidden");
+      Actions._resetEditImageState();
       Renderers.renderPostsTable();
       Renderers.updateDashboardStats();
     } catch (error) {
@@ -624,6 +676,113 @@ const Actions = {
   },
 
   // ==================
+  // AUTOSAVE / DRAFT RECOVERY (Write Blog form)
+  // ==================
+  // Fixes: users on slow networks who background the tab (e.g. to grab a
+  // link from WhatsApp) losing their entire in-progress post. Nothing was
+  // ever persisted until a save request succeeded, so a stalled upload or
+  // a reloaded/reclaimed tab wiped everything. This snapshots the form to
+  // localStorage as the user types/edits, independent of network state.
+
+  // Builds a plain-object snapshot of the current Write Blog form.
+  _collectAutosaveSnapshot: () => ({
+    title: document.getElementById("blog-title")?.value || "",
+    slug: document.getElementById("blog-slug")?.value || "",
+    excerpt: document.getElementById("blog-excerpt")?.value || "",
+    content: AppState.editor ? AppState.editor.root.innerHTML : "",
+    category: document.getElementById("blog-category")?.value || "",
+    savedAt: Date.now(),
+  }),
+
+  // Debounced so we don't hammer localStorage on every keystroke.
+  autosaveBlogForm: Utils.debounce(() => {
+    const snap = Actions._collectAutosaveSnapshot();
+    const isEmpty =
+      !snap.title &&
+      !snap.excerpt &&
+      (!snap.content || snap.content === "<p><br></p>");
+    if (isEmpty) return;
+
+    try {
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(snap));
+    } catch (e) {
+      console.warn("Autosave failed:", e);
+    }
+  }, 800),
+
+  // Wipes the autosaved snapshot — called once a post is actually saved
+  // (draft/publish/schedule) so a stale recovery prompt doesn't linger.
+  clearAutosave: () => {
+    try {
+      localStorage.removeItem(AUTOSAVE_KEY);
+    } catch {
+      // ignore
+    }
+    document.getElementById("draft-recovery-banner")?.classList.add("hidden");
+  },
+
+  // Called whenever the Write Blog section is opened. Shows a recovery
+  // banner if there's a meaningful unsaved snapshot sitting in
+  // localStorage from an earlier, interrupted session.
+  checkForAutosave: () => {
+    let raw;
+    try {
+      raw = localStorage.getItem(AUTOSAVE_KEY);
+    } catch {
+      return;
+    }
+    if (!raw) return;
+
+    let snap;
+    try {
+      snap = JSON.parse(raw);
+    } catch {
+      try {
+        localStorage.removeItem(AUTOSAVE_KEY);
+      } catch {
+        // ignore
+      }
+      return;
+    }
+
+    const hasContent =
+      snap.title ||
+      snap.excerpt ||
+      (snap.content && snap.content !== "<p><br></p>");
+    if (!hasContent) return;
+
+    const banner = document.getElementById("draft-recovery-banner");
+    if (!banner) return;
+
+    const timeEl = document.getElementById("draft-recovery-time");
+    if (timeEl) {
+      timeEl.textContent = Utils.formatDateTime(
+        new Date(snap.savedAt).toISOString()
+      );
+    }
+    banner.classList.remove("hidden");
+
+    const restoreBtn = document.getElementById("restore-autosave-btn");
+    if (restoreBtn) {
+      restoreBtn.onclick = () => {
+        document.getElementById("blog-title").value = snap.title;
+        document.getElementById("blog-slug").value = snap.slug;
+        document.getElementById("blog-excerpt").value = snap.excerpt;
+        if (AppState.editor) AppState.editor.root.innerHTML = snap.content;
+        const categorySelect = document.getElementById("blog-category");
+        if (categorySelect) categorySelect.value = snap.category;
+        banner.classList.add("hidden");
+        Utils.showToast("Draft restored", "success");
+      };
+    }
+
+    const discardBtn = document.getElementById("discard-autosave-btn");
+    if (discardBtn) {
+      discardBtn.onclick = Actions.clearAutosave;
+    }
+  },
+
+  // ==================
   // HELPERS
   // ==================
   getBlogFormData: async () => {
@@ -661,9 +820,22 @@ const Actions = {
     if (AppState.editor) AppState.editor.setContents([]);
     AppState.featuredImageUrl = null;
     AppState.pendingFormData = null; // ← add this
+    Actions.clearAutosave(); // post is safely saved — drop the local snapshot
     document.getElementById("image-preview").innerHTML = `
     <i class="fas fa-cloud-upload-alt"></i>
     <p>Click to upload image</p>
   `;
+  },
+
+  // Resets everything tied to the edit modal's featured-image picker.
+  // Called when the edit modal opens (fresh post) and after a successful
+  // save, so state never leaks between edit sessions.
+  _resetEditImageState: () => {
+    if (AppState.editPreviewUrl) {
+      URL.revokeObjectURL(AppState.editPreviewUrl);
+    }
+    AppState.editPreviewUrl = null;
+    AppState.editFeaturedImageFile = null;
+    AppState.editFeaturedImageUrl = null;
   },
 };

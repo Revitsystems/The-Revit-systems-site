@@ -1,0 +1,299 @@
+/* ============================================================
+   REVIT SYSTEMS — SERVICES PAGE STYLES (services.css)
+   Loads after style.css + home.css — page-specific rules only
+   ============================================================ */
+
+/* ================================================================
+   SERVICES HERO
+================================================================ */
+.rv-svc-hero {
+  margin-top: 90px;
+  padding: 70px 0 60px;
+  background: var(--off-white);
+  text-align: center;
+}
+.rv-svc-hero__inner {
+  width: 90%;
+  max-width: 760px;
+  margin: 0 auto;
+}
+.rv-svc-hero .rv-breadcrumb {
+  justify-content: center;
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+.rv-svc-hero .rv-breadcrumb a {
+  color: var(--mid);
+}
+.rv-svc-hero .rv-breadcrumb a:hover {
+  color: var(--gold);
+}
+.rv-svc-hero .rv-breadcrumb span {
+  color: var(--gold);
+}
+.rv-svc-hero .rv-label {
+  justify-content: center;
+}
+.rv-svc-hero .rv-label::before {
+  display: none;
+}
+
+.rv-svc-hero__h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(2.2rem, 4.5vw, 3.6rem);
+  font-weight: 600;
+  color: var(--dark);
+  line-height: 1.2;
+  margin: 8px 0 20px;
+}
+.rv-svc-hero__sub {
+  font-size: 1rem;
+  color: var(--mid);
+  line-height: 1.8;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+@media (max-width: 600px) {
+  .rv-svc-hero {
+    padding: 50px 0 40px;
+  }
+}
+
+/* ================================================================
+   SERVICES SHOWCASE
+================================================================ */
+.rv-svc-showcase {
+  background: var(--white);
+  padding: 70px 0 100px;
+}
+.rv-svc-showcase__inner {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: 56px;
+  align-items: start;
+}
+
+.rv-svc-showcase__media {
+  position: sticky;
+  top: 110px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-dark);
+}
+.rv-svc-showcase__media img {
+  width: 100%;
+  height: 700px;
+  object-fit: cover;
+  display: block;
+}
+
+.rv-svc-showcase__list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rv-svc-row {
+  display: flex;
+  gap: 24px;
+  padding: 32px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  transition: padding-left 0.3s var(--ease);
+}
+.rv-svc-row:hover {
+  padding-left: 12px;
+}
+.rv-svc-row:last-child {
+  border-bottom: none;
+}
+
+.rv-svc-row__icon {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-md);
+  background: var(--off-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+  transition: background 0.3s, color 0.3s;
+}
+.rv-svc-row:hover .rv-svc-row__icon {
+  background: var(--gold);
+  color: var(--white);
+}
+
+.rv-svc-row__title {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--dark);
+  margin: 0 0 10px;
+}
+.rv-svc-row__text {
+  font-size: 0.95rem;
+  color: var(--mid);
+  line-height: 1.75;
+  margin: 0 0 14px;
+  max-width: 520px;
+}
+.rv-svc-row__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  text-decoration: none;
+  transition: gap 0.2s;
+}
+.rv-svc-row__link:hover {
+  gap: 14px;
+}
+.rv-svc-row__link i {
+  font-size: 0.7rem;
+}
+
+@media (max-width: 1000px) {
+  .rv-svc-showcase__inner {
+    grid-template-columns: 1fr;
+  }
+  .rv-svc-showcase__media {
+    position: relative;
+    top: 0;
+  }
+  .rv-svc-showcase__media img {
+    height: 400px;
+  }
+}
+@media (max-width: 600px) {
+  .rv-svc-showcase {
+    padding: 50px 0 70px;
+  }
+  .rv-svc-row {
+    gap: 16px;
+    padding: 26px 0;
+  }
+  .rv-svc-row__icon {
+    width: 52px;
+    height: 52px;
+  }
+  .rv-svc-row__title {
+    font-size: 1.25rem;
+  }
+}
+
+/* ================================================================
+   COMMITMENT / STATS
+================================================================ */
+.rv-svc-commit {
+  background: var(--off-white);
+  padding: 70px 0 70px;
+}
+.rv-svc-commit__inner {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 24px;
+  align-items: stretch;
+}
+
+.rv-svc-commit__stat,
+.rv-svc-commit__card {
+  border-radius: var(--radius-lg);
+  padding: 36px 30px;
+  min-width: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.rv-svc-commit__stat--gold {
+  background: var(--gold);
+  color: var(--white);
+}
+.rv-svc-commit__stat--dark {
+  background: var(--dark-3);
+  color: var(--white);
+}
+
+.rv-svc-commit__number {
+  font-family: var(--font-serif);
+  font-size: 3.2rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.rv-svc-commit__number span {
+  font-size: 1.8rem;
+}
+.rv-svc-commit__label {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.rv-svc-commit__text {
+  font-size: 0.82rem;
+  opacity: 0.85;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.rv-svc-commit__card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 44px 40px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.rv-svc-commit__heading {
+  font-family: var(--font-serif);
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 600;
+  color: var(--dark);
+  margin: 0 0 14px;
+  line-height: 1.3;
+}
+.rv-svc-commit__desc {
+  font-size: 0.92rem;
+  color: var(--mid);
+  line-height: 1.75;
+  margin: 0 0 28px;
+}
+.rv-svc-commit .rv-btn {
+  width: fit-content;
+}
+
+@media (max-width: 1200px) {
+  .rv-svc-commit__inner {
+    grid-template-columns: 1fr 1fr;
+  }
+  .rv-svc-commit__card {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 600px) {
+  .rv-svc-commit__inner {
+    grid-template-columns: 1fr;
+  }
+
+  .rv-svc-commit__card {
+    padding: 32px 26px;
+  }
+
+  .rv-svc-commit .rv-btn {
+    width: 102%;
+  }
+}

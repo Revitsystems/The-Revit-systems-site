@@ -556,6 +556,26 @@
           <!-- Write Blog Section -->
           <section id="write-section" class="section">
             <h1 class="section-title">Write New Blog</h1>
+
+            <div
+              id="draft-recovery-banner"
+              class="content-card draft-recovery-banner hidden"
+            >
+              <span
+                >We found an unsaved draft from
+                <strong id="draft-recovery-time"></strong>. Pick up where you
+                left off?</span
+              >
+              <div class="recovery-actions">
+                <button class="btn-secondary" id="discard-autosave-btn">
+                  Discard
+                </button>
+                <button class="btn-primary" id="restore-autosave-btn">
+                  Restore
+                </button>
+              </div>
+            </div>
+
             <div class="content-card">
               <form id="blog-form" class="blog-form">
                 <div class="form-grid">
@@ -1403,14 +1423,59 @@ Blog administrator and content creator.</textarea
               <textarea id="edit-excerpt" rows="2" required></textarea>
             </div>
             <div class="form-group">
-              <label for="edit-content">Content</label>
-              <textarea id="edit-content" rows="6" required></textarea>
+              <label for="edit-editor">Content</label>
+              <div id="edit-editor-container" class="editor-container">
+                <div id="edit-editor-toolbar">
+                  <span class="ql-formats">
+                    <select class="ql-header">
+                      <option value="1">Heading 1</option>
+                      <option value="2">Heading 2</option>
+                      <option value="3">Heading 3</option>
+                      <option selected>Normal</option>
+                    </select>
+                  </span>
+                  <span class="ql-formats">
+                    <button class="ql-bold"></button>
+                    <button class="ql-italic"></button>
+                    <button class="ql-underline"></button>
+                  </span>
+                  <span class="ql-formats">
+                    <button class="ql-list" value="ordered"></button>
+                    <button class="ql-list" value="bullet"></button>
+                  </span>
+                  <span class="ql-formats">
+                    <button class="ql-link"></button>
+                    <button class="ql-image"></button>
+                  </span>
+                  <span class="ql-formats">
+                    <button class="ql-clean"></button>
+                  </span>
+                </div>
+                <div id="edit-editor"></div>
+              </div>
             </div>
             <div class="form-group">
               <label for="edit-category">Category</label>
               <select id="edit-category" required>
                 <!-- Populated dynamically -->
               </select>
+            </div>
+            <div class="form-group">
+              <label for="edit-image">Featured Image</label>
+              <div class="image-upload">
+                <input type="file" id="edit-image" accept="image/*" hidden />
+                <div class="upload-preview" id="edit-image-preview">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                  <p>Click to upload image</p>
+                </div>
+                <button
+                  type="button"
+                  class="btn-secondary"
+                  onclick="document.getElementById('edit-image').click()"
+                >
+                  <i class="fas fa-image"></i> Change Image
+                </button>
+              </div>
             </div>
             <div class="form-group">
               <label>Current Status</label>

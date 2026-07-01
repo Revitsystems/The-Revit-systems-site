@@ -1330,6 +1330,20 @@ body {
   background: var(--white);
 }
 
+/* Edit Post modal's Quill instance — gives editors/authors/admins a
+   WYSIWYG view instead of raw HTML tags when editing an existing post.
+   Shorter min-height than the main write editor since it sits inside a
+   modal with limited vertical space. */
+#edit-editor-toolbar {
+  border-bottom: 1px solid var(--gray-300);
+  background: var(--gray-100);
+}
+
+#edit-editor {
+  min-height: 250px;
+  background: var(--white);
+}
+
 .ql-toolbar {
   border: none !important;
   background: var(--gray-100);
@@ -1643,6 +1657,29 @@ body {
 
 .preview-content strong {
   color: var(--dark);
+}
+
+/* ============================================
+   DRAFT RECOVERY BANNER (Write Blog)
+   Shown when Actions.checkForAutosave() finds an unsaved snapshot in
+   localStorage from an earlier, interrupted session (slow network /
+   backgrounded tab / accidental reload).
+   ============================================ */
+.draft-recovery-banner {
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: #fff8ec;
+  border-left: 4px solid var(--primary);
+}
+
+.draft-recovery-banner .recovery-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 /* ============================================
@@ -2355,6 +2392,11 @@ body {
 
   .comment-checkbox {
     align-self: flex-start;
+  }
+
+  .draft-recovery-banner {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 
