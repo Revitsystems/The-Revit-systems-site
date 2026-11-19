@@ -290,11 +290,11 @@ header {
   flex-direction: column;
   gap: 16px;
 }
-.rv-logo {
+.rv-footer-logo {
   display: flex;
   flex-direction: column;
 }
-.rv-logo-mark {
+.rv-footer-logo-mark {
   width: 100px;
   height: 100px;
   color: var(--logo-mark-color);
@@ -306,7 +306,7 @@ header {
   font-size: 1.2rem;
 }
 
-.rv-logo-mark img {
+.rv-footer-logo-mark img {
   width: 100%;
   height: 100%;
 }
